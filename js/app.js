@@ -23,6 +23,10 @@ class App {
     document.getElementById('start-training-btn').addEventListener('click', () => this.startTraining());
     document.getElementById('end-training-btn').addEventListener('click', () => this.endTraining());
     
+    document.getElementById('export-btn').addEventListener('click', () => this.exportExercises());
+    document.getElementById('import-btn').addEventListener('click', () => this.importExercises());
+    document.getElementById('import-file').addEventListener('change', (e) => this.handleImportFile(e));
+    
     document.addEventListener('click', (e) => {
       if (e.target.id === 'exercise-modal') {
         this.hideExerciseModal();
@@ -242,6 +246,57 @@ class App {
     } catch (error) {
       console.error('Error updating weight:', error);
     }
+  }
+
+  async exportExercises() {
+    try {
+      const exportData = await storage.exportExercises();
+      this.showToast(`${exportData.exercises.length} Übungen erfolgreich exportiert! 📤`);
+    } catch (error) {
+      console.error('Error exporting exercises:', error);
+      this.showToast('Fehler beim Exportieren der Übungen ❌', 'error');
+    }
+  }
+
+  importExercises() {
+    document.getElementById('import-file').click();
+  }
+
+  async handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const result = await storage.importExercises(file);
+      await this.loadExercises();
+      
+      this.showToast(`Import erfolgreich! ${result.imported} Übungen importiert${result.skipped > 0 ? `, ${result.skipped} übersprungen` : ''} 📥`);
+      
+      event.target.value = '';
+    } catch (error) {
+      console.error('Error importing exercises:', error);
+      this.showToast(`Import-Fehler: ${error.message} ❌`, 'error');
+      event.target.value = '';
+    }
+  }
+
+  showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg text-white font-medium z-50 transition-all duration-300 ${
+      type === 'error' ? 'bg-red-500' : 'bg-green-500'
+    }`;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 300);
+    }, 3000);
   }
 }
 

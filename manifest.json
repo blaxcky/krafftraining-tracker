@@ -2,12 +2,12 @@
   "name": "Krafttraining Tracker",
   "short_name": "KraftTracker",
   "description": "Minimalistische Progressive Web App für Krafttraining",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#1f2937",
   "orientation": "portrait",
-  "scope": "/",
+  "scope": "./",
   "icons": [
     {
       "src": "icons/icon-72x72.png",

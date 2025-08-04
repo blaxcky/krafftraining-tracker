@@ -48,11 +48,21 @@
 
         <!-- Exercises Tab -->
         <div id="exercises-tab" class="tab-content">
-            <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-4 space-y-3">
                 <button id="add-exercise-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
                     <span class="text-xl">+</span>
                     Neue Übung hinzufügen
                 </button>
+                
+                <div class="flex gap-2">
+                    <button id="export-btn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm">
+                        📤 Export
+                    </button>
+                    <button id="import-btn" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm">
+                        📥 Import
+                    </button>
+                </div>
+                <input type="file" id="import-file" accept=".json" class="hidden">
             </div>
 
             <div id="exercises-list" class="space-y-3">

@@ -1,11 +1,11 @@
 const CACHE_NAME = 'krafttraining-tracker-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/js/app.js',
-  '/js/storage.js',
-  '/js/pwa.js',
+  './',
+  './index.html',
+  './manifest.json',
+  './js/app.js',
+  './js/storage.js',
+  './js/pwa.js',
   'https://cdn.tailwindcss.com'
 ];
 

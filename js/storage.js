@@ -165,6 +165,85 @@ class Storage {
       request.onerror = () => reject(request.error);
     });
   }
+
+  async exportExercises() {
+    const exercises = await this.getAllExercises();
+    const exportData = {
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      exercises: exercises.map(ex => ({
+        name: ex.name,
+        weight: ex.weight
+      }))
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `krafttraining-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    URL.revokeObjectURL(link.href);
+    return exportData;
+  }
+
+  async importExercises(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = async (e) => {
+        try {
+          const importData = JSON.parse(e.target.result);
+          
+          if (!importData.exercises || !Array.isArray(importData.exercises)) {
+            throw new Error('Ungültiges Backup-Format');
+          }
+          
+          let importedCount = 0;
+          let skippedCount = 0;
+          
+          for (const exercise of importData.exercises) {
+            if (!exercise.name || exercise.name.trim() === '') {
+              skippedCount++;
+              continue;
+            }
+            
+            try {
+              await this.addExercise(exercise.name, exercise.weight || 0);
+              importedCount++;
+            } catch (error) {
+              console.warn(`Fehler beim Importieren von "${exercise.name}":`, error);
+              skippedCount++;
+            }
+          }
+          
+          resolve({
+            imported: importedCount,
+            skipped: skippedCount,
+            total: importData.exercises.length
+          });
+        } catch (error) {
+          reject(new Error('Fehler beim Lesen der Backup-Datei: ' + error.message));
+        }
+      };
+      
+      reader.onerror = () => reject(new Error('Fehler beim Lesen der Datei'));
+      reader.readAsText(file);
+    });
+  }
+
+  async clearAllExercises() {
+    const transaction = this.db.transaction(['exercises'], 'readwrite');
+    const store = transaction.objectStore('exercises');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
 }
 
 const storage = new Storage();
