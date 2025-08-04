@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="80" fill="#1f2937"/>
+  
+  <!-- Weight plate outer ring -->
+  <circle cx="256" cy="256" r="160" fill="#374151" stroke="#6b7280" stroke-width="4"/>
+  
+  <!-- Weight plate inner circle -->
+  <circle cx="256" cy="256" r="120" fill="#1f2937"/>
+  
+  <!-- Center hole -->
+  <circle cx="256" cy="256" r="30" fill="#374151"/>
+  
+  <!-- Barbell bar -->
+  <rect x="140" y="246" width="232" height="20" rx="10" fill="#6b7280"/>
+  
+  <!-- Weight plates on sides -->
+  <circle cx="120" cy="256" r="40" fill="#374151" stroke="#6b7280" stroke-width="3"/>
+  <circle cx="392" cy="256" r="40" fill="#374151" stroke="#6b7280" stroke-width="3"/>
+  
+  <!-- App title -->
+  <text x="256" y="380" text-anchor="middle" fill="#f9fafb" font-family="Arial, sans-serif" font-size="32" font-weight="bold">💪</text>
+  <text x="256" y="420" text-anchor="middle" fill="#f9fafb" font-family="Arial, sans-serif" font-size="28" font-weight="bold">KRAFT</text>
+  <text x="256" y="450" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="18">TRACKER</text>
+</svg>

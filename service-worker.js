@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krafttraining-tracker-v1';
+const CACHE_NAME = 'krafttraining-tracker-v2';
 const urlsToCache = [
   './',
   './index.html',
@@ -6,15 +6,22 @@ const urlsToCache = [
   './js/app.js',
   './js/storage.js',
   './js/pwa.js',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png',
   'https://cdn.tailwindcss.com'
 ];
 
 self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Cache opened');
         return cache.addAll(urlsToCache);
+      })
+      .then(() => {
+        console.log('All resources cached');
+        return self.skipWaiting();
       })
   );
 });
@@ -49,6 +56,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -59,6 +67,9 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      console.log('Service Worker activated');
+      return self.clients.claim();
     })
   );
 });
