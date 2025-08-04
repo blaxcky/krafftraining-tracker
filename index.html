@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krafttraining Tracker</title>
+    <meta name="description" content="Minimalistischer Krafttraining Tracker - PWA">
+    <meta name="theme-color" content="#1f2937">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1f2937',
+                        secondary: '#374151'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-6 max-w-md">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-primary mb-2">💪 Krafttraining</h1>
+            <p class="text-gray-600">Einfach. Effektiv. Offline.</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="mb-6">
+            <div class="flex bg-white rounded-lg shadow-sm overflow-hidden">
+                <button id="tab-exercises" class="flex-1 py-3 px-4 text-center font-medium bg-primary text-white">
+                    Übungen
+                </button>
+                <button id="tab-training" class="flex-1 py-3 px-4 text-center font-medium text-gray-600 hover:bg-gray-50">
+                    Training
+                </button>
+            </div>
+        </nav>
+
+        <!-- Exercises Tab -->
+        <div id="exercises-tab" class="tab-content">
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                <button id="add-exercise-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                    <span class="text-xl">+</span>
+                    Neue Übung hinzufügen
+                </button>
+            </div>
+
+            <div id="exercises-list" class="space-y-3">
+                <!-- Übungen werden hier dynamisch eingefügt -->
+            </div>
+
+            <!-- Add/Edit Exercise Modal -->
+            <div id="exercise-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-lg w-full max-w-sm p-6">
+                    <h3 id="modal-title" class="text-lg font-semibold mb-4">Neue Übung</h3>
+                    <form id="exercise-form">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Übungsname</label>
+                            <input type="text" id="exercise-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Gewicht (kg)</label>
+                            <input type="number" id="exercise-weight" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" step="0.5" min="0">
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="button" id="cancel-btn" class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                Abbrechen
+                            </button>
+                            <button type="submit" class="flex-1 py-2 px-4 bg-primary text-white rounded-lg hover:bg-gray-700">
+                                Speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Tab -->
+        <div id="training-tab" class="tab-content hidden">
+            <div id="no-training" class="text-center py-12">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="text-6xl mb-4">🏋️</div>
+                    <h3 class="text-lg font-semibold mb-2">Bereit für dein Training?</h3>
+                    <p class="text-gray-600 mb-6">Starte dein Workout mit allen verfügbaren Übungen</p>
+                    <button id="start-training-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+                        Training starten
+                    </button>
+                </div>
+            </div>
+
+            <div id="active-training" class="hidden">
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-lg">Aktives Training</h3>
+                            <p class="text-gray-600 text-sm" id="training-progress">0 von 0 Übungen erledigt</p>
+                        </div>
+                        <button id="end-training-btn" class="text-red-500 hover:text-red-600 font-medium">
+                            Beenden
+                        </button>
+                    </div>
+                </div>
+
+                <div id="training-exercises" class="space-y-3">
+                    <!-- Training Übungen werden hier dynamisch eingefügt -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/pwa.js"></script>
+</body>
+</html>
