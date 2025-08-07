@@ -64,13 +64,23 @@ class App {
       return;
     }
     
-    container.innerHTML = exercises.map(exercise => `
+    container.innerHTML = exercises.map((exercise, index) => `
       <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
         <div class="flex-1">
           <h3 class="font-medium text-gray-900">${exercise.name}</h3>
           <p class="text-sm text-gray-600">${exercise.weight} kg</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-1">
+          <button onclick="app.moveExercise(${exercise.id}, 'up')" 
+                  class="text-gray-500 hover:text-gray-700 p-2 ${index === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
+                  ${index === 0 ? 'disabled' : ''}>
+            ↑
+          </button>
+          <button onclick="app.moveExercise(${exercise.id}, 'down')" 
+                  class="text-gray-500 hover:text-gray-700 p-2 ${index === exercises.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+                  ${index === exercises.length - 1 ? 'disabled' : ''}>
+            ↓
+          </button>
           <button onclick="app.editExercise(${exercise.id})" class="text-blue-500 hover:text-blue-600 p-2">
             ✏️
           </button>
@@ -277,6 +287,21 @@ class App {
       console.error('Error importing exercises:', error);
       this.showToast(`Import-Fehler: ${error.message} ❌`, 'error');
       event.target.value = '';
+    }
+  }
+
+  async moveExercise(exerciseId, direction) {
+    try {
+      const success = await storage.moveExercise(exerciseId, direction);
+      if (success) {
+        await this.loadExercises();
+        const training = await storage.getCurrentTraining();
+        if (training) {
+          await this.loadTraining();
+        }
+      }
+    } catch (error) {
+      console.error('Error moving exercise:', error);
     }
   }
 
