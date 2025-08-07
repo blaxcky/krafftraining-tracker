@@ -24,6 +24,24 @@
             }
         }
     </script>
+    <style>
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .icon-button {
+            transition: all 0.2s ease;
+        }
+        .icon-button:hover .icon {
+            transform: scale(1.1);
+        }
+        .icon-button:disabled .icon {
+            opacity: 0.5;
+            transform: none;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div id="app" class="container mx-auto px-4 py-6 max-w-md">
