@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krafttraining-tracker-v16';
+const CACHE_NAME = 'krafttraining-tracker-v17';
 const urlsToCache = [
   './',
   './index.html',
@@ -6,8 +6,7 @@ const urlsToCache = [
   './js/app.js',
   './js/storage.js',
   './js/pwa.js',
-  './icons/icon-192x192.png',
-  './icons/icon-512x512.png',
+  './icons/dumbbell-512.png',
   'https://cdn.tailwindcss.com'
 ];
 
