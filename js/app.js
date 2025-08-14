@@ -3,14 +3,23 @@ class App {
     this.currentTab = 'exercises';
     this.editingExercise = null;
     this.editingType = 'exercise';
+    this.version = '1.2';
     this.init();
   }
 
   async init() {
     await storage.init();
     this.setupEventListeners();
+    this.updateVersionBadge();
     await this.loadExercises();
     await this.loadTraining();
+  }
+
+  updateVersionBadge() {
+    const badge = document.getElementById('version-badge');
+    if (badge) {
+      badge.textContent = `v${this.version} (c7)`;
+    }
   }
 
   setupEventListeners() {
