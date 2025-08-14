@@ -32,6 +32,9 @@ class Storage {
   }
 
   async addExercise(name, weight = 0) {
+    const exercises = await this.getAllExercises();
+    const maxOrder = exercises.length > 0 ? Math.max(...exercises.map(e => e.order || 0)) : -1;
+    
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
     
@@ -39,6 +42,7 @@ class Storage {
       const request = store.add({
         name: name.trim(),
         weight: parseFloat(weight) || 0,
+        order: maxOrder + 1,
         createdAt: new Date()
       });
       
@@ -53,7 +57,11 @@ class Storage {
     
     return new Promise((resolve, reject) => {
       const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const exercises = request.result;
+        exercises.sort((a, b) => (a.order || 0) - (b.order || 0));
+        resolve(exercises);
+      };
       request.onerror = () => reject(request.error);
     });
   }
@@ -231,6 +239,42 @@ class Storage {
       
       reader.onerror = () => reject(new Error('Fehler beim Lesen der Datei'));
       reader.readAsText(file);
+    });
+  }
+
+  async moveExercise(exerciseId, direction) {
+    const exercises = await this.getAllExercises();
+    const currentIndex = exercises.findIndex(ex => ex.id === exerciseId);
+    
+    if (currentIndex === -1) return false;
+    
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= exercises.length) return false;
+    
+    const currentExercise = exercises[currentIndex];
+    const targetExercise = exercises[newIndex];
+    
+    const tempOrder = currentExercise.order;
+    currentExercise.order = targetExercise.order;
+    targetExercise.order = tempOrder;
+    
+    const transaction = this.db.transaction(['exercises'], 'readwrite');
+    const store = transaction.objectStore('exercises');
+    
+    return new Promise((resolve, reject) => {
+      const updateCurrent = store.put(currentExercise);
+      const updateTarget = store.put(targetExercise);
+      
+      let completed = 0;
+      const checkComplete = () => {
+        completed++;
+        if (completed === 2) resolve(true);
+      };
+      
+      updateCurrent.onsuccess = checkComplete;
+      updateTarget.onsuccess = checkComplete;
+      updateCurrent.onerror = () => reject(updateCurrent.error);
+      updateTarget.onerror = () => reject(updateTarget.error);
     });
   }
 

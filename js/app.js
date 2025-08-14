@@ -64,18 +64,36 @@ class App {
       return;
     }
     
-    container.innerHTML = exercises.map(exercise => `
+    container.innerHTML = exercises.map((exercise, index) => `
       <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
         <div class="flex-1">
           <h3 class="font-medium text-gray-900">${exercise.name}</h3>
           <p class="text-sm text-gray-600">${exercise.weight} kg</p>
         </div>
-        <div class="flex gap-2">
-          <button onclick="app.editExercise(${exercise.id})" class="text-blue-500 hover:text-blue-600 p-2">
-            ✏️
+        <div class="flex gap-1">
+          <button onclick="app.moveExercise(${exercise.id}, 'up')" 
+                  class="icon-button text-gray-500 hover:text-gray-700 p-2 ${index === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
+                  ${index === 0 ? 'disabled' : ''}>
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m4.5 15.75 7.5-7.5 7.5 7.5"/>
+            </svg>
           </button>
-          <button onclick="app.deleteExercise(${exercise.id})" class="text-red-500 hover:text-red-600 p-2">
-            🗑️
+          <button onclick="app.moveExercise(${exercise.id}, 'down')" 
+                  class="icon-button text-gray-500 hover:text-gray-700 p-2 ${index === exercises.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+                  ${index === exercises.length - 1 ? 'disabled' : ''}>
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+            </svg>
+          </button>
+          <button onclick="app.editExercise(${exercise.id})" class="icon-button text-blue-500 hover:text-blue-600 p-2">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+            </svg>
+          </button>
+          <button onclick="app.deleteExercise(${exercise.id})" class="icon-button text-red-500 hover:text-red-600 p-2">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m19 7-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
+            </svg>
           </button>
         </div>
       </div>
@@ -277,6 +295,21 @@ class App {
       console.error('Error importing exercises:', error);
       this.showToast(`Import-Fehler: ${error.message} ❌`, 'error');
       event.target.value = '';
+    }
+  }
+
+  async moveExercise(exerciseId, direction) {
+    try {
+      const success = await storage.moveExercise(exerciseId, direction);
+      if (success) {
+        await this.loadExercises();
+        const training = await storage.getCurrentTraining();
+        if (training) {
+          await this.loadTraining();
+        }
+      }
+    } catch (error) {
+      console.error('Error moving exercise:', error);
     }
   }
 

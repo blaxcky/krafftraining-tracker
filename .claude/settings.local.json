@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:heroicons.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:yesicon.app)"
+    ],
+    "deny": []
+  }
+}
