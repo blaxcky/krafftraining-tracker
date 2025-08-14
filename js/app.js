@@ -3,7 +3,7 @@ class App {
     this.currentTab = 'exercises';
     this.editingExercise = null;
     this.editingType = 'exercise';
-    this.version = '1.5';
+    this.version = '1.6';
     this.init();
   }
 
@@ -18,7 +18,7 @@ class App {
   updateVersionBadge() {
     const badge = document.getElementById('version-badge');
     if (badge) {
-      badge.textContent = `v${this.version} (c10)`;
+      badge.textContent = `v${this.version} (c11)`;
     }
   }
 
@@ -77,10 +77,11 @@ class App {
     
     container.innerHTML = exercises.map((exercise, index) => {
       const isHeader = exercise.type === 'header';
+      const marginTop = isHeader && index > 0 ? 'mt-6' : '';
       return `
-        <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${isHeader ? 'bg-purple-50 border-l-4 border-purple-500' : ''}">
+        <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop} ${isHeader ? '' : ''}">
           <div class="flex-1">
-            <h3 class="font-medium ${isHeader ? 'text-lg font-bold text-purple-800' : 'text-gray-900'}">${exercise.name}</h3>
+            <h3 class="font-medium ${isHeader ? 'text-lg font-bold text-gray-800 border-b border-gray-300 pb-2' : 'text-gray-900'}">${exercise.name}</h3>
             ${!isHeader ? `<p class="text-sm text-gray-600">${exercise.weight} kg</p>` : ''}
           </div>
           <div class="flex gap-1">
@@ -136,13 +137,14 @@ class App {
     document.getElementById('training-progress').textContent = `${completed} von ${total} Übungen erledigt`;
     
     const container = document.getElementById('training-exercises');
-    container.innerHTML = training.exercises.map(exercise => {
+    container.innerHTML = training.exercises.map((exercise, index) => {
       const isHeader = exercise.type === 'header';
+      const marginTop = isHeader && index > 0 ? 'mt-6' : '';
       
       if (isHeader) {
         return `
-          <div class="bg-purple-50 rounded-lg p-3 border-l-4 border-purple-500">
-            <h3 class="text-lg font-bold text-purple-800">${exercise.name}</h3>
+          <div class="bg-white rounded-lg p-3 ${marginTop}">
+            <h3 class="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2">${exercise.name}</h3>
           </div>
         `;
       }
