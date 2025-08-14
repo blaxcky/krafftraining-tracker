@@ -225,7 +225,8 @@ class Storage {
       exercises: exercises.map(ex => ({
         name: ex.name,
         type: ex.type || 'exercise',
-        weight: ex.type === 'header' ? undefined : ex.weight
+        weight: ex.type === 'header' ? undefined : ex.weight,
+        order: ex.order
       }))
     };
     
@@ -263,11 +264,27 @@ class Storage {
             }
             
             try {
+              let newId;
               if (exercise.type === 'header') {
-                await this.addHeader(exercise.name);
+                newId = await this.addHeader(exercise.name);
               } else {
-                await this.addExercise(exercise.name, exercise.weight || 0);
+                newId = await this.addExercise(exercise.name, exercise.weight || 0);
               }
+              
+              // Order-Feld setzen falls vorhanden
+              if (exercise.order !== undefined && newId) {
+                const transaction = this.db.transaction(['exercises'], 'readwrite');
+                const store = transaction.objectStore('exercises');
+                const getRequest = store.get(newId);
+                getRequest.onsuccess = () => {
+                  const savedExercise = getRequest.result;
+                  if (savedExercise) {
+                    savedExercise.order = exercise.order;
+                    store.put(savedExercise);
+                  }
+                };
+              }
+              
               importedCount++;
             } catch (error) {
               console.warn(`Fehler beim Importieren von "${exercise.name}":`, error);
