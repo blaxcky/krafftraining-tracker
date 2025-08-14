@@ -42,6 +42,27 @@ class Storage {
       const request = store.add({
         name: name.trim(),
         weight: parseFloat(weight) || 0,
+        type: 'exercise',
+        order: maxOrder + 1,
+        createdAt: new Date()
+      });
+      
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async addHeader(name) {
+    const exercises = await this.getAllExercises();
+    const maxOrder = exercises.length > 0 ? Math.max(...exercises.map(e => e.order || 0)) : -1;
+    
+    const transaction = this.db.transaction(['exercises'], 'readwrite');
+    const store = transaction.objectStore('exercises');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.add({
+        name: name.trim(),
+        type: 'header',
         order: maxOrder + 1,
         createdAt: new Date()
       });
@@ -76,7 +97,9 @@ class Storage {
         const exercise = getRequest.result;
         if (exercise) {
           exercise.name = name.trim();
-          exercise.weight = parseFloat(weight) || 0;
+          if (exercise.type === 'exercise') {
+            exercise.weight = parseFloat(weight) || 0;
+          }
           exercise.updatedAt = new Date();
           
           const updateRequest = store.put(exercise);
@@ -110,8 +133,9 @@ class Storage {
       exercises: exercises.map(ex => ({
         id: ex.id,
         name: ex.name,
-        weight: ex.weight,
-        completed: false
+        type: ex.type || 'exercise',
+        weight: ex.weight || 0,
+        completed: ex.type === 'header' ? null : false
       }))
     };
 
@@ -181,7 +205,8 @@ class Storage {
       exportDate: new Date().toISOString(),
       exercises: exercises.map(ex => ({
         name: ex.name,
-        weight: ex.weight
+        type: ex.type || 'exercise',
+        weight: ex.type === 'header' ? undefined : ex.weight
       }))
     };
     
@@ -219,7 +244,11 @@ class Storage {
             }
             
             try {
-              await this.addExercise(exercise.name, exercise.weight || 0);
+              if (exercise.type === 'header') {
+                await this.addHeader(exercise.name);
+              } else {
+                await this.addExercise(exercise.name, exercise.weight || 0);
+              }
               importedCount++;
             } catch (error) {
               console.warn(`Fehler beim Importieren von "${exercise.name}":`, error);

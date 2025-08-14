@@ -2,6 +2,7 @@ class App {
   constructor() {
     this.currentTab = 'exercises';
     this.editingExercise = null;
+    this.editingType = 'exercise';
     this.init();
   }
 
@@ -17,6 +18,7 @@ class App {
     document.getElementById('tab-training').addEventListener('click', () => this.switchTab('training'));
     
     document.getElementById('add-exercise-btn').addEventListener('click', () => this.showExerciseModal());
+    document.getElementById('add-header-btn').addEventListener('click', () => this.showHeaderModal());
     document.getElementById('cancel-btn').addEventListener('click', () => this.hideExerciseModal());
     document.getElementById('exercise-form').addEventListener('submit', (e) => this.saveExercise(e));
     
@@ -64,40 +66,43 @@ class App {
       return;
     }
     
-    container.innerHTML = exercises.map((exercise, index) => `
-      <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
-        <div class="flex-1">
-          <h3 class="font-medium text-gray-900">${exercise.name}</h3>
-          <p class="text-sm text-gray-600">${exercise.weight} kg</p>
+    container.innerHTML = exercises.map((exercise, index) => {
+      const isHeader = exercise.type === 'header';
+      return `
+        <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${isHeader ? 'bg-purple-50 border-l-4 border-purple-500' : ''}">
+          <div class="flex-1">
+            <h3 class="font-medium ${isHeader ? 'text-lg font-bold text-purple-800' : 'text-gray-900'}">${exercise.name}</h3>
+            ${!isHeader ? `<p class="text-sm text-gray-600">${exercise.weight} kg</p>` : ''}
+          </div>
+          <div class="flex gap-1">
+            <button onclick="app.moveExercise(${exercise.id}, 'up')" 
+                    class="icon-button text-gray-500 hover:text-gray-700 p-2 ${index === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
+                    ${index === 0 ? 'disabled' : ''}>
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m4.5 15.75 7.5-7.5 7.5 7.5"/>
+              </svg>
+            </button>
+            <button onclick="app.moveExercise(${exercise.id}, 'down')" 
+                    class="icon-button text-gray-500 hover:text-gray-700 p-2 ${index === exercises.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+                    ${index === exercises.length - 1 ? 'disabled' : ''}>
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+              </svg>
+            </button>
+            <button onclick="app.editExercise(${exercise.id})" class="icon-button text-blue-500 hover:text-blue-600 p-2">
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+              </svg>
+            </button>
+            <button onclick="app.deleteExercise(${exercise.id})" class="icon-button text-red-500 hover:text-red-600 p-2">
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m19 7-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="flex gap-1">
-          <button onclick="app.moveExercise(${exercise.id}, 'up')" 
-                  class="icon-button text-gray-500 hover:text-gray-700 p-2 ${index === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
-                  ${index === 0 ? 'disabled' : ''}>
-            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m4.5 15.75 7.5-7.5 7.5 7.5"/>
-            </svg>
-          </button>
-          <button onclick="app.moveExercise(${exercise.id}, 'down')" 
-                  class="icon-button text-gray-500 hover:text-gray-700 p-2 ${index === exercises.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}"
-                  ${index === exercises.length - 1 ? 'disabled' : ''}>
-            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
-            </svg>
-          </button>
-          <button onclick="app.editExercise(${exercise.id})" class="icon-button text-blue-500 hover:text-blue-600 p-2">
-            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-            </svg>
-          </button>
-          <button onclick="app.deleteExercise(${exercise.id})" class="icon-button text-red-500 hover:text-red-600 p-2">
-            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m19 7-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   async loadTraining() {
@@ -115,53 +120,76 @@ class App {
   }
 
   renderTrainingExercises(training) {
-    const completed = training.exercises.filter(ex => ex.completed).length;
-    const total = training.exercises.length;
+    const actualExercises = training.exercises.filter(ex => ex.type !== 'header');
+    const completed = actualExercises.filter(ex => ex.completed).length;
+    const total = actualExercises.length;
     
     document.getElementById('training-progress').textContent = `${completed} von ${total} Übungen erledigt`;
     
     const container = document.getElementById('training-exercises');
-    container.innerHTML = training.exercises.map(exercise => `
-      <div class="bg-white rounded-lg shadow-sm p-4 ${exercise.completed ? 'opacity-75 bg-green-50' : ''}">
-        <div class="flex items-center gap-3">
-          <input 
-            type="checkbox" 
-            ${exercise.completed ? 'checked' : ''} 
-            onchange="app.toggleExercise(${exercise.id}, this.checked)"
-            class="w-5 h-5 text-green-500 rounded focus:ring-green-500"
-          >
-          <div class="flex-1">
-            <h3 class="font-medium ${exercise.completed ? 'line-through text-gray-500' : 'text-gray-900'}">${exercise.name}</h3>
+    container.innerHTML = training.exercises.map(exercise => {
+      const isHeader = exercise.type === 'header';
+      
+      if (isHeader) {
+        return `
+          <div class="bg-purple-50 rounded-lg p-3 border-l-4 border-purple-500">
+            <h3 class="text-lg font-bold text-purple-800">${exercise.name}</h3>
           </div>
-          <div class="flex items-center gap-2">
+        `;
+      }
+      
+      return `
+        <div class="bg-white rounded-lg shadow-sm p-4 ${exercise.completed ? 'opacity-75 bg-green-50' : ''}">
+          <div class="flex items-center gap-3">
             <input 
-              type="number" 
-              value="${exercise.weight}" 
-              step="0.5" 
-              min="0"
-              onchange="app.updateWeight(${exercise.id}, this.value, ${exercise.completed})"
-              class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+              type="checkbox" 
+              ${exercise.completed ? 'checked' : ''} 
+              onchange="app.toggleExercise(${exercise.id}, this.checked)"
+              class="w-5 h-5 text-green-500 rounded focus:ring-green-500"
             >
-            <span class="text-sm text-gray-600">kg</span>
+            <div class="flex-1">
+              <h3 class="font-medium ${exercise.completed ? 'line-through text-gray-500' : 'text-gray-900'}">${exercise.name}</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <input 
+                type="number" 
+                value="${exercise.weight}" 
+                step="0.5" 
+                min="0"
+                onchange="app.updateWeight(${exercise.id}, this.value, ${exercise.completed})"
+                class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+              <span class="text-sm text-gray-600">kg</span>
+            </div>
           </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   showExerciseModal(exercise = null) {
     this.editingExercise = exercise;
+    this.editingType = exercise?.type || 'exercise';
     const modal = document.getElementById('exercise-modal');
     const title = document.getElementById('modal-title');
     const nameInput = document.getElementById('exercise-name');
     const weightInput = document.getElementById('exercise-weight');
+    const weightField = document.getElementById('weight-field');
+    
+    if (this.editingType === 'header') {
+      weightField.style.display = 'none';
+      title.textContent = exercise ? 'Überschrift bearbeiten' : 'Neue Überschrift';
+    } else {
+      weightField.style.display = 'block';
+      title.textContent = exercise ? 'Übung bearbeiten' : 'Neue Übung';
+    }
     
     if (exercise) {
-      title.textContent = 'Übung bearbeiten';
       nameInput.value = exercise.name;
-      weightInput.value = exercise.weight;
+      if (this.editingType === 'exercise') {
+        weightInput.value = exercise.weight;
+      }
     } else {
-      title.textContent = 'Neue Übung';
       nameInput.value = '';
       weightInput.value = '';
     }
@@ -170,9 +198,16 @@ class App {
     nameInput.focus();
   }
 
+  showHeaderModal(header = null) {
+    this.editingExercise = header;
+    this.editingType = 'header';
+    this.showExerciseModal(header);
+  }
+
   hideExerciseModal() {
     document.getElementById('exercise-modal').classList.add('hidden');
     this.editingExercise = null;
+    this.editingType = 'exercise';
   }
 
   async saveExercise(e) {
@@ -186,7 +221,11 @@ class App {
       if (this.editingExercise) {
         await storage.updateExercise(this.editingExercise.id, name, weight);
       } else {
-        await storage.addExercise(name, weight);
+        if (this.editingType === 'header') {
+          await storage.addHeader(name);
+        } else {
+          await storage.addExercise(name, weight);
+        }
       }
       
       this.hideExerciseModal();
