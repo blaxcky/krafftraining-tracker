@@ -6,7 +6,7 @@ const urlsToCache = [
   './js/app.js',
   './js/storage.js',
   './js/pwa.js',
-  './icons/dumbbell-512.png',
+  './icons/icon-512x512.png',
   'https://cdn.tailwindcss.com'
 ];
 
