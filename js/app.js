@@ -18,7 +18,10 @@ class App {
     document.getElementById('tab-training').addEventListener('click', () => this.switchTab('training'));
     
     document.getElementById('add-exercise-btn').addEventListener('click', () => this.showExerciseModal());
-    document.getElementById('add-header-btn').addEventListener('click', () => this.showHeaderModal());
+    document.getElementById('add-header-btn').addEventListener('click', () => {
+      console.log('Header button clicked!');
+      this.showHeaderModal();
+    });
     document.getElementById('cancel-btn').addEventListener('click', () => this.hideExerciseModal());
     document.getElementById('exercise-form').addEventListener('submit', (e) => this.saveExercise(e));
     
@@ -199,6 +202,7 @@ class App {
   }
 
   showHeaderModal(header = null) {
+    console.log('showHeaderModal called with:', header);
     this.editingExercise = header;
     this.editingType = 'header';
     this.showExerciseModal(header);
