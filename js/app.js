@@ -3,7 +3,7 @@ class App {
     this.currentTab = 'exercises';
     this.editingExercise = null;
     this.editingType = 'exercise';
-    this.version = '1.7';
+    this.version = '1.8';
     this.init();
   }
 
@@ -18,7 +18,7 @@ class App {
   updateVersionBadge() {
     const badge = document.getElementById('version-badge');
     if (badge) {
-      badge.textContent = `v${this.version} (c12)`;
+      badge.textContent = `v${this.version} (c13)`;
     }
   }
 
@@ -77,11 +77,11 @@ class App {
     
     container.innerHTML = exercises.map((exercise, index) => {
       const isHeader = exercise.type === 'header';
-      const marginTop = isHeader && index > 0 ? 'mt-6' : '';
+      const marginTop = isHeader && index > 0 ? 'mt-10' : '';
       return `
-        <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop} ${isHeader ? '' : ''}">
+        <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop} ${isHeader ? 'border-l-4 border-gray-400' : ''}">
           <div class="flex-1">
-            <h3 class="font-medium ${isHeader ? 'text-lg font-bold text-gray-800 border-b border-gray-300 pb-2' : 'text-gray-900'}">${exercise.name}</h3>
+            <h3 class="font-medium ${isHeader ? 'text-lg font-bold text-gray-800 border-b-2 border-gray-400 pb-3' : 'text-gray-900'}">${exercise.name}</h3>
             ${!isHeader ? `<p class="text-sm text-gray-600">${exercise.weight} kg</p>` : ''}
           </div>
           <div class="flex gap-1">
@@ -139,12 +139,12 @@ class App {
     const container = document.getElementById('training-exercises');
     container.innerHTML = training.exercises.map((exercise, index) => {
       const isHeader = exercise.type === 'header';
-      const marginTop = isHeader && index > 0 ? 'mt-6' : '';
+      const marginTop = isHeader && index > 0 ? 'mt-10' : '';
       
       if (isHeader) {
         return `
-          <div class="bg-white rounded-lg p-3 ${marginTop}">
-            <h3 class="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2">${exercise.name}</h3>
+          <div class="bg-white rounded-lg p-4 ${marginTop} border-l-4 border-gray-400">
+            <h3 class="text-lg font-bold text-gray-800 border-b-2 border-gray-400 pb-3">${exercise.name}</h3>
           </div>
         `;
       }
