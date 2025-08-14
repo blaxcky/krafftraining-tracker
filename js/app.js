@@ -3,7 +3,7 @@ class App {
     this.currentTab = 'exercises';
     this.editingExercise = null;
     this.editingType = 'exercise';
-    this.version = '1.2';
+    this.version = '1.3';
     this.init();
   }
 
@@ -18,7 +18,7 @@ class App {
   updateVersionBadge() {
     const badge = document.getElementById('version-badge');
     if (badge) {
-      badge.textContent = `v${this.version} (c7)`;
+      badge.textContent = `v${this.version} (c8)`;
     }
   }
 

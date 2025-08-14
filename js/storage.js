@@ -73,13 +73,32 @@ class Storage {
   }
 
   async getAllExercises() {
-    const transaction = this.db.transaction(['exercises'], 'readonly');
+    const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
     
     return new Promise((resolve, reject) => {
       const request = store.getAll();
-      request.onsuccess = () => {
+      request.onsuccess = async () => {
         const exercises = request.result;
+        
+        // Auto-Migration: Fehlende Order-Werte hinzufügen
+        let needsUpdate = false;
+        exercises.forEach((exercise, index) => {
+          if (exercise.order === undefined || exercise.order === null) {
+            exercise.order = index;
+            needsUpdate = true;
+          }
+        });
+        
+        // Updates speichern falls nötig
+        if (needsUpdate) {
+          for (const exercise of exercises) {
+            if (exercise.order !== undefined) {
+              store.put(exercise);
+            }
+          }
+        }
+        
         exercises.sort((a, b) => (a.order || 0) - (b.order || 0));
         resolve(exercises);
       };
@@ -283,9 +302,12 @@ class Storage {
     const currentExercise = exercises[currentIndex];
     const targetExercise = exercises[newIndex];
     
-    const tempOrder = currentExercise.order;
-    currentExercise.order = targetExercise.order;
-    targetExercise.order = tempOrder;
+    // Robuste Order-Behandlung mit Fallback
+    const currentOrder = currentExercise.order !== undefined ? currentExercise.order : currentIndex;
+    const targetOrder = targetExercise.order !== undefined ? targetExercise.order : newIndex;
+    
+    currentExercise.order = targetOrder;
+    targetExercise.order = currentOrder;
     
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
