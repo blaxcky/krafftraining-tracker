@@ -235,7 +235,9 @@ class Storage {
     
     const link = document.createElement('a');
     link.href = URL.createObjectURL(dataBlob);
-    link.download = `krafttraining-backup-${new Date().toISOString().split('T')[0]}.json`;
+    const now = new Date();
+    const dateTime = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    link.download = `krafttraining-backup-${dateTime}.json`;
     link.click();
     
     URL.revokeObjectURL(link.href);
