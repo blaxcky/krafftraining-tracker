@@ -7,15 +7,16 @@ def create_fitness_icon(size):
     img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
-    # Background circle with rounded corners
-    margin = size // 20
+    # Background circle matching the maskable icon safe zone
     bg_color = (31, 41, 55, 255)  # Dark gray
-    draw.rounded_rectangle([margin, margin, size-margin, size-margin], 
-                          radius=size//8, fill=bg_color)
+    center = size // 2
+    safe_zone_radius = int(size * 0.4)
+    draw.ellipse([center - safe_zone_radius, center - safe_zone_radius, 
+                  center + safe_zone_radius, center + safe_zone_radius], 
+                 fill=bg_color)
     
     # Weight plate design
-    center = size // 2
-    outer_radius = size // 3
+    outer_radius = int(size * 0.38) # Slightly smaller than safe zone
     inner_radius = size // 4
     hole_radius = size // 12
     
