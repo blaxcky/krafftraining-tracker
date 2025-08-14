@@ -97,7 +97,7 @@ class Storage {
         const exercise = getRequest.result;
         if (exercise) {
           exercise.name = name.trim();
-          if (exercise.type === 'exercise') {
+          if (exercise.type !== 'header') {
             exercise.weight = parseFloat(weight) || 0;
           }
           exercise.updatedAt = new Date();
