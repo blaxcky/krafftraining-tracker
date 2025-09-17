@@ -83,11 +83,32 @@ class App {
     container.innerHTML = exercises.map((exercise, index) => {
       const isHeader = exercise.type === 'header';
       const marginTop = isHeader && index > 0 ? 'mt-10' : '';
+
+      if (isHeader) {
+        return `
+          <div class="${marginTop}">
+            <div class="relative overflow-hidden rounded-xl shadow-lg">
+              <div class="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-primary opacity-95"></div>
+              <div class="relative flex items-center justify-between px-5 py-4 text-white">
+                <div class="flex items-center gap-4">
+                  <span class="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-xs font-semibold uppercase tracking-[0.35em]">#</span>
+                  <div>
+                    <p class="text-[11px] uppercase tracking-[0.4em] text-white/70">Abschnitt</p>
+                    <h3 class="text-xl font-semibold leading-tight">${exercise.name}</h3>
+                  </div>
+                </div>
+              <div class="hidden text-sm font-medium md:block text-white/70">Frische Energie ✨</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       return `
-        <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop} ${isHeader ? 'border-l-4 border-gray-400' : ''}">
+        <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop}">
           <div class="flex-1">
-            <h3 class="font-medium ${isHeader ? 'text-lg font-bold text-gray-800 border-b-2 border-gray-400 pb-3' : 'text-gray-900'}">${exercise.name}</h3>
-            ${!isHeader ? `<p class="text-sm text-gray-600">${exercise.weight} kg</p>` : ''}
+            <h3 class="font-medium text-gray-900">${exercise.name}</h3>
+            <p class="text-sm text-gray-600">${exercise.weight} kg</p>
           </div>
           <div class="flex gap-1">
             <button onclick="app.moveExercise(${exercise.id}, 'up')" 
@@ -150,8 +171,20 @@ class App {
       if (!pendingHeader) return;
       const marginTop = fragments.length > 0 ? 'mt-10' : '';
       fragments.push(`
-        <div class="bg-white rounded-lg p-4 ${marginTop} border-l-4 border-gray-400">
-          <h3 class="text-lg font-bold text-gray-800 border-b-2 border-gray-400 pb-3">${pendingHeader.name}</h3>
+        <div class="${marginTop}">
+          <div class="relative overflow-hidden rounded-xl shadow-md">
+            <div class="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-primary opacity-95"></div>
+            <div class="relative flex items-center justify-between px-5 py-4 text-white">
+              <div class="flex items-center gap-4">
+                <span class="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-[11px] font-semibold uppercase tracking-[0.35em]">#</span>
+                <div>
+                  <p class="text-[11px] uppercase tracking-[0.4em] text-white/70">Nächster Block</p>
+                  <h3 class="text-lg font-semibold leading-tight">${pendingHeader.name}</h3>
+                </div>
+              </div>
+              <div class="hidden text-sm font-medium text-white/70 md:block">Fokus behalten ⚡️</div>
+            </div>
+          </div>
         </div>
       `);
       pendingHeader = null;
