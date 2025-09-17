@@ -189,9 +189,10 @@ class Storage {
     const exercise = training.exercises.find(ex => ex.id === exerciseId);
     if (exercise) {
       exercise.weight = parseFloat(weight) || 0;
-      exercise.completed = completed;
+      const isCompleted = !!completed;
+      exercise.completed = isCompleted;
       
-      if (completed) {
+      if (isCompleted) {
         await this.updateExercise(exerciseId, exercise.name, weight);
       }
     }

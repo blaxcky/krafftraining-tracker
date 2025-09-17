@@ -4,7 +4,7 @@ class App {
     this.editingExercise = null;
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
-    this.version = '2.3';
+    this.version = '2.4';
     this.init();
   }
 
@@ -136,7 +136,7 @@ class App {
 
   renderTrainingExercises(training) {
     const actualExercises = training.exercises.filter(ex => ex.type !== 'header');
-    const completed = actualExercises.filter(ex => ex.completed).length;
+    const completed = actualExercises.filter(ex => this.isExerciseCompleted(ex)).length;
     const total = actualExercises.length;
     
     document.getElementById('training-progress').textContent = `${completed} von ${total} Übungen erledigt`;
@@ -163,7 +163,9 @@ class App {
         return;
       }
 
-      if (!showCompleted && exercise.completed) {
+      const isCompleted = this.isExerciseCompleted(exercise);
+
+      if (!showCompleted && isCompleted) {
         return;
       }
 
@@ -171,15 +173,15 @@ class App {
         flushPendingHeader();
       }
 
-      const cardStateClasses = exercise.completed ? 'opacity-75 bg-green-50' : '';
-      const nameClasses = exercise.completed ? 'line-through text-gray-500' : 'text-gray-900';
+      const cardStateClasses = isCompleted ? 'opacity-75 bg-green-50' : '';
+      const nameClasses = isCompleted ? 'line-through text-gray-500' : 'text-gray-900';
 
       fragments.push(`
         <div class="bg-white rounded-lg shadow-sm p-4 ${cardStateClasses}">
           <div class="flex items-center gap-3">
             <input 
               type="checkbox" 
-              ${exercise.completed ? 'checked' : ''} 
+              ${isCompleted ? 'checked' : ''} 
               onchange="app.toggleExercise(${exercise.id}, this.checked)"
               class="w-5 h-5 text-green-500 rounded focus:ring-green-500"
             >
@@ -192,7 +194,7 @@ class App {
                 value="${exercise.weight}" 
                 step="0.5" 
                 min="0"
-                onchange="app.updateWeight(${exercise.id}, this.value, ${exercise.completed})"
+                onchange="app.updateWeight(${exercise.id}, this.value, ${isCompleted})"
                 class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent"
               >
               <span class="text-sm text-gray-600">kg</span>
@@ -242,6 +244,15 @@ class App {
     button.classList.toggle('hover:text-gray-700', !shouldDisable);
     button.classList.toggle('text-gray-300', shouldDisable);
     button.classList.toggle('cursor-not-allowed', shouldDisable);
+  }
+
+  isExerciseCompleted(exercise) {
+    if (!exercise) return false;
+    return this.normalizeCompletedValue(exercise.completed);
+  }
+
+  normalizeCompletedValue(value) {
+    return value === true || value === 'true' || value === 1 || value === '1';
   }
 
   showExerciseModal(exercise = null) {
@@ -370,7 +381,8 @@ class App {
     try {
       const training = await storage.getCurrentTraining();
       const exercise = training.exercises.find(ex => ex.id === exerciseId);
-      await storage.updateTrainingExercise(exerciseId, exercise.weight, completed);
+      const completedValue = this.normalizeCompletedValue(completed);
+      await storage.updateTrainingExercise(exerciseId, exercise.weight, completedValue);
       await this.loadTraining();
     } catch (error) {
       console.error('Error toggling exercise:', error);
@@ -379,7 +391,8 @@ class App {
 
   async updateWeight(exerciseId, weight, completed) {
     try {
-      await storage.updateTrainingExercise(exerciseId, weight, completed);
+      const completedValue = this.normalizeCompletedValue(completed);
+      await storage.updateTrainingExercise(exerciseId, weight, completedValue);
       await this.loadTraining();
     } catch (error) {
       console.error('Error updating weight:', error);
