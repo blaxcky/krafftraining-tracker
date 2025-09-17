@@ -87,17 +87,15 @@ class App {
       if (isHeader) {
         return `
           <div class="${marginTop}">
-            <div class="relative overflow-hidden rounded-xl shadow-lg">
-              <div class="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-primary opacity-95"></div>
-              <div class="relative flex items-center justify-between px-5 py-4 text-white">
-                <div class="flex items-center gap-4">
-                  <span class="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-xs font-semibold uppercase tracking-[0.35em]">#</span>
-                  <div>
-                    <p class="text-[11px] uppercase tracking-[0.4em] text-white/70">Abschnitt</p>
-                    <h3 class="text-xl font-semibold leading-tight">${exercise.name}</h3>
-                  </div>
-                </div>
-              <div class="hidden text-sm font-medium md:block text-white/70">Frische Energie ✨</div>
+            <div class="relative overflow-hidden rounded-xl border border-primary/10 bg-white/80 backdrop-blur-sm">
+              <div class="absolute inset-0 bg-gradient-to-r from-primary/8 via-secondary/5 to-transparent"></div>
+              <div class="relative flex items-center gap-3 px-5 py-3">
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 4.75v2.5m0 9.5v2.5M18.75 12h-2.5m-8.5 0h-2.5m12.364 4.364-1.768-1.768m-7.592 0-1.768 1.768m0-7.728 1.768 1.768m7.592 0 1.768-1.768M9.75 8.75l.4 1.2c.06.18.2.32.38.38l1.2.4-1.2.4a.5.5 0 0 0-.38.38l-.4 1.2-.4-1.2a.5.5 0 0 0-.38-.38l-1.2-.4 1.2-.4a.5.5 0 0 0 .38-.38l.4-1.2z" />
+                  </svg>
+                </span>
+                <h3 class="text-lg font-semibold text-primary">${exercise.name}</h3>
               </div>
             </div>
           </div>
@@ -172,17 +170,15 @@ class App {
       const marginTop = fragments.length > 0 ? 'mt-10' : '';
       fragments.push(`
         <div class="${marginTop}">
-          <div class="relative overflow-hidden rounded-xl shadow-md">
-            <div class="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-primary opacity-95"></div>
-            <div class="relative flex items-center justify-between px-5 py-4 text-white">
-              <div class="flex items-center gap-4">
-                <span class="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-[11px] font-semibold uppercase tracking-[0.35em]">#</span>
-                <div>
-                  <p class="text-[11px] uppercase tracking-[0.4em] text-white/70">Nächster Block</p>
-                  <h3 class="text-lg font-semibold leading-tight">${pendingHeader.name}</h3>
-                </div>
-              </div>
-              <div class="hidden text-sm font-medium text-white/70 md:block">Fokus behalten ⚡️</div>
+          <div class="relative overflow-hidden rounded-xl border border-primary/10 bg-white/80 backdrop-blur-sm">
+            <div class="absolute inset-0 bg-gradient-to-r from-primary/8 via-secondary/5 to-transparent"></div>
+            <div class="relative flex items-center gap-3 px-5 py-3">
+              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 4.75v2.5m0 9.5v2.5M18.75 12h-2.5m-8.5 0h-2.5m12.364 4.364-1.768-1.768m-7.592 0-1.768 1.768m0-7.728 1.768 1.768m7.592 0 1.768-1.768M9.75 8.75l.4 1.2c.06.18.2.32.38.38l1.2.4-1.2.4a.5.5 0 0 0-.38.38l-.4 1.2-.4-1.2a.5.5 0 0 0-.38-.38l-1.2-.4 1.2-.4a.5.5 0 0 0 .38-.38l.4-1.2z" />
+                </svg>
+              </span>
+              <h3 class="text-lg font-semibold text-primary">${pendingHeader.name}</h3>
             </div>
           </div>
         </div>
