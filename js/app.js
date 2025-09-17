@@ -85,14 +85,13 @@ class App {
       const marginTop = isHeader && index > 0 ? 'mt-10' : '';
 
       if (isHeader) {
+        const icon = this.getHeaderIcon(exercise.name);
         return `
           <div class="${marginTop}">
             <div class="relative overflow-hidden rounded-xl border border-primary/10 bg-gradient-to-r from-primary/15 via-secondary/10 to-primary/5 shadow-sm">
               <div class="flex items-center gap-3 px-5 py-3 bg-white/80 backdrop-blur-sm">
-                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 4.75v2.5m0 9.5v2.5M18.75 12h-2.5m-8.5 0h-2.5m12.364 4.364-1.768-1.768m-7.592 0-1.768 1.768m0-7.728 1.768 1.768m7.592 0 1.768-1.768M9.75 8.75l.4 1.2c.06.18.2.32.38.38l1.2.4-1.2.4a.5.5 0 0 0-.38.38l-.4 1.2-.4-1.2a.5.5 0 0 0-.38-.38l-1.2-.4 1.2-.4a.5.5 0 0 0 .38-.38l.4-1.2z" />
-                  </svg>
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-lg">
+                  ${icon}
                 </span>
                 <h3 class="text-lg font-semibold text-primary">${exercise.name}</h3>
               </div>
@@ -167,14 +166,13 @@ class App {
     const flushPendingHeader = () => {
       if (!pendingHeader) return;
       const marginTop = fragments.length > 0 ? 'mt-10' : '';
+      const icon = this.getHeaderIcon(pendingHeader.name);
       fragments.push(`
         <div class="${marginTop}">
           <div class="relative overflow-hidden rounded-xl border border-primary/10 bg-gradient-to-r from-primary/15 via-secondary/10 to-primary/5 shadow-sm">
             <div class="flex items-center gap-3 px-5 py-3 bg-white/80 backdrop-blur-sm">
-              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 4.75v2.5m0 9.5v2.5M18.75 12h-2.5m-8.5 0h-2.5m12.364 4.364-1.768-1.768m-7.592 0-1.768 1.768m0-7.728 1.768 1.768m7.592 0 1.768-1.768M9.75 8.75l.4 1.2c.06.18.2.32.38.38l1.2.4-1.2.4a.5.5 0 0 0-.38.38l-.4 1.2-.4-1.2a.5.5 0 0 0-.38-.38l-1.2-.4 1.2-.4a.5.5 0 0 0 .38-.38l.4-1.2z" />
-                </svg>
+              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-lg">
+                ${icon}
               </span>
               <h3 class="text-lg font-semibold text-primary">${pendingHeader.name}</h3>
             </div>
@@ -280,6 +278,25 @@ class App {
 
   normalizeCompletedValue(value) {
     return value === true || value === 'true' || value === 1 || value === '1';
+  }
+
+  normalizeText(text) {
+    if (!text) return '';
+    return text
+      .toLowerCase()
+      .replace(/ä/g, 'ae')
+      .replace(/ö/g, 'oe')
+      .replace(/ü/g, 'ue')
+      .replace(/ß/g, 'ss');
+  }
+
+  getHeaderIcon(name) {
+    const normalized = this.normalizeText(name);
+    if (normalized.includes('bein') || normalized.includes('leg')) return '🦵';
+    if (normalized.includes('arm') || normalized.includes('oberkoerper') || normalized.includes('upper')) return '💪';
+    if (normalized.includes('rueck') || normalized.includes('back')) return '🦾';
+    if (normalized.includes('bauch') || normalized.includes('core') || normalized.includes('abs')) return '🧘';
+    return '🏋️';
   }
 
   showExerciseModal(exercise = null) {
