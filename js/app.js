@@ -90,7 +90,7 @@ class App {
           <div class="${marginTop}">
             <div class="relative overflow-hidden rounded-xl border border-primary/10 bg-gradient-to-r from-primary/15 via-secondary/10 to-primary/5 shadow-sm">
               <div class="flex items-center gap-3 px-5 py-3 bg-white/80 backdrop-blur-sm">
-                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-lg">
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
                   ${icon}
                 </span>
                 <h3 class="text-lg font-semibold text-primary">${exercise.name}</h3>
@@ -171,7 +171,7 @@ class App {
         <div class="${marginTop}">
           <div class="relative overflow-hidden rounded-xl border border-primary/10 bg-gradient-to-r from-primary/15 via-secondary/10 to-primary/5 shadow-sm">
             <div class="flex items-center gap-3 px-5 py-3 bg-white/80 backdrop-blur-sm">
-              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-lg">
+              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
                 ${icon}
               </span>
               <h3 class="text-lg font-semibold text-primary">${pendingHeader.name}</h3>
@@ -292,11 +292,53 @@ class App {
 
   getHeaderIcon(name) {
     const normalized = this.normalizeText(name);
-    if (normalized.includes('bein') || normalized.includes('leg')) return '🦵';
-    if (normalized.includes('arm') || normalized.includes('oberkoerper') || normalized.includes('upper')) return '💪';
-    if (normalized.includes('rueck') || normalized.includes('back')) return '🦾';
-    if (normalized.includes('bauch') || normalized.includes('core') || normalized.includes('abs')) return '🧘';
-    return '🏋️';
+    if (normalized.includes('bein') || normalized.includes('leg')) return this.renderHeaderIcon('legs');
+    if (normalized.includes('arm') || normalized.includes('oberkoerper') || normalized.includes('upper')) return this.renderHeaderIcon('arms');
+    if (normalized.includes('rueck') || normalized.includes('back')) return this.renderHeaderIcon('back');
+    if (normalized.includes('bauch') || normalized.includes('core') || normalized.includes('abs')) return this.renderHeaderIcon('core');
+    return this.renderHeaderIcon('default');
+  }
+
+  renderHeaderIcon(type) {
+    const icons = {
+      legs: `
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4.5a2.5 2.5 0 0 1 2.5 2.5v2.5l-2 4.5 3.5 5.5" />
+          <path d="M9.5 4.75 8 11l3.5 3.5L10 20" />
+        </svg>
+      `,
+      arms: `
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6.5 13.5a4.5 4.5 0 0 1 4.5-4.5h2l2-3 2.5 1.5-2 3.5h-1.5v3.5l-2.5 3" />
+          <path d="M6 17.5c1.5 1 3 .5 4.5-1l1-1" />
+        </svg>
+      `,
+      back: `
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4v16" />
+          <path d="M8 7.5h8" />
+          <path d="M7 12h10" />
+          <path d="M8 16.5h8" />
+          <path d="M10 20c0-2 0-4 2-4s2 2 2 4" />
+        </svg>
+      `,
+      core: `
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="7" y="5" width="10" height="14" rx="3" />
+          <path d="M7 9.5h10" />
+          <path d="M7 14.5h10" />
+        </svg>
+      `,
+      default: `
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="6.5" r="2.5" />
+          <path d="M7 20l2-7 3-2.5 3 2.5 2 7" />
+          <path d="M5 20h14" />
+        </svg>
+      `
+    };
+
+    return icons[type] || icons.default;
   }
 
   showExerciseModal(exercise = null) {
