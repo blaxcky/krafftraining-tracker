@@ -60,7 +60,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Version Badge -->
-    <div id="version-badge" class="version-badge" style="position: fixed !important; top: 8px; right: 8px; font-size: 10px; color: #6b7280; background: white; padding: 2px 6px; border-radius: 4px; opacity: 1; z-index: 99999; font-family: monospace; border: 1px solid #e5e7eb; pointer-events: none;">v1.2 (c7)</div>
+    <div id="version-badge" class="version-badge" style="position: fixed !important; top: 8px; right: 8px; font-size: 10px; color: #6b7280; background: white; padding: 2px 6px; border-radius: 4px; opacity: 1; z-index: 99999; font-family: monospace; border: 1px solid #e5e7eb; pointer-events: none;">v2.3 (c17)</div>
     
     <div id="app" class="container mx-auto px-4 py-6 max-w-md">
         
@@ -157,9 +157,14 @@
                             <h3 class="font-semibold text-lg">Aktives Training</h3>
                             <p class="text-gray-600 text-sm" id="training-progress">0 von 0 Übungen erledigt</p>
                         </div>
-                        <button id="end-training-btn" class="text-red-500 hover:text-red-600 font-medium">
-                            Beenden
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <button id="toggle-completed-btn" type="button" class="text-sm text-gray-500 hover:text-gray-700 font-medium">
+                                Erledigte anzeigen
+                            </button>
+                            <button id="end-training-btn" type="button" class="text-red-500 hover:text-red-600 font-medium">
+                                Beenden
+                            </button>
+                        </div>
                     </div>
                 </div>
 

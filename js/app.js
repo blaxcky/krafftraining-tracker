@@ -3,7 +3,8 @@ class App {
     this.currentTab = 'exercises';
     this.editingExercise = null;
     this.editingType = 'exercise';
-    this.version = '2.2';
+    this.showCompletedExercises = false;
+    this.version = '2.3';
     this.init();
   }
 
@@ -33,6 +34,10 @@ class App {
     
     document.getElementById('start-training-btn').addEventListener('click', () => this.startTraining());
     document.getElementById('end-training-btn').addEventListener('click', () => this.endTraining());
+    const toggleCompletedBtn = document.getElementById('toggle-completed-btn');
+    if (toggleCompletedBtn) {
+      toggleCompletedBtn.addEventListener('click', () => this.toggleCompletedVisibility());
+    }
     
     document.getElementById('export-btn').addEventListener('click', () => this.exportExercises());
     document.getElementById('import-btn').addEventListener('click', () => this.importExercises());
@@ -137,20 +142,40 @@ class App {
     document.getElementById('training-progress').textContent = `${completed} von ${total} Übungen erledigt`;
     
     const container = document.getElementById('training-exercises');
-    container.innerHTML = training.exercises.map((exercise, index) => {
-      const isHeader = exercise.type === 'header';
-      const marginTop = isHeader && index > 0 ? 'mt-10' : '';
-      
-      if (isHeader) {
-        return `
-          <div class="bg-white rounded-lg p-4 ${marginTop} border-l-4 border-gray-400">
-            <h3 class="text-lg font-bold text-gray-800 border-b-2 border-gray-400 pb-3">${exercise.name}</h3>
-          </div>
-        `;
+    const showCompleted = this.showCompletedExercises;
+    const fragments = [];
+    let pendingHeader = null;
+
+    const flushPendingHeader = () => {
+      if (!pendingHeader) return;
+      const marginTop = fragments.length > 0 ? 'mt-10' : '';
+      fragments.push(`
+        <div class="bg-white rounded-lg p-4 ${marginTop} border-l-4 border-gray-400">
+          <h3 class="text-lg font-bold text-gray-800 border-b-2 border-gray-400 pb-3">${pendingHeader.name}</h3>
+        </div>
+      `);
+      pendingHeader = null;
+    };
+
+    training.exercises.forEach((exercise) => {
+      if (exercise.type === 'header') {
+        pendingHeader = exercise;
+        return;
       }
-      
-      return `
-        <div class="bg-white rounded-lg shadow-sm p-4 ${exercise.completed ? 'opacity-75 bg-green-50' : ''}">
+
+      if (!showCompleted && exercise.completed) {
+        return;
+      }
+
+      if (pendingHeader) {
+        flushPendingHeader();
+      }
+
+      const cardStateClasses = exercise.completed ? 'opacity-75 bg-green-50' : '';
+      const nameClasses = exercise.completed ? 'line-through text-gray-500' : 'text-gray-900';
+
+      fragments.push(`
+        <div class="bg-white rounded-lg shadow-sm p-4 ${cardStateClasses}">
           <div class="flex items-center gap-3">
             <input 
               type="checkbox" 
@@ -159,7 +184,7 @@ class App {
               class="w-5 h-5 text-green-500 rounded focus:ring-green-500"
             >
             <div class="flex-1">
-              <h3 class="font-medium ${exercise.completed ? 'line-through text-gray-500' : 'text-gray-900'}">${exercise.name}</h3>
+              <h3 class="font-medium ${nameClasses}">${exercise.name}</h3>
             </div>
             <div class="flex items-center gap-2">
               <input 
@@ -174,8 +199,49 @@ class App {
             </div>
           </div>
         </div>
+      `);
+    });
+
+    if (fragments.length === 0) {
+      const messageIcon = total > 0 ? '🎉' : '🏋️';
+      const messageText = total > 0 ? 'Alle Übungen erledigt!' : 'Keine Übungen verfügbar.';
+      const messageHint = total > 0
+        ? (showCompleted ? 'Blende erledigte Übungen aus, um nur offene zu sehen.' : 'Blende erledigte Übungen ein, wenn du sie erneut sehen möchtest.')
+        : 'Füge Übungen hinzu, um loszulegen.';
+
+      container.innerHTML = `
+        <div class="bg-white rounded-lg shadow-sm p-6 text-center text-gray-600">
+          <div class="text-4xl mb-2">${messageIcon}</div>
+          <p>${messageText}</p>
+          <p class="text-sm text-gray-500 mt-1">${messageHint}</p>
+        </div>
       `;
-    }).join('');
+    } else {
+      container.innerHTML = fragments.join('');
+    }
+
+    this.updateToggleCompletedButton(completed);
+  }
+
+  async toggleCompletedVisibility() {
+    this.showCompletedExercises = !this.showCompletedExercises;
+    const training = await storage.getCurrentTraining();
+    if (training) {
+      this.renderTrainingExercises(training);
+    }
+  }
+
+  updateToggleCompletedButton(completedCount = 0) {
+    const button = document.getElementById('toggle-completed-btn');
+    if (!button) return;
+
+    button.textContent = this.showCompletedExercises ? 'Erledigte ausblenden' : 'Erledigte anzeigen';
+    const shouldDisable = completedCount === 0 && !this.showCompletedExercises;
+    button.disabled = shouldDisable;
+    button.classList.toggle('text-gray-500', !shouldDisable);
+    button.classList.toggle('hover:text-gray-700', !shouldDisable);
+    button.classList.toggle('text-gray-300', shouldDisable);
+    button.classList.toggle('cursor-not-allowed', shouldDisable);
   }
 
   showExerciseModal(exercise = null) {
@@ -280,6 +346,7 @@ class App {
   async startTraining() {
     try {
       await storage.startTraining();
+      this.showCompletedExercises = false;
       await this.loadTraining();
       this.switchTab('training');
     } catch (error) {
@@ -291,6 +358,7 @@ class App {
     if (confirm('Training beenden?')) {
       try {
         await storage.endTraining();
+        this.showCompletedExercises = false;
         await this.loadTraining();
       } catch (error) {
         console.error('Error ending training:', error);
