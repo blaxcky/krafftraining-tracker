@@ -132,11 +132,18 @@ class App {
         `;
       }
 
+      const additionalWeightInfo = [];
+      if (exercise.additionalWeight1) additionalWeightInfo.push('+2.5kg');
+      if (exercise.additionalWeight2) additionalWeightInfo.push('+2.5kg');
+      const additionalWeightText = additionalWeightInfo.length > 0
+        ? ` <span class="text-xs text-primary font-semibold">(${additionalWeightInfo.join(' ')})</span>`
+        : '';
+
       return `
         <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop}">
           <div class="flex-1">
             <h3 class="font-medium text-gray-900">${exercise.name}</h3>
-            <p class="text-sm text-gray-600">${exercise.weight} kg</p>
+            <p class="text-sm text-gray-600">${exercise.weight} kg${additionalWeightText}</p>
           </div>
           ${controls}
         </div>
@@ -209,9 +216,9 @@ class App {
       fragments.push(`
         <div class="bg-white rounded-lg shadow-sm p-4 ${cardStateClasses}">
           <div class="flex items-center gap-3">
-            <input 
-              type="checkbox" 
-              ${isCompleted ? 'checked' : ''} 
+            <input
+              type="checkbox"
+              ${isCompleted ? 'checked' : ''}
               onchange="app.toggleExercise(${exercise.id}, this.checked)"
               class="w-5 h-5 text-green-500 rounded focus:ring-green-500"
             >
@@ -219,16 +226,36 @@ class App {
               <h3 class="font-medium ${nameClasses}">${exercise.name}</h3>
             </div>
             <div class="flex items-center gap-2">
-              <input 
-                type="number" 
-                value="${exercise.weight}" 
-                step="0.5" 
+              <input
+                type="number"
+                value="${exercise.weight}"
+                step="0.5"
                 min="0"
                 onchange="app.updateWeight(${exercise.id}, this.value, ${isCompleted})"
                 class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent"
               >
               <span class="text-sm text-gray-600">kg</span>
             </div>
+          </div>
+          <div class="flex items-center gap-3 mt-2 ml-8">
+            <label class="flex items-center gap-1.5 cursor-pointer text-xs text-gray-600">
+              <input
+                type="checkbox"
+                ${exercise.additionalWeight1 ? 'checked' : ''}
+                onchange="app.updateAdditionalWeight(${exercise.id}, 'additionalWeight1', this.checked)"
+                class="w-3.5 h-3.5 text-primary rounded focus:ring-1 focus:ring-primary"
+              >
+              <span>+2.5kg</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer text-xs text-gray-600">
+              <input
+                type="checkbox"
+                ${exercise.additionalWeight2 ? 'checked' : ''}
+                onchange="app.updateAdditionalWeight(${exercise.id}, 'additionalWeight2', this.checked)"
+                class="w-3.5 h-3.5 text-primary rounded focus:ring-1 focus:ring-primary"
+              >
+              <span>+2.5kg</span>
+            </label>
           </div>
         </div>
       `);
@@ -334,25 +361,34 @@ class App {
     const nameInput = document.getElementById('exercise-name');
     const weightInput = document.getElementById('exercise-weight');
     const weightField = document.getElementById('weight-field');
-    
+    const additionalWeightsField = document.getElementById('additional-weights-field');
+    const additionalWeight1Input = document.getElementById('additional-weight-1');
+    const additionalWeight2Input = document.getElementById('additional-weight-2');
+
     if (this.editingType === 'header') {
       weightField.style.display = 'none';
+      additionalWeightsField.style.display = 'none';
       title.textContent = exercise ? 'Überschrift bearbeiten' : 'Neue Überschrift';
     } else {
       weightField.style.display = 'block';
+      additionalWeightsField.style.display = 'block';
       title.textContent = exercise ? 'Übung bearbeiten' : 'Neue Übung';
     }
-    
+
     if (exercise) {
       nameInput.value = exercise.name;
       if (this.editingType === 'exercise') {
         weightInput.value = exercise.weight;
+        additionalWeight1Input.checked = exercise.additionalWeight1 || false;
+        additionalWeight2Input.checked = exercise.additionalWeight2 || false;
       }
     } else {
       nameInput.value = '';
       weightInput.value = '';
+      additionalWeight1Input.checked = false;
+      additionalWeight2Input.checked = false;
     }
-    
+
     modal.classList.remove('hidden');
     nameInput.focus();
   }
@@ -373,23 +409,25 @@ class App {
     e.preventDefault();
     const name = document.getElementById('exercise-name').value.trim();
     const weight = document.getElementById('exercise-weight').value;
-    
+    const additionalWeight1 = document.getElementById('additional-weight-1').checked;
+    const additionalWeight2 = document.getElementById('additional-weight-2').checked;
+
     if (!name) return;
-    
+
     try {
       if (this.editingExercise) {
-        await storage.updateExercise(this.editingExercise.id, name, weight);
+        await storage.updateExercise(this.editingExercise.id, name, weight, additionalWeight1, additionalWeight2);
       } else {
         if (this.editingType === 'header') {
           await storage.addHeader(name);
         } else {
-          await storage.addExercise(name, weight);
+          await storage.addExercise(name, weight, additionalWeight1, additionalWeight2);
         }
       }
-      
+
       this.hideExerciseModal();
       await this.loadExercises();
-      
+
       const training = await storage.getCurrentTraining();
       if (training) {
         await this.loadTraining();
@@ -451,7 +489,13 @@ class App {
       const training = await storage.getCurrentTraining();
       const exercise = training.exercises.find(ex => ex.id === exerciseId);
       const completedValue = this.normalizeCompletedValue(completed);
-      await storage.updateTrainingExercise(exerciseId, exercise.weight, completedValue);
+      await storage.updateTrainingExercise(
+        exerciseId,
+        exercise.weight,
+        completedValue,
+        exercise.additionalWeight1,
+        exercise.additionalWeight2
+      );
       await this.loadTraining();
     } catch (error) {
       console.error('Error toggling exercise:', error);
@@ -460,11 +504,41 @@ class App {
 
   async updateWeight(exerciseId, weight, completed) {
     try {
+      const training = await storage.getCurrentTraining();
+      const exercise = training.exercises.find(ex => ex.id === exerciseId);
       const completedValue = this.normalizeCompletedValue(completed);
-      await storage.updateTrainingExercise(exerciseId, weight, completedValue);
+      await storage.updateTrainingExercise(
+        exerciseId,
+        weight,
+        completedValue,
+        exercise.additionalWeight1,
+        exercise.additionalWeight2
+      );
       await this.loadTraining();
     } catch (error) {
       console.error('Error updating weight:', error);
+    }
+  }
+
+  async updateAdditionalWeight(exerciseId, field, checked) {
+    try {
+      const training = await storage.getCurrentTraining();
+      const exercise = training.exercises.find(ex => ex.id === exerciseId);
+      if (!exercise) return;
+
+      const additionalWeight1 = field === 'additionalWeight1' ? checked : exercise.additionalWeight1;
+      const additionalWeight2 = field === 'additionalWeight2' ? checked : exercise.additionalWeight2;
+
+      await storage.updateTrainingExercise(
+        exerciseId,
+        exercise.weight,
+        exercise.completed,
+        additionalWeight1,
+        additionalWeight2
+      );
+      await this.loadTraining();
+    } catch (error) {
+      console.error('Error updating additional weight:', error);
     }
   }
 

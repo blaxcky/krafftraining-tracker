@@ -31,22 +31,24 @@ class Storage {
     });
   }
 
-  async addExercise(name, weight = 0) {
+  async addExercise(name, weight = 0, additionalWeight1 = false, additionalWeight2 = false) {
     const exercises = await this.getAllExercises();
     const maxOrder = exercises.length > 0 ? Math.max(...exercises.map(e => e.order || 0)) : -1;
-    
+
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
-    
+
     return new Promise((resolve, reject) => {
       const request = store.add({
         name: name.trim(),
         weight: parseFloat(weight) || 0,
+        additionalWeight1: !!additionalWeight1,
+        additionalWeight2: !!additionalWeight2,
         type: 'exercise',
         order: maxOrder + 1,
         createdAt: new Date()
       });
-      
+
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -106,10 +108,10 @@ class Storage {
     });
   }
 
-  async updateExercise(id, name, weight) {
+  async updateExercise(id, name, weight, additionalWeight1, additionalWeight2) {
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
-    
+
     return new Promise((resolve, reject) => {
       const getRequest = store.get(id);
       getRequest.onsuccess = () => {
@@ -118,9 +120,15 @@ class Storage {
           exercise.name = name.trim();
           if (exercise.type !== 'header') {
             exercise.weight = parseFloat(weight) || 0;
+            if (additionalWeight1 !== undefined) {
+              exercise.additionalWeight1 = !!additionalWeight1;
+            }
+            if (additionalWeight2 !== undefined) {
+              exercise.additionalWeight2 = !!additionalWeight2;
+            }
           }
           exercise.updatedAt = new Date();
-          
+
           const updateRequest = store.put(exercise);
           updateRequest.onsuccess = () => resolve(exercise);
           updateRequest.onerror = () => reject(updateRequest.error);
@@ -154,13 +162,15 @@ class Storage {
         name: ex.name,
         type: ex.type || 'exercise',
         weight: ex.weight || 0,
+        additionalWeight1: ex.additionalWeight1 || false,
+        additionalWeight2: ex.additionalWeight2 || false,
         completed: ex.type === 'header' ? null : false
       }))
     };
 
     const transaction = this.db.transaction(['training'], 'readwrite');
     const store = transaction.objectStore('training');
-    
+
     return new Promise((resolve, reject) => {
       const request = store.put(trainingData);
       request.onsuccess = () => resolve(trainingData);
@@ -182,24 +192,30 @@ class Storage {
     });
   }
 
-  async updateTrainingExercise(exerciseId, weight, completed) {
+  async updateTrainingExercise(exerciseId, weight, completed, additionalWeight1, additionalWeight2) {
     const training = await this.getCurrentTraining();
     if (!training) return null;
 
     const exercise = training.exercises.find(ex => ex.id === exerciseId);
     if (exercise) {
       exercise.weight = parseFloat(weight) || 0;
+      if (additionalWeight1 !== undefined) {
+        exercise.additionalWeight1 = !!additionalWeight1;
+      }
+      if (additionalWeight2 !== undefined) {
+        exercise.additionalWeight2 = !!additionalWeight2;
+      }
       const isCompleted = !!completed;
       exercise.completed = isCompleted;
-      
+
       if (isCompleted) {
-        await this.updateExercise(exerciseId, exercise.name, weight);
+        await this.updateExercise(exerciseId, exercise.name, weight, exercise.additionalWeight1, exercise.additionalWeight2);
       }
     }
 
     const transaction = this.db.transaction(['training'], 'readwrite');
     const store = transaction.objectStore('training');
-    
+
     return new Promise((resolve, reject) => {
       const request = store.put(training);
       request.onsuccess = () => resolve(training);
@@ -227,20 +243,22 @@ class Storage {
         name: ex.name,
         type: ex.type || 'exercise',
         weight: ex.type === 'header' ? undefined : ex.weight,
+        additionalWeight1: ex.type === 'header' ? undefined : (ex.additionalWeight1 || false),
+        additionalWeight2: ex.type === 'header' ? undefined : (ex.additionalWeight2 || false),
         order: ex.order
       }))
     };
-    
+
     const dataStr = JSON.stringify(exportData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    
+
     const link = document.createElement('a');
     link.href = URL.createObjectURL(dataBlob);
     const now = new Date();
     const dateTime = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
     link.download = `krafttraining-backup-${dateTime}.json`;
     link.click();
-    
+
     URL.revokeObjectURL(link.href);
     return exportData;
   }
@@ -271,9 +289,14 @@ class Storage {
               if (exercise.type === 'header') {
                 newId = await this.addHeader(exercise.name);
               } else {
-                newId = await this.addExercise(exercise.name, exercise.weight || 0);
+                newId = await this.addExercise(
+                  exercise.name,
+                  exercise.weight || 0,
+                  exercise.additionalWeight1 || false,
+                  exercise.additionalWeight2 || false
+                );
               }
-              
+
               // Order-Feld setzen falls vorhanden
               if (exercise.order !== undefined && newId) {
                 const transaction = this.db.transaction(['exercises'], 'readwrite');
@@ -287,7 +310,7 @@ class Storage {
                   }
                 };
               }
-              
+
               importedCount++;
             } catch (error) {
               console.warn(`Fehler beim Importieren von "${exercise.name}":`, error);
