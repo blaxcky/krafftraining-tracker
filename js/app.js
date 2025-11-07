@@ -14,6 +14,50 @@ class App {
     return String(weight).replace(',', '.');
   }
 
+  // Aktualisiert die Checkboxen für Zusatzgewichte (cascading logic)
+  updatePlateCheckboxes() {
+    const plate1 = document.getElementById('plate-1');
+    const plate2 = document.getElementById('plate-2');
+
+    // Wenn Scheibe 2 ausgewählt ist, muss Scheibe 1 auch ausgewählt sein
+    if (plate2 && plate2.checked) {
+      if (plate1) plate1.checked = true;
+    }
+
+    this.updateTotalWeight();
+  }
+
+  // Berechnet und aktualisiert die Anzeige des Gesamtgewichts
+  updateTotalWeight() {
+    const weightInput = document.getElementById('exercise-weight');
+    const plate1 = document.getElementById('plate-1');
+    const plate2 = document.getElementById('plate-2');
+    const totalWeightSpan = document.getElementById('total-weight');
+
+    if (!weightInput || !totalWeightSpan) return;
+
+    const baseWeight = parseFloat(weightInput.value.replace(',', '.')) || 0;
+    let additionalPlates = 0;
+
+    if (plate1 && plate1.checked) additionalPlates++;
+    if (plate2 && plate2.checked) additionalPlates++;
+
+    const totalWeight = baseWeight + (additionalPlates * 2.5);
+    totalWeightSpan.textContent = `${totalWeight} kg`;
+  }
+
+  // Gibt die Anzahl der Zusatzscheiben zurück
+  getAdditionalPlates() {
+    const plate1 = document.getElementById('plate-1');
+    const plate2 = document.getElementById('plate-2');
+
+    let plates = 0;
+    if (plate1 && plate1.checked) plates++;
+    if (plate2 && plate2.checked) plates++;
+
+    return plates;
+  }
+
   async init() {
     await storage.init();
     this.setupEventListeners();
@@ -32,23 +76,26 @@ class App {
   setupEventListeners() {
     document.getElementById('tab-exercises').addEventListener('click', () => this.switchTab('exercises'));
     document.getElementById('tab-training').addEventListener('click', () => this.switchTab('training'));
-    
+
     document.getElementById('add-exercise-btn').addEventListener('click', () => this.showExerciseModal());
     document.getElementById('add-header-btn').addEventListener('click', () => this.showHeaderModal());
     document.getElementById('cancel-btn').addEventListener('click', () => this.hideExerciseModal());
     document.getElementById('exercise-form').addEventListener('submit', (e) => this.saveExercise(e));
-    
+
+    // Event-Listener für Gewichtsberechnung
+    document.getElementById('exercise-weight').addEventListener('input', () => this.updateTotalWeight());
+
     document.getElementById('start-training-btn').addEventListener('click', () => this.startTraining());
     document.getElementById('end-training-btn').addEventListener('click', () => this.endTraining());
     const toggleCompletedBtn = document.getElementById('toggle-completed-btn');
     if (toggleCompletedBtn) {
       toggleCompletedBtn.addEventListener('click', () => this.toggleCompletedVisibility());
     }
-    
+
     document.getElementById('export-btn').addEventListener('click', () => this.exportExercises());
     document.getElementById('import-btn').addEventListener('click', () => this.importExercises());
     document.getElementById('import-file').addEventListener('change', (e) => this.handleImportFile(e));
-    
+
     document.addEventListener('click', (e) => {
       if (e.target.id === 'exercise-modal') {
         this.hideExerciseModal();
@@ -138,11 +185,24 @@ class App {
         `;
       }
 
+      // Anzeige der Zusatzgewichte
+      let weightDisplay = `${this.formatWeight(exercise.baseWeight || exercise.weight)} kg`;
+      const additionalPlates = exercise.additionalPlates || 0;
+      if (additionalPlates > 0) {
+        weightDisplay += ` <span class="text-xs text-green-600">+ ${additionalPlates}x 2.5kg</span>`;
+      }
+      const totalWeight = exercise.baseWeight !== undefined
+        ? (exercise.baseWeight + (additionalPlates * 2.5))
+        : exercise.weight;
+
       return `
         <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop}">
           <div class="flex-1">
             <h3 class="font-medium text-gray-900">${exercise.name}</h3>
-            <p class="text-sm text-gray-600">${this.formatWeight(exercise.weight)} kg</p>
+            <p class="text-sm text-gray-600">
+              ${weightDisplay}
+              ${additionalPlates > 0 ? `<span class="text-xs text-gray-500"> = ${this.formatWeight(totalWeight)} kg</span>` : ''}
+            </p>
           </div>
           ${controls}
         </div>
@@ -211,10 +271,12 @@ class App {
 
       const cardStateClasses = isCompleted ? 'opacity-75 bg-green-50' : '';
       const nameClasses = isCompleted ? 'line-through text-gray-500' : 'text-gray-900';
+      const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : exercise.weight;
+      const additionalPlates = exercise.additionalPlates || 0;
 
       fragments.push(`
         <div class="bg-white rounded-lg shadow-sm p-4 ${cardStateClasses}">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 mb-3">
             <input
               type="checkbox"
               ${isCompleted ? 'checked' : ''}
@@ -224,15 +286,45 @@ class App {
             <div class="flex-1">
               <h3 class="font-medium ${nameClasses}">${exercise.name}</h3>
             </div>
+          </div>
+          <div class="flex flex-col gap-2 ml-8">
             <div class="flex items-center gap-2">
+              <label class="text-xs text-gray-600 w-20">Basisgewicht:</label>
               <input
                 type="text"
                 inputmode="decimal"
-                value="${this.formatWeight(exercise.weight)}"
-                onchange="app.updateWeight(${exercise.id}, this.value, ${isCompleted})"
+                value="${this.formatWeight(baseWeight)}"
+                onchange="app.updateTrainingWeight(${exercise.id}, this.value, ${isCompleted})"
                 class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent"
               >
               <span class="text-sm text-gray-600">kg</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="text-xs text-gray-600 w-20">Zusatzgewichte:</label>
+              <div class="flex gap-3">
+                <label class="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    ${additionalPlates >= 1 ? 'checked' : ''}
+                    onchange="app.updateTrainingPlates(${exercise.id}, 1, this.checked, ${isCompleted})"
+                    class="w-4 h-4 text-primary rounded focus:ring-primary"
+                  >
+                  <span class="text-xs text-gray-700">2.5kg</span>
+                </label>
+                <label class="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    ${additionalPlates >= 2 ? 'checked' : ''}
+                    onchange="app.updateTrainingPlates(${exercise.id}, 2, this.checked, ${isCompleted})"
+                    class="w-4 h-4 text-primary rounded focus:ring-primary"
+                  >
+                  <span class="text-xs text-gray-700">2.5kg</span>
+                </label>
+              </div>
+            </div>
+            <div class="text-xs text-gray-600">
+              <span>Gesamtgewicht: </span>
+              <span class="font-semibold text-primary">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
             </div>
           </div>
         </div>
@@ -339,7 +431,9 @@ class App {
     const nameInput = document.getElementById('exercise-name');
     const weightInput = document.getElementById('exercise-weight');
     const weightField = document.getElementById('weight-field');
-    
+    const plate1 = document.getElementById('plate-1');
+    const plate2 = document.getElementById('plate-2');
+
     if (this.editingType === 'header') {
       weightField.style.display = 'none';
       title.textContent = exercise ? 'Überschrift bearbeiten' : 'Neue Überschrift';
@@ -347,17 +441,23 @@ class App {
       weightField.style.display = 'block';
       title.textContent = exercise ? 'Übung bearbeiten' : 'Neue Übung';
     }
-    
+
     if (exercise) {
       nameInput.value = exercise.name;
       if (this.editingType === 'exercise') {
-        weightInput.value = this.formatWeight(exercise.weight);
+        weightInput.value = this.formatWeight(exercise.baseWeight !== undefined ? exercise.baseWeight : exercise.weight);
+        const additionalPlates = exercise.additionalPlates || 0;
+        if (plate1) plate1.checked = additionalPlates >= 1;
+        if (plate2) plate2.checked = additionalPlates >= 2;
       }
     } else {
       nameInput.value = '';
       weightInput.value = '';
+      if (plate1) plate1.checked = false;
+      if (plate2) plate2.checked = false;
     }
-    
+
+    this.updateTotalWeight();
     modal.classList.remove('hidden');
     nameInput.focus();
   }
@@ -378,23 +478,24 @@ class App {
     e.preventDefault();
     const name = document.getElementById('exercise-name').value.trim();
     const weight = document.getElementById('exercise-weight').value;
-    
+    const additionalPlates = this.getAdditionalPlates();
+
     if (!name) return;
-    
+
     try {
       if (this.editingExercise) {
-        await storage.updateExercise(this.editingExercise.id, name, weight);
+        await storage.updateExercise(this.editingExercise.id, name, weight, additionalPlates);
       } else {
         if (this.editingType === 'header') {
           await storage.addHeader(name);
         } else {
-          await storage.addExercise(name, weight);
+          await storage.addExercise(name, weight, additionalPlates);
         }
       }
-      
+
       this.hideExerciseModal();
       await this.loadExercises();
-      
+
       const training = await storage.getCurrentTraining();
       if (training) {
         await this.loadTraining();
@@ -466,10 +567,55 @@ class App {
   async updateWeight(exerciseId, weight, completed) {
     try {
       const completedValue = this.normalizeCompletedValue(completed);
-      await storage.updateTrainingExercise(exerciseId, weight, completedValue);
+      await storage.updateTrainingExercise(exerciseId, weight, completedValue, 0);
       await this.loadTraining();
     } catch (error) {
       console.error('Error updating weight:', error);
+    }
+  }
+
+  async updateTrainingWeight(exerciseId, weight, completed) {
+    try {
+      const training = await storage.getCurrentTraining();
+      const exercise = training.exercises.find(ex => ex.id === exerciseId);
+      const additionalPlates = exercise ? (exercise.additionalPlates || 0) : 0;
+      const completedValue = this.normalizeCompletedValue(completed);
+      await storage.updateTrainingExercise(exerciseId, weight, completedValue, additionalPlates);
+      await this.loadTraining();
+    } catch (error) {
+      console.error('Error updating training weight:', error);
+    }
+  }
+
+  async updateTrainingPlates(exerciseId, plateNumber, checked, completed) {
+    try {
+      const training = await storage.getCurrentTraining();
+      const exercise = training.exercises.find(ex => ex.id === exerciseId);
+      if (!exercise) return;
+
+      let additionalPlates = exercise.additionalPlates || 0;
+
+      // Logik für cascading checkboxes
+      if (plateNumber === 1) {
+        if (checked) {
+          additionalPlates = Math.max(additionalPlates, 1);
+        } else {
+          additionalPlates = 0; // Wenn Scheibe 1 deaktiviert, beide deaktivieren
+        }
+      } else if (plateNumber === 2) {
+        if (checked) {
+          additionalPlates = 2; // Beide Scheiben aktivieren
+        } else {
+          additionalPlates = 1; // Nur Scheibe 1 bleibt
+        }
+      }
+
+      const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : exercise.weight;
+      const completedValue = this.normalizeCompletedValue(completed);
+      await storage.updateTrainingExercise(exerciseId, baseWeight, completedValue, additionalPlates);
+      await this.loadTraining();
+    } catch (error) {
+      console.error('Error updating training plates:', error);
     }
   }
 

@@ -19,6 +19,13 @@ class Storage {
     return String(num).replace(',', '.');
   }
 
+  // Berechnet das Gesamtgewicht basierend auf Basisgewicht und Zusatzscheiben
+  calculateTotalWeight(baseWeight, additionalPlates = 0) {
+    const base = this.parseWeight(baseWeight);
+    const plates = parseInt(additionalPlates) || 0;
+    return base + (plates * 2.5);
+  }
+
   async init() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.dbVersion);
@@ -45,22 +52,28 @@ class Storage {
     });
   }
 
-  async addExercise(name, weight = 0) {
+  async addExercise(name, weight = 0, additionalPlates = 0) {
     const exercises = await this.getAllExercises();
     const maxOrder = exercises.length > 0 ? Math.max(...exercises.map(e => e.order || 0)) : -1;
-    
+
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
-    
+
     return new Promise((resolve, reject) => {
+      const baseWeight = this.parseWeight(weight);
+      const plates = parseInt(additionalPlates) || 0;
+      const totalWeight = this.calculateTotalWeight(baseWeight, plates);
+
       const request = store.add({
         name: name.trim(),
-        weight: this.parseWeight(weight),
+        baseWeight: baseWeight,
+        additionalPlates: plates,
+        weight: totalWeight, // Für Rückwärtskompatibilität
         type: 'exercise',
         order: maxOrder + 1,
         createdAt: new Date()
       });
-      
+
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -89,21 +102,33 @@ class Storage {
   async getAllExercises() {
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
-    
+
     return new Promise((resolve, reject) => {
       const request = store.getAll();
       request.onsuccess = async () => {
         const exercises = request.result;
-        
-        // Auto-Migration: Fehlende Order-Werte hinzufügen
+
+        // Auto-Migration: Fehlende Order-Werte und Gewichtsfelder hinzufügen
         let needsUpdate = false;
         exercises.forEach((exercise, index) => {
           if (exercise.order === undefined || exercise.order === null) {
             exercise.order = index;
             needsUpdate = true;
           }
+
+          // Migration: Alte weight-only Daten zu neuem Format
+          if (exercise.type !== 'header' && exercise.baseWeight === undefined) {
+            exercise.baseWeight = exercise.weight || 0;
+            exercise.additionalPlates = 0;
+            needsUpdate = true;
+          }
+
+          // Gesamtgewicht immer aktualisieren
+          if (exercise.type !== 'header') {
+            exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
+          }
         });
-        
+
         // Updates speichern falls nötig
         if (needsUpdate) {
           for (const exercise of exercises) {
@@ -112,7 +137,7 @@ class Storage {
             }
           }
         }
-        
+
         exercises.sort((a, b) => (a.order || 0) - (b.order || 0));
         resolve(exercises);
       };
@@ -120,10 +145,10 @@ class Storage {
     });
   }
 
-  async updateExercise(id, name, weight) {
+  async updateExercise(id, name, weight, additionalPlates) {
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
-    
+
     return new Promise((resolve, reject) => {
       const getRequest = store.get(id);
       getRequest.onsuccess = () => {
@@ -131,10 +156,12 @@ class Storage {
         if (exercise) {
           exercise.name = name.trim();
           if (exercise.type !== 'header') {
-            exercise.weight = this.parseWeight(weight);
+            exercise.baseWeight = this.parseWeight(weight);
+            exercise.additionalPlates = parseInt(additionalPlates) || 0;
+            exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
           }
           exercise.updatedAt = new Date();
-          
+
           const updateRequest = store.put(exercise);
           updateRequest.onsuccess = () => resolve(exercise);
           updateRequest.onerror = () => reject(updateRequest.error);
@@ -167,6 +194,8 @@ class Storage {
         id: ex.id,
         name: ex.name,
         type: ex.type || 'exercise',
+        baseWeight: ex.baseWeight || 0,
+        additionalPlates: ex.additionalPlates || 0,
         weight: ex.weight || 0,
         completed: ex.type === 'header' ? null : false
       }))
@@ -174,7 +203,7 @@ class Storage {
 
     const transaction = this.db.transaction(['training'], 'readwrite');
     const store = transaction.objectStore('training');
-    
+
     return new Promise((resolve, reject) => {
       const request = store.put(trainingData);
       request.onsuccess = () => resolve(trainingData);
@@ -196,24 +225,26 @@ class Storage {
     });
   }
 
-  async updateTrainingExercise(exerciseId, weight, completed) {
+  async updateTrainingExercise(exerciseId, weight, completed, additionalPlates) {
     const training = await this.getCurrentTraining();
     if (!training) return null;
 
     const exercise = training.exercises.find(ex => ex.id === exerciseId);
     if (exercise) {
-      exercise.weight = this.parseWeight(weight);
+      exercise.baseWeight = this.parseWeight(weight);
+      exercise.additionalPlates = parseInt(additionalPlates) || 0;
+      exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
       const isCompleted = !!completed;
       exercise.completed = isCompleted;
-      
+
       if (isCompleted) {
-        await this.updateExercise(exerciseId, exercise.name, weight);
+        await this.updateExercise(exerciseId, exercise.name, weight, additionalPlates);
       }
     }
 
     const transaction = this.db.transaction(['training'], 'readwrite');
     const store = transaction.objectStore('training');
-    
+
     return new Promise((resolve, reject) => {
       const request = store.put(training);
       request.onsuccess = () => resolve(training);
@@ -235,26 +266,28 @@ class Storage {
   async exportExercises() {
     const exercises = await this.getAllExercises();
     const exportData = {
-      version: '1.0',
+      version: '2.0',
       exportDate: new Date().toISOString(),
       exercises: exercises.map(ex => ({
         name: ex.name,
         type: ex.type || 'exercise',
+        baseWeight: ex.type === 'header' ? undefined : ex.baseWeight,
+        additionalPlates: ex.type === 'header' ? undefined : ex.additionalPlates,
         weight: ex.type === 'header' ? undefined : ex.weight,
         order: ex.order
       }))
     };
-    
+
     const dataStr = JSON.stringify(exportData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    
+
     const link = document.createElement('a');
     link.href = URL.createObjectURL(dataBlob);
     const now = new Date();
     const dateTime = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
     link.download = `krafttraining-backup-${dateTime}.json`;
     link.click();
-    
+
     URL.revokeObjectURL(link.href);
     return exportData;
   }
@@ -285,9 +318,12 @@ class Storage {
               if (exercise.type === 'header') {
                 newId = await this.addHeader(exercise.name);
               } else {
-                newId = await this.addExercise(exercise.name, exercise.weight || 0);
+                // Unterstütze sowohl neues Format (baseWeight + additionalPlates) als auch altes (weight)
+                const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : (exercise.weight || 0);
+                const additionalPlates = exercise.additionalPlates !== undefined ? exercise.additionalPlates : 0;
+                newId = await this.addExercise(exercise.name, baseWeight, additionalPlates);
               }
-              
+
               // Order-Feld setzen falls vorhanden
               if (exercise.order !== undefined && newId) {
                 const transaction = this.db.transaction(['exercises'], 'readwrite');
@@ -301,7 +337,7 @@ class Storage {
                   }
                 };
               }
-              
+
               importedCount++;
             } catch (error) {
               console.warn(`Fehler beim Importieren von "${exercise.name}":`, error);
