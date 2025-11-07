@@ -298,7 +298,7 @@ class App {
               >
               <span class="text-sm text-gray-600">kg</span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-4">
               <label class="text-xs text-gray-600 w-20">Zusatzgewichte:</label>
               <div class="flex gap-3">
                 <label class="flex items-center gap-1">
