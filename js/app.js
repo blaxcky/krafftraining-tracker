@@ -186,14 +186,13 @@ class App {
       }
 
       // Anzeige der Zusatzgewichte
-      let weightDisplay = `${this.formatWeight(exercise.baseWeight || exercise.weight)} kg`;
+      const baseWeight = exercise.baseWeight || 0;
       const additionalPlates = exercise.additionalPlates || 0;
+      let weightDisplay = `${this.formatWeight(baseWeight)} kg`;
       if (additionalPlates > 0) {
         weightDisplay += ` <span class="text-xs text-green-600">+ ${additionalPlates}x 2.5kg</span>`;
       }
-      const totalWeight = exercise.baseWeight !== undefined
-        ? (exercise.baseWeight + (additionalPlates * 2.5))
-        : exercise.weight;
+      const totalWeight = baseWeight + (additionalPlates * 2.5);
 
       return `
         <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop}">
@@ -271,7 +270,7 @@ class App {
 
       const cardStateClasses = isCompleted ? 'opacity-75 bg-green-50' : '';
       const nameClasses = isCompleted ? 'line-through text-gray-500' : 'text-gray-900';
-      const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : exercise.weight;
+      const baseWeight = exercise.baseWeight || 0;
       const additionalPlates = exercise.additionalPlates || 0;
 
       fragments.push(`
@@ -445,7 +444,7 @@ class App {
     if (exercise) {
       nameInput.value = exercise.name;
       if (this.editingType === 'exercise') {
-        weightInput.value = this.formatWeight(exercise.baseWeight !== undefined ? exercise.baseWeight : exercise.weight);
+        weightInput.value = this.formatWeight(exercise.baseWeight || 0);
         const additionalPlates = exercise.additionalPlates || 0;
         if (plate1) plate1.checked = additionalPlates >= 1;
         if (plate2) plate2.checked = additionalPlates >= 2;
@@ -557,7 +556,7 @@ class App {
       const training = await storage.getCurrentTraining();
       const exercise = training.exercises.find(ex => ex.id === exerciseId);
       const completedValue = this.normalizeCompletedValue(completed);
-      const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : exercise.weight;
+      const baseWeight = exercise.baseWeight || 0;
       const additionalPlates = exercise.additionalPlates || 0;
 
       // Nur beim Abhaken (completed=true) die Master-Daten aktualisieren
@@ -617,7 +616,7 @@ class App {
         }
       }
 
-      const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : exercise.weight;
+      const baseWeight = exercise.baseWeight || 0;
       const completedValue = this.normalizeCompletedValue(completed);
       // Nicht in Master-Daten speichern, nur Training-Session
       await storage.updateTrainingExercise(exerciseId, baseWeight, completedValue, additionalPlates, false);
