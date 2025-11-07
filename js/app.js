@@ -557,7 +557,12 @@ class App {
       const training = await storage.getCurrentTraining();
       const exercise = training.exercises.find(ex => ex.id === exerciseId);
       const completedValue = this.normalizeCompletedValue(completed);
-      await storage.updateTrainingExercise(exerciseId, exercise.weight, completedValue);
+      const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : exercise.weight;
+      const additionalPlates = exercise.additionalPlates || 0;
+
+      // Nur beim Abhaken (completed=true) die Master-Daten aktualisieren
+      const saveToMaster = completedValue === true;
+      await storage.updateTrainingExercise(exerciseId, baseWeight, completedValue, additionalPlates, saveToMaster);
       await this.loadTraining();
     } catch (error) {
       console.error('Error toggling exercise:', error);
@@ -567,7 +572,8 @@ class App {
   async updateWeight(exerciseId, weight, completed) {
     try {
       const completedValue = this.normalizeCompletedValue(completed);
-      await storage.updateTrainingExercise(exerciseId, weight, completedValue, 0);
+      // Nicht in Master-Daten speichern, nur Training-Session
+      await storage.updateTrainingExercise(exerciseId, weight, completedValue, 0, false);
       await this.loadTraining();
     } catch (error) {
       console.error('Error updating weight:', error);
@@ -580,7 +586,8 @@ class App {
       const exercise = training.exercises.find(ex => ex.id === exerciseId);
       const additionalPlates = exercise ? (exercise.additionalPlates || 0) : 0;
       const completedValue = this.normalizeCompletedValue(completed);
-      await storage.updateTrainingExercise(exerciseId, weight, completedValue, additionalPlates);
+      // Nicht in Master-Daten speichern, nur Training-Session
+      await storage.updateTrainingExercise(exerciseId, weight, completedValue, additionalPlates, false);
       await this.loadTraining();
     } catch (error) {
       console.error('Error updating training weight:', error);
@@ -612,7 +619,8 @@ class App {
 
       const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : exercise.weight;
       const completedValue = this.normalizeCompletedValue(completed);
-      await storage.updateTrainingExercise(exerciseId, baseWeight, completedValue, additionalPlates);
+      // Nicht in Master-Daten speichern, nur Training-Session
+      await storage.updateTrainingExercise(exerciseId, baseWeight, completedValue, additionalPlates, false);
       await this.loadTraining();
     } catch (error) {
       console.error('Error updating training plates:', error);

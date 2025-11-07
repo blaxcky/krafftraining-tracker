@@ -225,7 +225,7 @@ class Storage {
     });
   }
 
-  async updateTrainingExercise(exerciseId, weight, completed, additionalPlates) {
+  async updateTrainingExercise(exerciseId, weight, completed, additionalPlates, saveToMaster = false) {
     const training = await this.getCurrentTraining();
     if (!training) return null;
 
@@ -237,8 +237,9 @@ class Storage {
       const isCompleted = !!completed;
       exercise.completed = isCompleted;
 
-      if (isCompleted) {
-        await this.updateExercise(exerciseId, exercise.name, weight, additionalPlates);
+      // Nur in Master-Daten speichern wenn explizit gewünscht (beim Abhaken)
+      if (saveToMaster && isCompleted) {
+        await this.updateExercise(exerciseId, exercise.name, exercise.baseWeight, exercise.additionalPlates);
       }
     }
 
