@@ -8,6 +8,12 @@ class App {
     this.init();
   }
 
+  // Hilfsfunktion: Formatiert Gewicht mit Punkt statt Komma
+  formatWeight(weight) {
+    if (!weight && weight !== 0) return '0';
+    return String(weight).replace(',', '.');
+  }
+
   async init() {
     await storage.init();
     this.setupEventListeners();
@@ -136,7 +142,7 @@ class App {
         <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop}">
           <div class="flex-1">
             <h3 class="font-medium text-gray-900">${exercise.name}</h3>
-            <p class="text-sm text-gray-600">${exercise.weight} kg</p>
+            <p class="text-sm text-gray-600">${this.formatWeight(exercise.weight)} kg</p>
           </div>
           ${controls}
         </div>
@@ -209,9 +215,9 @@ class App {
       fragments.push(`
         <div class="bg-white rounded-lg shadow-sm p-4 ${cardStateClasses}">
           <div class="flex items-center gap-3">
-            <input 
-              type="checkbox" 
-              ${isCompleted ? 'checked' : ''} 
+            <input
+              type="checkbox"
+              ${isCompleted ? 'checked' : ''}
               onchange="app.toggleExercise(${exercise.id}, this.checked)"
               class="w-5 h-5 text-green-500 rounded focus:ring-green-500"
             >
@@ -219,11 +225,10 @@ class App {
               <h3 class="font-medium ${nameClasses}">${exercise.name}</h3>
             </div>
             <div class="flex items-center gap-2">
-              <input 
-                type="number" 
-                value="${exercise.weight}" 
-                step="0.5" 
-                min="0"
+              <input
+                type="text"
+                inputmode="decimal"
+                value="${this.formatWeight(exercise.weight)}"
                 onchange="app.updateWeight(${exercise.id}, this.value, ${isCompleted})"
                 class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent"
               >
@@ -346,7 +351,7 @@ class App {
     if (exercise) {
       nameInput.value = exercise.name;
       if (this.editingType === 'exercise') {
-        weightInput.value = exercise.weight;
+        weightInput.value = this.formatWeight(exercise.weight);
       }
     } else {
       nameInput.value = '';

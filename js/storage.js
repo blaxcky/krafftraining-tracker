@@ -5,6 +5,20 @@ class Storage {
     this.db = null;
   }
 
+  // Hilfsfunktion: Konvertiert Komma zu Punkt und parst das Gewicht
+  parseWeight(weight) {
+    if (typeof weight === 'number') return weight;
+    if (!weight) return 0;
+    const normalized = String(weight).replace(',', '.');
+    return parseFloat(normalized) || 0;
+  }
+
+  // Hilfsfunktion: Formatiert Gewicht mit Punkt
+  formatWeight(weight) {
+    const num = this.parseWeight(weight);
+    return String(num).replace(',', '.');
+  }
+
   async init() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.dbVersion);
@@ -41,7 +55,7 @@ class Storage {
     return new Promise((resolve, reject) => {
       const request = store.add({
         name: name.trim(),
-        weight: parseFloat(weight) || 0,
+        weight: this.parseWeight(weight),
         type: 'exercise',
         order: maxOrder + 1,
         createdAt: new Date()
@@ -117,7 +131,7 @@ class Storage {
         if (exercise) {
           exercise.name = name.trim();
           if (exercise.type !== 'header') {
-            exercise.weight = parseFloat(weight) || 0;
+            exercise.weight = this.parseWeight(weight);
           }
           exercise.updatedAt = new Date();
           
@@ -188,7 +202,7 @@ class Storage {
 
     const exercise = training.exercises.find(ex => ex.id === exerciseId);
     if (exercise) {
-      exercise.weight = parseFloat(weight) || 0;
+      exercise.weight = this.parseWeight(weight);
       const isCompleted = !!completed;
       exercise.completed = isCompleted;
       
