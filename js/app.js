@@ -800,6 +800,27 @@ class App {
     }
   }
 
+  // Schnellauswahl-Cardio hinzufügen
+  async addQuickCardio(name, inputId) {
+    const caloriesInput = document.getElementById(inputId);
+    const calories = parseInt(caloriesInput.value) || 0;
+
+    if (calories <= 0) {
+      this.showToast('Bitte Kalorien eingeben', 'error');
+      return;
+    }
+
+    try {
+      await storage.addCardioToSession(name, calories);
+      caloriesInput.value = '';
+      await this.updateCaloriesDisplay();
+      this.showToast(`${name} hinzugefügt: ${calories} kcal`);
+    } catch (error) {
+      console.error('Error adding quick cardio:', error);
+      this.showToast('Fehler beim Hinzufügen', 'error');
+    }
+  }
+
   // Cardio-Eintrag löschen
   async deleteCardioEntry(cardioId) {
     try {

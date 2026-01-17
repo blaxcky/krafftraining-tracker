@@ -233,17 +233,53 @@
                 <!-- Cardio hinzufügen -->
                 <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
                     <h3 class="font-semibold text-lg mb-3">Cardio hinzufügen</h3>
-                    <div class="space-y-3">
-                        <div>
-                            <input type="text" id="cardio-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="z.B. Laufen, Radfahren...">
+
+                    <!-- Schnellauswahl -->
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">🚴</span>
+                            <span class="flex-1 text-gray-700">Crosstrainer</span>
+                            <input type="number" inputmode="numeric" id="quick-cardio-crosstrainer" class="w-20 px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center" placeholder="kcal">
+                            <button onclick="app.addQuickCardio('Crosstrainer', 'quick-cardio-crosstrainer')" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-3 rounded-lg transition-colors">
+                                +
+                            </button>
                         </div>
-                        <div class="flex gap-2">
-                            <input type="number" inputmode="numeric" id="cardio-calories" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Kalorien">
-                            <button id="add-cardio-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                                + Hinzufügen
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">🚲</span>
+                            <span class="flex-1 text-gray-700">Ergometer</span>
+                            <input type="number" inputmode="numeric" id="quick-cardio-ergometer" class="w-20 px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center" placeholder="kcal">
+                            <button onclick="app.addQuickCardio('Ergometer', 'quick-cardio-ergometer')" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-3 rounded-lg transition-colors">
+                                +
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">🛋️</span>
+                            <span class="flex-1 text-gray-700">Liege-Ergometer</span>
+                            <input type="number" inputmode="numeric" id="quick-cardio-liege" class="w-20 px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center" placeholder="kcal">
+                            <button onclick="app.addQuickCardio('Liege-Ergometer', 'quick-cardio-liege')" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-3 rounded-lg transition-colors">
+                                +
                             </button>
                         </div>
                     </div>
+
+                    <!-- Eigenes Cardio (eingeklappt) -->
+                    <details class="border-t border-gray-200 pt-3">
+                        <summary class="cursor-pointer text-gray-600 hover:text-gray-800 font-medium flex items-center gap-2">
+                            <span class="text-sm">▶</span>
+                            Eigenes Cardio hinzufügen
+                        </summary>
+                        <div class="mt-3 space-y-3">
+                            <div>
+                                <input type="text" id="cardio-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="z.B. Laufen, Radfahren...">
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="number" inputmode="numeric" id="cardio-calories" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Kalorien">
+                                <button id="add-cardio-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                                    + Hinzufügen
+                                </button>
+                            </div>
+                        </div>
+                    </details>
                 </div>
 
                 <!-- Cardio-Liste -->
