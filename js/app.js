@@ -208,11 +208,10 @@ class App {
         <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop}">
           <div class="flex-1">
             <h3 class="font-medium text-gray-900">${exercise.name}</h3>
-            <p class="text-sm text-gray-600">
-              ${weightDisplay}
-              ${additionalPlates > 0 ? `<span class="text-xs text-gray-500"> = ${this.formatWeight(totalWeight)} kg</span>` : ''}
-              ${calories > 0 ? `<span class="text-xs text-orange-500 ml-2">🔥 ${calories} kcal</span>` : ''}
-            </p>
+            <div class="text-sm text-gray-600">
+              <p>${weightDisplay}${additionalPlates > 0 ? ` <span class="text-xs text-gray-500">= ${this.formatWeight(totalWeight)} kg</span>` : ''}</p>
+              ${calories > 0 ? `<p class="text-orange-500">🔥 ${calories} kcal</p>` : ''}
+            </div>
           </div>
           ${controls}
         </div>
@@ -283,6 +282,7 @@ class App {
       const nameClasses = isCompleted ? 'line-through text-gray-500' : 'text-gray-900';
       const baseWeight = exercise.baseWeight || 0;
       const additionalPlates = exercise.additionalPlates || 0;
+      const calories = exercise.calories || 0;
 
       fragments.push(`
         <div class="bg-white rounded-lg shadow-sm p-4 ${cardStateClasses}">
@@ -336,6 +336,11 @@ class App {
               <span>Gesamtgewicht: </span>
               <span class="font-semibold text-primary">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
             </div>
+            ${calories > 0 ? `
+            <div class="text-xs text-orange-500">
+              <span>🔥 ${calories} kcal</span>
+            </div>
+            ` : ''}
           </div>
         </div>
       `);
