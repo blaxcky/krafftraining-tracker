@@ -4,7 +4,7 @@ class App {
     this.editingExercise = null;
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
-    this.version = '2.5';
+    this.version = '2.6';
     this.init();
   }
 
@@ -69,13 +69,14 @@ class App {
   updateVersionBadge() {
     const badge = document.getElementById('version-badge');
     if (badge) {
-      badge.textContent = `v${this.version} (c17)`;
+      badge.textContent = `v${this.version} (c18)`;
     }
   }
 
   setupEventListeners() {
     document.getElementById('tab-exercises').addEventListener('click', () => this.switchTab('exercises'));
     document.getElementById('tab-training').addEventListener('click', () => this.switchTab('training'));
+    document.getElementById('tab-calories').addEventListener('click', () => this.switchTab('calories'));
 
     document.getElementById('add-exercise-btn').addEventListener('click', () => this.showExerciseModal());
     document.getElementById('add-header-btn').addEventListener('click', () => this.showHeaderModal());
@@ -96,6 +97,9 @@ class App {
     document.getElementById('import-btn').addEventListener('click', () => this.importExercises());
     document.getElementById('import-file').addEventListener('change', (e) => this.handleImportFile(e));
 
+    // Cardio Event-Listener
+    document.getElementById('add-cardio-btn').addEventListener('click', () => this.addCardioEntry());
+
     document.addEventListener('click', (e) => {
       if (e.target.id === 'exercise-modal') {
         this.hideExerciseModal();
@@ -105,17 +109,22 @@ class App {
 
   switchTab(tab) {
     this.currentTab = tab;
-    
+
     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
     document.querySelectorAll('nav button').forEach(btn => {
       btn.classList.remove('bg-primary', 'text-white');
       btn.classList.add('text-gray-600', 'hover:bg-gray-50');
     });
-    
+
     document.getElementById(`${tab}-tab`).classList.remove('hidden');
     const activeBtn = document.getElementById(`tab-${tab}`);
     activeBtn.classList.add('bg-primary', 'text-white');
     activeBtn.classList.remove('text-gray-600', 'hover:bg-gray-50');
+
+    // Kalorien-Tab laden wenn ausgewählt
+    if (tab === 'calories') {
+      this.loadCaloriesTab();
+    }
   }
 
   async loadExercises() {
@@ -188,6 +197,7 @@ class App {
       // Anzeige der Zusatzgewichte
       const baseWeight = exercise.baseWeight || 0;
       const additionalPlates = exercise.additionalPlates || 0;
+      const calories = exercise.calories || 0;
       let weightDisplay = `${this.formatWeight(baseWeight)} kg`;
       if (additionalPlates > 0) {
         weightDisplay += ` <span class="text-xs text-green-600">+ ${additionalPlates}x 2.5kg</span>`;
@@ -201,6 +211,7 @@ class App {
             <p class="text-sm text-gray-600">
               ${weightDisplay}
               ${additionalPlates > 0 ? `<span class="text-xs text-gray-500"> = ${this.formatWeight(totalWeight)} kg</span>` : ''}
+              ${calories > 0 ? `<span class="text-xs text-orange-500 ml-2">🔥 ${calories} kcal</span>` : ''}
             </p>
           </div>
           ${controls}
@@ -432,6 +443,7 @@ class App {
     const weightField = document.getElementById('weight-field');
     const plate1 = document.getElementById('plate-1');
     const plate2 = document.getElementById('plate-2');
+    const caloriesInput = document.getElementById('exercise-calories');
 
     if (this.editingType === 'header') {
       weightField.style.display = 'none';
@@ -448,12 +460,14 @@ class App {
         const additionalPlates = exercise.additionalPlates || 0;
         if (plate1) plate1.checked = additionalPlates >= 1;
         if (plate2) plate2.checked = additionalPlates >= 2;
+        if (caloriesInput) caloriesInput.value = exercise.calories || '';
       }
     } else {
       nameInput.value = '';
       weightInput.value = '';
       if (plate1) plate1.checked = false;
       if (plate2) plate2.checked = false;
+      if (caloriesInput) caloriesInput.value = '';
     }
 
     this.updateTotalWeight();
@@ -478,17 +492,19 @@ class App {
     const name = document.getElementById('exercise-name').value.trim();
     const weight = document.getElementById('exercise-weight').value;
     const additionalPlates = this.getAdditionalPlates();
+    const caloriesInput = document.getElementById('exercise-calories');
+    const calories = caloriesInput ? caloriesInput.value : 0;
 
     if (!name) return;
 
     try {
       if (this.editingExercise) {
-        await storage.updateExercise(this.editingExercise.id, name, weight, additionalPlates);
+        await storage.updateExercise(this.editingExercise.id, name, weight, additionalPlates, calories);
       } else {
         if (this.editingType === 'header') {
           await storage.addHeader(name);
         } else {
-          await storage.addExercise(name, weight, additionalPlates);
+          await storage.addExercise(name, weight, additionalPlates, calories);
         }
       }
 
@@ -679,9 +695,9 @@ class App {
       type === 'error' ? 'bg-red-500' : 'bg-green-500'
     }`;
     toast.textContent = message;
-    
+
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
       toast.style.opacity = '0';
       setTimeout(() => {
@@ -690,6 +706,109 @@ class App {
         }
       }, 300);
     }, 3000);
+  }
+
+  // Kalorien-Tab laden
+  async loadCaloriesTab() {
+    const training = await storage.getCurrentTraining();
+
+    if (!training) {
+      document.getElementById('no-training-calories').classList.remove('hidden');
+      document.getElementById('active-calories').classList.add('hidden');
+      return;
+    }
+
+    document.getElementById('no-training-calories').classList.add('hidden');
+    document.getElementById('active-calories').classList.remove('hidden');
+
+    await this.updateCaloriesDisplay();
+  }
+
+  // Kalorien-Anzeige aktualisieren
+  async updateCaloriesDisplay() {
+    const summary = await storage.getSessionCaloriesSummary();
+
+    // Gesamtkalorien-Anzeige aktualisieren
+    document.getElementById('total-calories-display').textContent = summary.totalCalories;
+    document.getElementById('exercise-calories-display').textContent = summary.exerciseCalories;
+    document.getElementById('cardio-calories-display').textContent = summary.cardioCalories;
+
+    // Cardio-Liste rendern
+    const cardioListContainer = document.getElementById('cardio-list-container');
+    const cardioList = document.getElementById('cardio-list');
+
+    if (summary.cardioEntries.length > 0) {
+      cardioListContainer.classList.remove('hidden');
+      cardioList.innerHTML = summary.cardioEntries.map(entry => `
+        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+          <div>
+            <span class="font-medium text-gray-900">${entry.name}</span>
+            <span class="text-sm text-orange-500 ml-2">${entry.calories} kcal</span>
+          </div>
+          <button onclick="app.deleteCardioEntry(${entry.id})" class="text-red-500 hover:text-red-600 p-1">
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m19 7-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      `).join('');
+    } else {
+      cardioListContainer.classList.add('hidden');
+    }
+
+    // Krafttraining-Kalorien-Liste rendern
+    const exerciseCaloriesContainer = document.getElementById('exercise-calories-container');
+    const exerciseCaloriesList = document.getElementById('exercise-calories-list');
+
+    const exercisesWithCalories = summary.completedExercises.filter(ex => ex.calories > 0);
+
+    if (exercisesWithCalories.length > 0) {
+      exerciseCaloriesContainer.classList.remove('hidden');
+      exerciseCaloriesList.innerHTML = exercisesWithCalories.map(ex => `
+        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+          <span class="text-gray-900">${ex.name}</span>
+          <span class="text-sm text-orange-500">${ex.calories} kcal</span>
+        </div>
+      `).join('');
+    } else {
+      exerciseCaloriesContainer.classList.add('hidden');
+    }
+  }
+
+  // Cardio-Eintrag hinzufügen
+  async addCardioEntry() {
+    const nameInput = document.getElementById('cardio-name');
+    const caloriesInput = document.getElementById('cardio-calories');
+
+    const name = nameInput.value.trim();
+    const calories = parseInt(caloriesInput.value) || 0;
+
+    if (!name || calories <= 0) {
+      this.showToast('Bitte Name und Kalorien eingeben', 'error');
+      return;
+    }
+
+    try {
+      await storage.addCardioToSession(name, calories);
+      nameInput.value = '';
+      caloriesInput.value = '';
+      await this.updateCaloriesDisplay();
+      this.showToast(`${name} hinzugefügt: ${calories} kcal`);
+    } catch (error) {
+      console.error('Error adding cardio:', error);
+      this.showToast('Fehler beim Hinzufügen', 'error');
+    }
+  }
+
+  // Cardio-Eintrag löschen
+  async deleteCardioEntry(cardioId) {
+    try {
+      await storage.removeCardioFromSession(cardioId);
+      await this.updateCaloriesDisplay();
+    } catch (error) {
+      console.error('Error deleting cardio:', error);
+      this.showToast('Fehler beim Löschen', 'error');
+    }
   }
 }
 

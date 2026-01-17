@@ -52,7 +52,7 @@ class Storage {
     });
   }
 
-  async addExercise(name, weight = 0, additionalPlates = 0) {
+  async addExercise(name, weight = 0, additionalPlates = 0, calories = 0) {
     const exercises = await this.getAllExercises();
     const maxOrder = exercises.length > 0 ? Math.max(...exercises.map(e => e.order || 0)) : -1;
 
@@ -69,6 +69,7 @@ class Storage {
         baseWeight: baseWeight,
         additionalPlates: plates,
         weight: totalWeight, // Für Rückwärtskompatibilität
+        calories: parseInt(calories) || 0,
         type: 'exercise',
         order: maxOrder + 1,
         createdAt: new Date()
@@ -123,6 +124,12 @@ class Storage {
             needsUpdate = true;
           }
 
+          // Migration: calories-Feld hinzufügen
+          if (exercise.type !== 'header' && exercise.calories === undefined) {
+            exercise.calories = 0;
+            needsUpdate = true;
+          }
+
           // Gesamtgewicht immer aktualisieren
           if (exercise.type !== 'header') {
             exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
@@ -145,7 +152,7 @@ class Storage {
     });
   }
 
-  async updateExercise(id, name, weight, additionalPlates) {
+  async updateExercise(id, name, weight, additionalPlates, calories = null) {
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
 
@@ -159,6 +166,9 @@ class Storage {
             exercise.baseWeight = this.parseWeight(weight);
             exercise.additionalPlates = parseInt(additionalPlates) || 0;
             exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
+            if (calories !== null) {
+              exercise.calories = parseInt(calories) || 0;
+            }
           }
           exercise.updatedAt = new Date();
 
@@ -190,6 +200,7 @@ class Storage {
       id: 'current',
       active: true,
       startedAt: new Date(),
+      cardioEntries: [], // NEU: Cardio-Einträge für diese Session
       exercises: exercises.map(ex => ({
         id: ex.id,
         name: ex.name,
@@ -197,6 +208,7 @@ class Storage {
         baseWeight: ex.baseWeight || 0,
         additionalPlates: ex.additionalPlates || 0,
         weight: ex.weight || 0,
+        calories: ex.calories || 0, // NEU: Kalorien pro Übung
         completed: ex.type === 'header' ? null : false
       }))
     };
@@ -267,7 +279,7 @@ class Storage {
   async exportExercises() {
     const exercises = await this.getAllExercises();
     const exportData = {
-      version: '2.0',
+      version: '2.1',
       exportDate: new Date().toISOString(),
       exercises: exercises.map(ex => ({
         name: ex.name,
@@ -275,6 +287,7 @@ class Storage {
         baseWeight: ex.type === 'header' ? undefined : ex.baseWeight,
         additionalPlates: ex.type === 'header' ? undefined : ex.additionalPlates,
         weight: ex.type === 'header' ? undefined : ex.weight,
+        calories: ex.type === 'header' ? undefined : (ex.calories || 0),
         order: ex.order
       }))
     };
@@ -322,7 +335,8 @@ class Storage {
                 // Unterstütze sowohl neues Format (baseWeight + additionalPlates) als auch altes (weight)
                 const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : (exercise.weight || 0);
                 const additionalPlates = exercise.additionalPlates !== undefined ? exercise.additionalPlates : 0;
-                newId = await this.addExercise(exercise.name, baseWeight, additionalPlates);
+                const calories = exercise.calories !== undefined ? exercise.calories : 0;
+                newId = await this.addExercise(exercise.name, baseWeight, additionalPlates, calories);
               }
 
               // Order-Feld setzen falls vorhanden
@@ -403,12 +417,93 @@ class Storage {
   async clearAllExercises() {
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
-    
+
     return new Promise((resolve, reject) => {
       const request = store.clear();
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
+  }
+
+  // Cardio zur aktuellen Training-Session hinzufügen
+  async addCardioToSession(name, calories) {
+    const training = await this.getCurrentTraining();
+    if (!training) return null;
+
+    // cardioEntries initialisieren falls nicht vorhanden (Migration)
+    if (!training.cardioEntries) {
+      training.cardioEntries = [];
+    }
+
+    const newEntry = {
+      id: Date.now(),
+      name: name.trim(),
+      calories: parseInt(calories) || 0
+    };
+
+    training.cardioEntries.push(newEntry);
+
+    const transaction = this.db.transaction(['training'], 'readwrite');
+    const store = transaction.objectStore('training');
+
+    return new Promise((resolve, reject) => {
+      const request = store.put(training);
+      request.onsuccess = () => resolve(newEntry);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Cardio aus der aktuellen Training-Session entfernen
+  async removeCardioFromSession(cardioId) {
+    const training = await this.getCurrentTraining();
+    if (!training || !training.cardioEntries) return null;
+
+    training.cardioEntries = training.cardioEntries.filter(entry => entry.id !== cardioId);
+
+    const transaction = this.db.transaction(['training'], 'readwrite');
+    const store = transaction.objectStore('training');
+
+    return new Promise((resolve, reject) => {
+      const request = store.put(training);
+      request.onsuccess = () => resolve(training);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Kalorien-Zusammenfassung der aktuellen Session berechnen
+  async getSessionCaloriesSummary() {
+    const training = await this.getCurrentTraining();
+    if (!training) {
+      return {
+        exerciseCalories: 0,
+        cardioCalories: 0,
+        totalCalories: 0,
+        completedExercises: [],
+        cardioEntries: []
+      };
+    }
+
+    // Kalorien aus abgeschlossenen Übungen
+    const completedExercises = training.exercises.filter(
+      ex => ex.type !== 'header' && ex.completed === true
+    );
+    const exerciseCalories = completedExercises.reduce(
+      (sum, ex) => sum + (ex.calories || 0), 0
+    );
+
+    // Kalorien aus Cardio
+    const cardioEntries = training.cardioEntries || [];
+    const cardioCalories = cardioEntries.reduce(
+      (sum, entry) => sum + (entry.calories || 0), 0
+    );
+
+    return {
+      exerciseCalories,
+      cardioCalories,
+      totalCalories: exerciseCalories + cardioCalories,
+      completedExercises,
+      cardioEntries
+    };
   }
 }
 

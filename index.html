@@ -60,7 +60,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Version Badge -->
-    <div id="version-badge" class="version-badge" style="position: fixed !important; top: 8px; right: 8px; font-size: 10px; color: #6b7280; background: white; padding: 2px 6px; border-radius: 4px; opacity: 1; z-index: 99999; font-family: monospace; border: 1px solid #e5e7eb; pointer-events: none;">v2.5 (c17)</div>
+    <div id="version-badge" class="version-badge" style="position: fixed !important; top: 8px; right: 8px; font-size: 10px; color: #6b7280; background: white; padding: 2px 6px; border-radius: 4px; opacity: 1; z-index: 99999; font-family: monospace; border: 1px solid #e5e7eb; pointer-events: none;">v2.6 (c18)</div>
     
     <div id="app" class="container mx-auto px-4 py-6 max-w-md">
         
@@ -78,6 +78,9 @@
                 </button>
                 <button id="tab-training" class="flex-1 py-3 px-4 text-center font-medium text-gray-600 hover:bg-gray-50">
                     Training
+                </button>
+                <button id="tab-calories" class="flex-1 py-3 px-4 text-center font-medium text-gray-600 hover:bg-gray-50">
+                    Kalorien
                 </button>
             </div>
         </nav>
@@ -140,6 +143,12 @@
                                 <span>Gesamtgewicht: </span>
                                 <span id="total-weight" class="font-semibold text-primary">0 kg</span>
                             </div>
+
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Kalorien pro Satz (optional)</label>
+                                <input type="number" inputmode="numeric" id="exercise-calories" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="z.B. 50">
+                                <p class="text-xs text-gray-500 mt-1">Geschätzte Kalorien, die bei einem Satz verbrannt werden</p>
+                            </div>
                         </div>
                         <div class="flex gap-3">
                             <button type="button" id="cancel-btn" class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
@@ -187,6 +196,74 @@
 
                 <div id="training-exercises" class="space-y-3">
                     <!-- Training Übungen werden hier dynamisch eingefügt -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Calories Tab -->
+        <div id="calories-tab" class="tab-content hidden">
+            <div id="no-training-calories" class="text-center py-12">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="text-6xl mb-4">🔥</div>
+                    <h3 class="text-lg font-semibold mb-2">Kein aktives Training</h3>
+                    <p class="text-gray-600">Starte ein Training, um deine Kalorien zu tracken</p>
+                </div>
+            </div>
+
+            <div id="active-calories" class="hidden">
+                <!-- Kalorien-Zusammenfassung -->
+                <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg shadow-sm p-6 mb-4 text-white">
+                    <div class="text-center">
+                        <p class="text-sm opacity-90 mb-1">Gesamtkalorien verbrannt</p>
+                        <p id="total-calories-display" class="text-5xl font-bold">0</p>
+                        <p class="text-sm opacity-90 mt-1">kcal</p>
+                    </div>
+                    <div class="flex justify-around mt-4 pt-4 border-t border-white/20">
+                        <div class="text-center">
+                            <p class="text-2xl font-semibold" id="exercise-calories-display">0</p>
+                            <p class="text-xs opacity-75">Krafttraining</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-semibold" id="cardio-calories-display">0</p>
+                            <p class="text-xs opacity-75">Cardio</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cardio hinzufügen -->
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                    <h3 class="font-semibold text-lg mb-3">Cardio hinzufügen</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <input type="text" id="cardio-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="z.B. Laufen, Radfahren...">
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" inputmode="numeric" id="cardio-calories" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Kalorien">
+                            <button id="add-cardio-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                                + Hinzufügen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cardio-Liste -->
+                <div id="cardio-list-container" class="mb-4 hidden">
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <h3 class="font-semibold text-lg mb-3">Cardio-Einträge</h3>
+                        <div id="cardio-list" class="space-y-2">
+                            <!-- Cardio-Einträge werden hier dynamisch eingefügt -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Krafttraining-Kalorien -->
+                <div id="exercise-calories-container" class="hidden">
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <h3 class="font-semibold text-lg mb-3">Krafttraining-Kalorien</h3>
+                        <div id="exercise-calories-list" class="space-y-2">
+                            <!-- Übungs-Kalorien werden hier dynamisch eingefügt -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
