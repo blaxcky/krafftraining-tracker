@@ -3,7 +3,8 @@
     "allow": [
       "WebFetch(domain:heroicons.com)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:yesicon.app)"
+      "WebFetch(domain:yesicon.app)",
+      "WebFetch(domain:lucide.dev)"
     ],
     "deny": []
   }
