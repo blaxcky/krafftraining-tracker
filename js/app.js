@@ -714,7 +714,7 @@ class App {
     const exercise = training.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
 
-    const newWeight = Math.max(0, Math.min(150, (exercise.baseWeight || 0) + delta));
+    const newWeight = Math.max(0, Math.min(200, (exercise.baseWeight || 0) + delta));
     await storage.updateTrainingExercise(exerciseId, newWeight, this.normalizeCompletedValue(completed), exercise.additionalPlates || 0, false);
     await this.loadTraining();
   }
