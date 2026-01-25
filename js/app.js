@@ -190,6 +190,7 @@ class App {
                 ${controls}
               </div>
             </div>
+            <hr class="mt-3 border-t border-gray-200">
           </div>
         `;
       }
@@ -210,7 +211,13 @@ class App {
             <h3 class="font-medium text-gray-900">${exercise.name}</h3>
             <div class="text-sm text-gray-600">
               <p>${weightDisplay}${additionalPlates > 0 ? ` <span class="text-xs text-gray-500">= ${this.formatWeight(totalWeight)} kg</span>` : ''}</p>
-              ${calories > 0 ? `<p class="text-orange-500">🔥 ${calories} kcal</p>` : ''}
+              ${calories > 0 ? `
+              <div class="mt-1">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                  🔥 ${calories} kcal
+                </span>
+              </div>
+            ` : ''}
             </div>
           </div>
           ${controls}
@@ -257,6 +264,7 @@ class App {
               <h3 class="text-lg font-semibold text-primary">${pendingHeader.name}</h3>
             </div>
           </div>
+          <hr class="mt-3 border-t border-gray-200">
         </div>
       `);
       pendingHeader = null;
@@ -311,24 +319,26 @@ class App {
             </div>
             <div class="flex items-center gap-4">
               <label class="text-xs text-gray-600 w-20">Zusatzgewichte:</label>
-              <div class="flex gap-3">
-                <label class="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    ${additionalPlates >= 1 ? 'checked' : ''}
+              <div class="flex gap-2">
+                <label class="cursor-pointer">
+                  <input type="checkbox" ${additionalPlates >= 1 ? 'checked' : ''}
                     onchange="app.updateTrainingPlates(${exercise.id}, 1, this.checked, ${isCompleted})"
-                    class="w-4 h-4 text-primary rounded focus:ring-primary"
-                  >
-                  <span class="text-xs text-gray-700">2.5kg</span>
+                    class="sr-only peer">
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-colors
+                    peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500
+                    bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200">
+                    +2,5 kg
+                  </span>
                 </label>
-                <label class="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    ${additionalPlates >= 2 ? 'checked' : ''}
+                <label class="cursor-pointer">
+                  <input type="checkbox" ${additionalPlates >= 2 ? 'checked' : ''}
                     onchange="app.updateTrainingPlates(${exercise.id}, 2, this.checked, ${isCompleted})"
-                    class="w-4 h-4 text-primary rounded focus:ring-primary"
-                  >
-                  <span class="text-xs text-gray-700">2.5kg</span>
+                    class="sr-only peer">
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-colors
+                    peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500
+                    bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200">
+                    +2,5 kg
+                  </span>
                 </label>
               </div>
             </div>
@@ -337,8 +347,10 @@ class App {
               <span class="font-semibold text-primary">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
             </div>
             ${calories > 0 ? `
-            <div class="text-xs text-orange-500">
-              <span>🔥 ${calories} kcal</span>
+            <div class="mt-1">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                🔥 ${calories} kcal
+              </span>
             </div>
             ` : ''}
           </div>
