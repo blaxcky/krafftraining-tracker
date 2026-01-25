@@ -56,11 +56,57 @@
             border: 1px solid #e5e7eb;
             pointer-events: none;
         }
+        /* Weight Picker Styles */
+        .weight-picker-container {
+            position: relative;
+            height: 120px;
+            overflow: hidden;
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+        }
+        .weight-picker-container::before,
+        .weight-picker-container::after {
+            content: '';
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: #1f2937;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .weight-picker-container::before { top: calc(50% - 18px); }
+        .weight-picker-container::after { top: calc(50% + 18px); }
+        .weight-picker {
+            height: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .weight-picker::-webkit-scrollbar { display: none; }
+        .weight-picker-item {
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: #9ca3af;
+            scroll-snap-align: center;
+            cursor: pointer;
+        }
+        .weight-picker-item.selected {
+            color: #1f2937;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .weight-picker-spacer { height: 42px; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Version Badge -->
-    <div id="version-badge" class="version-badge" style="position: fixed !important; top: 8px; right: 8px; font-size: 10px; color: #6b7280; background: white; padding: 2px 6px; border-radius: 4px; opacity: 1; z-index: 99999; font-family: monospace; border: 1px solid #e5e7eb; pointer-events: none;">v2.6 (c18)</div>
+    <div id="version-badge" class="version-badge" style="position: fixed !important; top: 8px; right: 8px; font-size: 10px; color: #6b7280; background: white; padding: 2px 6px; border-radius: 4px; opacity: 1; z-index: 99999; font-family: monospace; border: 1px solid #e5e7eb; pointer-events: none;">v2.7 (c19)</div>
     
     <div id="app" class="container mx-auto px-4 py-6 max-w-md">
         
@@ -125,7 +171,10 @@
                         </div>
                         <div class="mb-6" id="weight-field">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Basisgewicht (kg)</label>
-                            <input type="text" inputmode="decimal" id="exercise-weight" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="z.B. 20 oder 20,5 oder 20.5">
+                            <div class="weight-picker-container">
+                                <div class="weight-picker" id="exercise-weight-picker"></div>
+                            </div>
+                            <input type="hidden" id="exercise-weight" value="0">
 
                             <div class="mt-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-3">Zusatzgewichte (2.5 kg Scheiben)</label>

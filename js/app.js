@@ -4,7 +4,7 @@ class App {
     this.editingExercise = null;
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
-    this.version = '2.6';
+    this.version = '2.7';
     this.init();
   }
 
@@ -46,6 +46,50 @@ class App {
     totalWeightSpan.textContent = `${totalWeight} kg`;
   }
 
+  // Initialisiert den Weight-Picker
+  initWeightPicker(pickerId, inputId) {
+    const picker = document.getElementById(pickerId);
+    const input = document.getElementById(inputId);
+    if (!picker) return;
+
+    picker.innerHTML = '<div class="weight-picker-spacer"></div>';
+    for (let w = 0; w <= 150; w += 5) {
+      picker.innerHTML += `<div class="weight-picker-item" data-value="${w}">${w} kg</div>`;
+    }
+    picker.innerHTML += '<div class="weight-picker-spacer"></div>';
+
+    picker.addEventListener('scroll', () => {
+      clearTimeout(this.pickerTimeout);
+      this.pickerTimeout = setTimeout(() => this.onPickerScroll(picker, input), 50);
+    });
+  }
+
+  onPickerScroll(picker, input) {
+    const items = picker.querySelectorAll('.weight-picker-item');
+    const center = picker.getBoundingClientRect().top + 60;
+    let closest = null, minDist = Infinity;
+
+    items.forEach(item => {
+      item.classList.remove('selected');
+      const dist = Math.abs(item.getBoundingClientRect().top + 18 - center);
+      if (dist < minDist) { minDist = dist; closest = item; }
+    });
+
+    if (closest) {
+      closest.classList.add('selected');
+      input.value = closest.dataset.value;
+      this.updateTotalWeight();
+    }
+  }
+
+  setPickerValue(pickerId, value) {
+    const picker = document.getElementById(pickerId);
+    if (!picker) return;
+    const snapped = Math.round(value / 5) * 5;
+    const index = snapped / 5;
+    picker.scrollTop = index * 36;
+  }
+
   // Gibt die Anzahl der Zusatzscheiben zurück
   getAdditionalPlates() {
     const plate1 = document.getElementById('plate-1');
@@ -69,7 +113,7 @@ class App {
   updateVersionBadge() {
     const badge = document.getElementById('version-badge');
     if (badge) {
-      badge.textContent = `v${this.version} (c18)`;
+      badge.textContent = `v${this.version} (c19)`;
     }
   }
 
@@ -308,14 +352,13 @@ class App {
           <div class="flex flex-col gap-2 ml-8">
             <div class="flex items-center gap-2">
               <label class="text-xs text-gray-600 w-20">Basisgewicht:</label>
-              <input
-                type="text"
-                inputmode="decimal"
-                value="${this.formatWeight(baseWeight)}"
-                onchange="app.updateTrainingWeight(${exercise.id}, this.value, ${isCompleted})"
-                class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-              <span class="text-sm text-gray-600">kg</span>
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -5, ${isCompleted})"
+                  class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-lg font-bold">-</button>
+                <span class="w-14 text-center font-semibold text-primary">${this.formatWeight(baseWeight)} kg</span>
+                <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 5, ${isCompleted})"
+                  class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-lg font-bold">+</button>
+              </div>
             </div>
             <div class="flex items-center gap-4">
               <label class="text-xs text-gray-600 w-20">Zusatzgewichte:</label>
@@ -489,6 +532,13 @@ class App {
 
     this.updateTotalWeight();
     modal.classList.remove('hidden');
+
+    if (this.editingType !== 'header') {
+      this.initWeightPicker('exercise-weight-picker', 'exercise-weight');
+      const weight = exercise ? (exercise.baseWeight || 0) : 0;
+      setTimeout(() => this.setPickerValue('exercise-weight-picker', weight), 50);
+    }
+
     nameInput.focus();
   }
 
@@ -657,6 +707,16 @@ class App {
     } catch (error) {
       console.error('Error updating training plates:', error);
     }
+  }
+
+  async adjustTrainingWeight(exerciseId, delta, completed) {
+    const training = await storage.getCurrentTraining();
+    const exercise = training.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+
+    const newWeight = Math.max(0, Math.min(150, (exercise.baseWeight || 0) + delta));
+    await storage.updateTrainingExercise(exerciseId, newWeight, this.normalizeCompletedValue(completed), exercise.additionalPlates || 0, false);
+    await this.loadTraining();
   }
 
   async exportExercises() {
