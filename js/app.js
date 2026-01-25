@@ -338,19 +338,11 @@ class App {
 
       fragments.push(`
         <div class="bg-white rounded-lg shadow-sm p-4 ${cardStateClasses}">
-          <div class="flex items-center gap-3 mb-3">
-            <input
-              type="checkbox"
-              ${isCompleted ? 'checked' : ''}
-              onchange="app.toggleExercise(${exercise.id}, this.checked)"
-              class="w-5 h-5 text-green-500 rounded focus:ring-green-500"
-            >
-            <div class="flex-1">
-              <h3 class="font-medium ${nameClasses}">${exercise.name}</h3>
-            </div>
+          <div class="mb-3">
+            <h3 class="font-medium ${nameClasses}">${exercise.name}</h3>
           </div>
           <hr class="my-2 border-t border-gray-200">
-          <div class="flex flex-col gap-2 ml-8">
+          <div class="flex flex-col gap-2">
             <div class="flex items-center gap-2">
               <label class="text-xs text-gray-600 w-20">Basisgewicht:</label>
               <div class="flex items-center gap-1">
@@ -398,6 +390,16 @@ class App {
             </div>
             ` : ''}
           </div>
+          <button
+            type="button"
+            onclick="app.toggleExercise(${exercise.id}, ${!isCompleted})"
+            class="w-full mt-3 py-3 rounded-lg font-medium text-center transition-colors ${
+              isCompleted
+                ? 'bg-green-100 text-green-700 border border-green-300'
+                : 'bg-green-500 text-white hover:bg-green-600 active:bg-green-700'
+            }">
+            ${isCompleted ? '✓ Erledigt' : 'Übung abschließen'}
+          </button>
         </div>
       `);
     });
