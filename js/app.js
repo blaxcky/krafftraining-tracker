@@ -349,6 +349,7 @@ class App {
               <h3 class="font-medium ${nameClasses}">${exercise.name}</h3>
             </div>
           </div>
+          <hr class="my-2 border-t border-gray-200">
           <div class="flex flex-col gap-2 ml-8">
             <div class="flex items-center gap-2">
               <label class="text-xs text-gray-600 w-20">Basisgewicht:</label>
