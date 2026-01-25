@@ -53,7 +53,7 @@ class App {
     if (!picker) return;
 
     picker.innerHTML = '<div class="weight-picker-spacer"></div>';
-    for (let w = 0; w <= 150; w += 1) {
+    for (let w = 0; w <= 200; w += 1) {
       picker.innerHTML += `<div class="weight-picker-item" data-value="${w}">${w} kg</div>`;
     }
     picker.innerHTML += '<div class="weight-picker-spacer"></div>';
