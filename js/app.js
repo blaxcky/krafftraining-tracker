@@ -213,7 +213,7 @@ class App {
               <p>${weightDisplay}${additionalPlates > 0 ? ` <span class="text-xs text-gray-500">= ${this.formatWeight(totalWeight)} kg</span>` : ''}</p>
               ${calories > 0 ? `
               <div class="mt-1">
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500 text-white">
                   🔥 ${calories} kcal
                 </span>
               </div>
@@ -325,7 +325,7 @@ class App {
                     onchange="app.updateTrainingPlates(${exercise.id}, 1, this.checked, ${isCompleted})"
                     class="sr-only peer">
                   <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-colors
-                    peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500
+                    peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500
                     bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200">
                     +2,5 kg
                   </span>
@@ -335,7 +335,7 @@ class App {
                     onchange="app.updateTrainingPlates(${exercise.id}, 2, this.checked, ${isCompleted})"
                     class="sr-only peer">
                   <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-colors
-                    peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500
+                    peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500
                     bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200">
                     +2,5 kg
                   </span>
@@ -348,7 +348,7 @@ class App {
             </div>
             ${calories > 0 ? `
             <div class="mt-1">
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500 text-white">
                 🔥 ${calories} kcal
               </span>
             </div>
