@@ -53,7 +53,7 @@ class App {
     if (!picker) return;
 
     picker.innerHTML = '<div class="weight-picker-spacer"></div>';
-    for (let w = 0; w <= 150; w += 5) {
+    for (let w = 0; w <= 150; w += 1) {
       picker.innerHTML += `<div class="weight-picker-item" data-value="${w}">${w} kg</div>`;
     }
     picker.innerHTML += '<div class="weight-picker-spacer"></div>';
@@ -85,8 +85,8 @@ class App {
   setPickerValue(pickerId, value) {
     const picker = document.getElementById(pickerId);
     if (!picker) return;
-    const snapped = Math.round(value / 5) * 5;
-    const index = snapped / 5;
+    const snapped = Math.round(value);
+    const index = snapped;
     picker.scrollTop = index * 36;
   }
 
@@ -353,10 +353,10 @@ class App {
             <div class="flex items-center gap-2">
               <label class="text-xs text-gray-600 w-20">Basisgewicht:</label>
               <div class="flex items-center gap-1">
-                <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -5, ${isCompleted})"
+                <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -1, ${isCompleted})"
                   class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-lg font-bold">-</button>
                 <span class="w-14 text-center font-semibold text-primary">${this.formatWeight(baseWeight)} kg</span>
-                <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 5, ${isCompleted})"
+                <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 1, ${isCompleted})"
                   class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-lg font-bold">+</button>
               </div>
             </div>
