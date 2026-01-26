@@ -278,9 +278,13 @@ class Storage {
 
   async exportExercises() {
     const exercises = await this.getAllExercises();
+    const emailAddress = this.getEmailAddress();
     const exportData = {
-      version: '2.1',
+      version: '2.2',
       exportDate: new Date().toISOString(),
+      settings: {
+        emailAddress: emailAddress || undefined
+      },
       exercises: exercises.map(ex => ({
         name: ex.name,
         type: ex.type || 'exercise',
@@ -360,10 +364,16 @@ class Storage {
             }
           }
           
+          // E-Mail-Adresse importieren falls vorhanden
+          if (importData.settings && importData.settings.emailAddress) {
+            this.saveEmailAddress(importData.settings.emailAddress);
+          }
+
           resolve({
             imported: importedCount,
             skipped: skippedCount,
-            total: importData.exercises.length
+            total: importData.exercises.length,
+            emailImported: !!(importData.settings && importData.settings.emailAddress)
           });
         } catch (error) {
           reject(new Error('Fehler beim Lesen der Backup-Datei: ' + error.message));
@@ -468,6 +478,16 @@ class Storage {
       request.onsuccess = () => resolve(training);
       request.onerror = () => reject(request.error);
     });
+  }
+
+  // E-Mail-Adresse speichern
+  saveEmailAddress(email) {
+    localStorage.setItem('krafttraining_email', email.trim());
+  }
+
+  // E-Mail-Adresse laden
+  getEmailAddress() {
+    return localStorage.getItem('krafttraining_email') || '';
   }
 
   // Kalorien-Zusammenfassung der aktuellen Session berechnen

@@ -144,8 +144,9 @@ class App {
     // Cardio Event-Listener
     document.getElementById('add-cardio-btn').addEventListener('click', () => this.addCardioEntry());
 
-    // E-Mail senden Button
+    // E-Mail senden Button und Eingabefeld
     document.getElementById('send-calories-email-btn').addEventListener('click', () => this.sendCaloriesSummaryEmail());
+    document.getElementById('email-address-input').addEventListener('change', (e) => this.saveEmailAddress(e.target.value));
 
     document.addEventListener('click', (e) => {
       if (e.target.id === 'exercise-modal') {
@@ -804,7 +805,18 @@ class App {
     document.getElementById('no-training-calories').classList.add('hidden');
     document.getElementById('active-calories').classList.remove('hidden');
 
+    // E-Mail-Adresse laden
+    const emailInput = document.getElementById('email-address-input');
+    if (emailInput) {
+      emailInput.value = storage.getEmailAddress();
+    }
+
     await this.updateCaloriesDisplay();
+  }
+
+  // E-Mail-Adresse speichern
+  saveEmailAddress(email) {
+    storage.saveEmailAddress(email);
   }
 
   // Kalorien-Anzeige aktualisieren
@@ -924,8 +936,17 @@ class App {
       return;
     }
 
-    // E-Mail-Adresse
-    const emailAddress = 'markus.schwarz1993@gmail.com';
+    // E-Mail-Adresse aus Eingabefeld holen und speichern
+    const emailInput = document.getElementById('email-address-input');
+    const emailAddress = emailInput ? emailInput.value.trim() : '';
+
+    if (!emailAddress) {
+      this.showToast('Bitte E-Mail-Adresse eingeben', 'error');
+      return;
+    }
+
+    // E-Mail-Adresse speichern
+    storage.saveEmailAddress(emailAddress);
 
     // Datum formatieren
     const now = new Date();
