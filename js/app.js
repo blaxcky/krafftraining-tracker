@@ -43,7 +43,7 @@ class App {
     if (plate2 && plate2.checked) additionalPlates++;
 
     const totalWeight = baseWeight + (additionalPlates * 2.5);
-    totalWeightSpan.textContent = `${totalWeight} kg`;
+    totalWeightSpan.textContent = `${totalWeight} KG`;
   }
 
   // Initialisiert den Weight-Picker
@@ -160,14 +160,15 @@ class App {
 
     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
     document.querySelectorAll('nav button').forEach(btn => {
-      btn.classList.remove('bg-primary', 'text-white');
-      btn.classList.add('text-gray-600', 'hover:bg-gray-50');
+      btn.classList.remove('active');
     });
 
-    document.getElementById(`${tab}-tab`).classList.remove('hidden');
+    const tabContent = document.getElementById(`${tab}-tab`);
+    tabContent.classList.remove('hidden');
+    tabContent.classList.add('fade-in');
+
     const activeBtn = document.getElementById(`tab-${tab}`);
-    activeBtn.classList.add('bg-primary', 'text-white');
-    activeBtn.classList.remove('text-gray-600', 'hover:bg-gray-50');
+    activeBtn.classList.add('active');
 
     // Kalorien-Tab laden wenn ausgewählt
     if (tab === 'calories') {
@@ -178,47 +179,49 @@ class App {
   async loadExercises() {
     const exercises = await storage.getAllExercises();
     const container = document.getElementById('exercises-list');
-    
+
     if (exercises.length === 0) {
       container.innerHTML = `
-        <div class="bg-white rounded-lg shadow-sm p-6 text-center text-gray-500">
-          <div class="text-4xl mb-2">🏋️‍♂️</div>
-          <p>Noch keine Übungen vorhanden.</p>
-          <p class="text-sm mt-1">Füge deine erste Übung hinzu!</p>
+        <div class="card rounded-2xl p-8 text-center">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+            <span class="text-3xl">🏋️‍♂️</span>
+          </div>
+          <p class="text-white/60">Noch keine Übungen vorhanden.</p>
+          <p class="text-sm text-white/40 mt-1">Füge deine erste Übung hinzu!</p>
         </div>
       `;
       return;
     }
-    
+
     container.innerHTML = exercises.map((exercise, index) => {
       const isHeader = exercise.type === 'header';
-      const marginTop = isHeader && index > 0 ? 'mt-10' : '';
+      const marginTop = isHeader && index > 0 ? 'mt-8' : '';
       const moveUpDisabled = index === 0;
       const moveDownDisabled = index === exercises.length - 1;
 
       const controls = `
         <div class="flex gap-1">
-          <button onclick="app.moveExercise(${exercise.id}, 'up')" 
-                  class="icon-button text-gray-500 hover:text-gray-700 p-2 ${moveUpDisabled ? 'opacity-50 cursor-not-allowed' : ''}"
+          <button onclick="app.moveExercise(${exercise.id}, 'up')"
+                  class="icon-btn ${moveUpDisabled ? 'opacity-30 cursor-not-allowed' : ''}"
                   ${moveUpDisabled ? 'disabled' : ''}>
-            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="m4.5 15.75 7.5-7.5 7.5 7.5"/>
             </svg>
           </button>
-          <button onclick="app.moveExercise(${exercise.id}, 'down')" 
-                  class="icon-button text-gray-500 hover:text-gray-700 p-2 ${moveDownDisabled ? 'opacity-50 cursor-not-allowed' : ''}"
+          <button onclick="app.moveExercise(${exercise.id}, 'down')"
+                  class="icon-btn ${moveDownDisabled ? 'opacity-30 cursor-not-allowed' : ''}"
                   ${moveDownDisabled ? 'disabled' : ''}>
-            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
             </svg>
           </button>
-          <button onclick="app.editExercise(${exercise.id})" class="icon-button text-blue-500 hover:text-blue-600 p-2">
-            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <button onclick="app.editExercise(${exercise.id})" class="icon-btn text-accent hover:text-accent">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
             </svg>
           </button>
-          <button onclick="app.deleteExercise(${exercise.id})" class="icon-button text-red-500 hover:text-red-600 p-2">
-            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <button onclick="app.deleteExercise(${exercise.id})" class="icon-btn text-red-500 hover:text-red-500">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="m19 7-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
             </svg>
           </button>
@@ -229,16 +232,15 @@ class App {
         const icon = this.getHeaderIcon(exercise.name);
         return `
           <div class="${marginTop}">
-            <div class="relative overflow-hidden rounded-xl border border-primary/10 bg-gradient-to-r from-primary/15 via-secondary/10 to-primary/5 shadow-sm">
-              <div class="flex items-center justify-between px-5 py-3 bg-white/80 backdrop-blur-sm">
+            <div class="header-badge rounded-xl border border-accent/10 overflow-hidden">
+              <div class="flex items-center justify-between px-5 py-4 relative z-10">
                 <div class="flex items-center gap-3">
                   ${icon}
-                  <h3 class="text-lg font-semibold text-primary">${exercise.name}</h3>
+                  <h3 class="text-lg font-display tracking-wide text-white">${exercise.name.toUpperCase()}</h3>
                 </div>
                 ${controls}
               </div>
             </div>
-            <hr class="mt-3 border-t border-gray-200">
           </div>
         `;
       }
@@ -249,19 +251,19 @@ class App {
       const calories = exercise.calories || 0;
       let weightDisplay = `${this.formatWeight(baseWeight)} kg`;
       if (additionalPlates > 0) {
-        weightDisplay += ` <span class="text-xs text-green-600">+ ${additionalPlates}x 2.5kg</span>`;
+        weightDisplay += ` <span class="text-xs text-accent">+ ${additionalPlates}x 2.5kg</span>`;
       }
       const totalWeight = baseWeight + (additionalPlates * 2.5);
 
       return `
-        <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between ${marginTop}">
+        <div class="card rounded-xl p-4 flex items-center justify-between ${marginTop}">
           <div class="flex-1">
-            <h3 class="font-medium text-gray-900">${exercise.name}</h3>
-            <div class="text-sm text-gray-600">
-              <p>${weightDisplay}${additionalPlates > 0 ? ` <span class="text-xs text-gray-500">= ${this.formatWeight(totalWeight)} kg</span>` : ''}</p>
+            <h3 class="font-medium text-white">${exercise.name}</h3>
+            <div class="text-sm text-white/50 mt-1">
+              <p>${weightDisplay}${additionalPlates > 0 ? ` <span class="text-xs text-white/30">= ${this.formatWeight(totalWeight)} kg</span>` : ''}</p>
               ${calories > 0 ? `
-              <div class="mt-1">
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500 text-white">
+              <div class="mt-2">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-500/20 text-orange-400 border border-orange-500/20">
                   🔥 ${calories} kcal
                 </span>
               </div>
@@ -292,9 +294,9 @@ class App {
     const actualExercises = training.exercises.filter(ex => ex.type !== 'header');
     const completed = actualExercises.filter(ex => this.isExerciseCompleted(ex)).length;
     const total = actualExercises.length;
-    
+
     document.getElementById('training-progress').textContent = `${completed} von ${total} Übungen erledigt`;
-    
+
     const container = document.getElementById('training-exercises');
     const showCompleted = this.showCompletedExercises;
     const fragments = [];
@@ -302,17 +304,16 @@ class App {
 
     const flushPendingHeader = () => {
       if (!pendingHeader) return;
-      const marginTop = fragments.length > 0 ? 'mt-10' : '';
+      const marginTop = fragments.length > 0 ? 'mt-8' : '';
       const icon = this.getHeaderIcon(pendingHeader.name);
       fragments.push(`
         <div class="${marginTop}">
-          <div class="relative overflow-hidden rounded-xl border border-primary/10 bg-gradient-to-r from-primary/15 via-secondary/10 to-primary/5 shadow-sm">
-            <div class="flex items-center gap-3 px-5 py-3 bg-white/80 backdrop-blur-sm">
+          <div class="header-badge rounded-xl border border-accent/10 overflow-hidden">
+            <div class="flex items-center gap-3 px-5 py-4 relative z-10">
               ${icon}
-              <h3 class="text-lg font-semibold text-primary">${pendingHeader.name}</h3>
+              <h3 class="text-lg font-display tracking-wide text-white">${pendingHeader.name.toUpperCase()}</h3>
             </div>
           </div>
-          <hr class="mt-3 border-t border-gray-200">
         </div>
       `);
       pendingHeader = null;
@@ -334,39 +335,37 @@ class App {
         flushPendingHeader();
       }
 
-      const cardStateClasses = isCompleted ? 'opacity-75 bg-green-50' : '';
-      const nameClasses = isCompleted ? 'line-through text-gray-500' : 'text-gray-900';
+      const cardStateClasses = isCompleted ? 'opacity-60' : '';
+      const nameClasses = isCompleted ? 'line-through text-white/50' : 'text-white';
       const baseWeight = exercise.baseWeight || 0;
       const additionalPlates = exercise.additionalPlates || 0;
       const calories = exercise.calories || 0;
 
       fragments.push(`
-        <div class="bg-white rounded-lg shadow-sm p-4 ${cardStateClasses}">
-          <div class="mb-3">
-            <h3 class="font-medium text-lg ${nameClasses}">${exercise.name}</h3>
+        <div class="card rounded-xl p-5 ${cardStateClasses}">
+          <div class="mb-4">
+            <h3 class="font-semibold text-lg ${nameClasses}">${exercise.name}</h3>
           </div>
-          <hr class="my-2 border-t border-gray-200">
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center gap-2">
-              <label class="text-xs text-gray-600 w-20">Basisgewicht:</label>
-              <div class="flex items-center gap-1">
+          <div class="h-px bg-white/5 mb-4"></div>
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <label class="text-xs text-white/40 w-24">Basisgewicht:</label>
+              <div class="flex items-center gap-2">
                 <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -1, ${isCompleted})"
-                  class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-lg font-bold">-</button>
-                <span class="w-14 text-center font-semibold text-primary">${this.formatWeight(baseWeight)} kg</span>
+                  class="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-lg font-bold transition-colors">-</button>
+                <span class="w-16 text-center font-display text-xl text-accent">${this.formatWeight(baseWeight)} KG</span>
                 <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 1, ${isCompleted})"
-                  class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-lg font-bold">+</button>
+                  class="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-lg font-bold transition-colors">+</button>
               </div>
             </div>
-            <div class="flex items-center gap-4">
-              <label class="text-xs text-gray-600 w-20">Zusatzgewichte:</label>
+            <div class="flex items-center gap-3">
+              <label class="text-xs text-white/40 w-24">Zusatzgewichte:</label>
               <div class="flex gap-2">
                 <label class="cursor-pointer">
                   <input type="checkbox" ${additionalPlates >= 1 ? 'checked' : ''}
                     onchange="app.updateTrainingPlates(${exercise.id}, 1, this.checked, ${isCompleted})"
                     class="sr-only peer">
-                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-colors
-                    peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500
-                    bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200">
+                  <span class="chip inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium peer-checked:active">
                     +2,5 kg
                   </span>
                 </label>
@@ -374,21 +373,19 @@ class App {
                   <input type="checkbox" ${additionalPlates >= 2 ? 'checked' : ''}
                     onchange="app.updateTrainingPlates(${exercise.id}, 2, this.checked, ${isCompleted})"
                     class="sr-only peer">
-                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-colors
-                    peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500
-                    bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200">
+                  <span class="chip inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium peer-checked:active">
                     +2,5 kg
                   </span>
                 </label>
               </div>
             </div>
-            <div class="text-xs text-gray-600">
-              <span>Gesamtgewicht: </span>
-              <span class="font-semibold text-primary">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
+            <div class="flex items-center gap-3 mt-1">
+              <span class="text-xs text-white/40 w-24">Gesamtgewicht:</span>
+              <span class="font-display text-accent text-lg">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} KG</span>
             </div>
             ${calories > 0 ? `
             <div class="mt-1">
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500 text-white">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-500/20 text-orange-400 border border-orange-500/20">
                 🔥 ${calories} kcal
               </span>
             </div>
@@ -397,11 +394,7 @@ class App {
           <button
             type="button"
             onclick="app.toggleExercise(${exercise.id}, ${!isCompleted})"
-            class="w-full mt-3 py-2 rounded-lg text-sm text-center transition-colors ${
-              isCompleted
-                ? 'bg-green-100 text-green-700 border border-green-300'
-                : 'bg-green-500 text-white hover:bg-green-600 active:bg-green-700'
-            }">
+            class="complete-btn w-full mt-5 py-3 rounded-xl text-sm font-semibold text-center ${isCompleted ? 'completed' : ''}">
             ${isCompleted ? '✓ Erledigt' : 'Übung abschließen'}
           </button>
         </div>
@@ -416,10 +409,12 @@ class App {
         : 'Füge Übungen hinzu, um loszulegen.';
 
       container.innerHTML = `
-        <div class="bg-white rounded-lg shadow-sm p-6 text-center text-gray-600">
-          <div class="text-4xl mb-2">${messageIcon}</div>
-          <p>${messageText}</p>
-          <p class="text-sm text-gray-500 mt-1">${messageHint}</p>
+        <div class="card rounded-2xl p-8 text-center">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center glow-accent">
+            <span class="text-3xl">${messageIcon}</span>
+          </div>
+          <p class="text-white/70">${messageText}</p>
+          <p class="text-sm text-white/40 mt-2">${messageHint}</p>
         </div>
       `;
     } else {
@@ -492,8 +487,8 @@ class App {
 
   wrapIconImg(src, alt) {
     return `
-      <span class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-        <img src="${src}" alt="${alt}" class="h-7 w-7" loading="lazy" decoding="async">
+      <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
+        <img src="${src}" alt="${alt}" class="h-6 w-6 opacity-80" loading="lazy" decoding="async">
       </span>
     `;
   }
@@ -775,8 +770,8 @@ class App {
 
   showToast(message, type = 'success') {
     const toast = document.createElement('div');
-    toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg text-white font-medium z-50 transition-all duration-300 ${
-      type === 'error' ? 'bg-red-500' : 'bg-green-500'
+    toast.className = `toast fixed top-16 left-1/2 transform -translate-x-1/2 px-5 py-3 rounded-xl font-medium z-50 transition-all duration-300 ${
+      type === 'error' ? 'error border-red-500/30' : 'success'
     }`;
     toast.textContent = message;
 
@@ -784,6 +779,7 @@ class App {
 
     setTimeout(() => {
       toast.style.opacity = '0';
+      toast.style.transform = 'translate(-50%, -10px)';
       setTimeout(() => {
         if (toast.parentNode) {
           toast.parentNode.removeChild(toast);
@@ -835,13 +831,13 @@ class App {
     if (summary.cardioEntries.length > 0) {
       cardioListContainer.classList.remove('hidden');
       cardioList.innerHTML = summary.cardioEntries.map(entry => `
-        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+        <div class="flex items-center justify-between py-3 border-b border-white/5 last:border-b-0">
           <div>
-            <span class="font-medium text-gray-900">${entry.name}</span>
-            <span class="text-sm text-orange-500 ml-2">${entry.calories} kcal</span>
+            <span class="font-medium text-white">${entry.name}</span>
+            <span class="text-sm text-orange-400 ml-2">${entry.calories} kcal</span>
           </div>
-          <button onclick="app.deleteCardioEntry(${entry.id})" class="text-red-500 hover:text-red-600 p-1">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <button onclick="app.deleteCardioEntry(${entry.id})" class="icon-btn text-red-500 hover:text-red-500">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="m19 7-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
             </svg>
           </button>
@@ -860,9 +856,9 @@ class App {
     if (exercisesWithCalories.length > 0) {
       exerciseCaloriesContainer.classList.remove('hidden');
       exerciseCaloriesList.innerHTML = exercisesWithCalories.map(ex => `
-        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-          <span class="text-gray-900">${ex.name}</span>
-          <span class="text-sm text-orange-500">${ex.calories} kcal</span>
+        <div class="flex items-center justify-between py-3 border-b border-white/5 last:border-b-0">
+          <span class="text-white">${ex.name}</span>
+          <span class="text-sm text-orange-400 font-medium">${ex.calories} kcal</span>
         </div>
       `).join('');
     } else {

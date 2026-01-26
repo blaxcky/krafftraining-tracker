@@ -5,79 +5,217 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Krafttraining Tracker</title>
     <meta name="description" content="Minimalistischer Krafttraining Tracker - PWA">
-    <meta name="theme-color" content="#1f2937">
-    
+    <meta name="theme-color" content="#0a0a0a">
+
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512x512.png">
     <link rel="apple-touch-icon" href="icons/icon-512x512.png">
-    
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#1f2937',
-                        secondary: '#374151'
+                        primary: '#0a0a0a',
+                        secondary: '#1a1a1a',
+                        accent: '#c8ff00',
+                        'accent-dark': '#a3cc00',
+                        surface: '#141414',
+                        'surface-light': '#1e1e1e',
+                        muted: '#525252'
+                    },
+                    fontFamily: {
+                        display: ['"Bebas Neue"', 'sans-serif'],
+                        body: ['"DM Sans"', 'sans-serif']
                     }
                 }
             }
         }
     </script>
     <style>
-        .icon {
-            width: 20px;
-            height: 20px;
-            display: inline-block;
-            vertical-align: middle;
+        * {
+            font-family: 'DM Sans', sans-serif;
         }
-        .icon-button {
+
+        body {
+            background: linear-gradient(180deg, #0a0a0a 0%, #0f0f0f 100%);
+            min-height: 100vh;
+        }
+
+        /* Diagonal stripe pattern for headers */
+        .stripe-pattern {
+            background: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 4px,
+                rgba(200, 255, 0, 0.03) 4px,
+                rgba(200, 255, 0, 0.03) 8px
+            );
+        }
+
+        /* Glow effects */
+        .glow-accent {
+            box-shadow: 0 0 20px rgba(200, 255, 0, 0.15),
+                        0 0 40px rgba(200, 255, 0, 0.05);
+        }
+
+        .glow-accent-intense {
+            box-shadow: 0 0 30px rgba(200, 255, 0, 0.3),
+                        0 0 60px rgba(200, 255, 0, 0.1);
+        }
+
+        /* Card styling */
+        .card {
+            background: linear-gradient(145deg, #1a1a1a 0%, #141414 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            border-color: rgba(200, 255, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Button animations */
+        .btn-primary {
+            background: linear-gradient(135deg, #c8ff00 0%, #a3cc00 100%);
+            color: #0a0a0a;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 25px rgba(200, 255, 0, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: rgba(200, 255, 0, 0.1);
+            color: #c8ff00;
+            border: 1px solid rgba(200, 255, 0, 0.2);
             transition: all 0.2s ease;
         }
-        .icon-button:hover .icon {
-            transform: scale(1.1);
+
+        .btn-secondary:hover {
+            background: rgba(200, 255, 0, 0.15);
+            border-color: rgba(200, 255, 0, 0.4);
         }
-        .icon-button:disabled .icon {
-            opacity: 0.5;
-            transform: none;
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            transition: all 0.2s ease;
         }
-        .version-badge {
-            position: fixed !important;
-            top: 8px;
-            right: 8px;
-            font-size: 10px;
-            color: #6b7280;
-            background: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            opacity: 1;
-            z-index: 10000;
-            font-family: monospace;
-            border: 1px solid #e5e7eb;
-            pointer-events: none;
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
         }
-        /* Weight Picker Styles */
+
+        /* Tab navigation */
+        .tab-btn {
+            position: relative;
+            color: #525252;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 1rem 0.5rem;
+        }
+
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: #c8ff00;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-btn.active {
+            color: #c8ff00;
+        }
+
+        .tab-btn.active::after {
+            width: 100%;
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: #737373;
+        }
+
+        /* Section headers with diagonal accent */
+        .section-header {
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-header::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 50%;
+            transform: translateY(-50%) skewX(-15deg);
+            width: 4px;
+            height: 70%;
+            background: #c8ff00;
+        }
+
+        /* Weight picker */
         .weight-picker-container {
             position: relative;
-            height: 120px;
+            height: 140px;
             overflow: hidden;
-            background: #f9fafb;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
+            background: #0a0a0a;
+            border: 1px solid rgba(200, 255, 0, 0.1);
+            border-radius: 12px;
         }
+
         .weight-picker-container::before,
         .weight-picker-container::after {
             content: '';
             position: absolute;
-            left: 10%;
-            right: 10%;
+            left: 15%;
+            right: 15%;
             height: 2px;
-            background: #1f2937;
+            background: linear-gradient(90deg, transparent, #c8ff00, transparent);
             pointer-events: none;
             z-index: 10;
         }
-        .weight-picker-container::before { top: calc(50% - 18px); }
-        .weight-picker-container::after { top: calc(50% + 18px); }
+
+        .weight-picker-container::before { top: calc(50% - 22px); }
+        .weight-picker-container::after { top: calc(50% + 22px); }
+
         .weight-picker {
             height: 100%;
             overflow-y: scroll;
@@ -85,72 +223,330 @@
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
         }
+
         .weight-picker::-webkit-scrollbar { display: none; }
+
         .weight-picker-item {
-            height: 36px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1rem;
-            color: #9ca3af;
+            color: #404040;
             scroll-snap-align: center;
             cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
         }
+
         .weight-picker-item.selected {
-            color: #1f2937;
-            font-size: 1.25rem;
-            font-weight: 600;
+            color: #c8ff00;
+            font-size: 1.75rem;
         }
-        .weight-picker-spacer { height: 42px; }
+
+        .weight-picker-spacer { height: 48px; }
+
+        /* Input styling */
+        .input-field {
+            background: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus {
+            border-color: #c8ff00;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(200, 255, 0, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: #525252;
+        }
+
+        /* Pill/chip styling */
+        .chip {
+            background: rgba(200, 255, 0, 0.1);
+            color: #c8ff00;
+            border: 1px solid rgba(200, 255, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .chip.active {
+            background: #c8ff00;
+            color: #0a0a0a;
+            border-color: #c8ff00;
+        }
+
+        /* Icon buttons */
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #525252;
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .icon-btn:hover.text-red-500 {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .icon-btn:hover.text-accent {
+            background: rgba(200, 255, 0, 0.1);
+            border-color: rgba(200, 255, 0, 0.2);
+        }
+
+        .icon-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .icon-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Progress ring */
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        /* Calories card gradient */
+        .calories-gradient {
+            background: linear-gradient(135deg, #c8ff00 0%, #7dd600 50%, #00cc66 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .calories-gradient::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 10px,
+                rgba(0, 0, 0, 0.03) 10px,
+                rgba(0, 0, 0, 0.03) 20px
+            );
+        }
+
+        /* Modal styling */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Toast styling */
+        .toast {
+            background: #1a1a1a;
+            border: 1px solid rgba(200, 255, 0, 0.2);
+            color: #fff;
+        }
+
+        .toast.success {
+            border-color: rgba(200, 255, 0, 0.3);
+        }
+
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Version badge */
+        .version-badge {
+            position: fixed !important;
+            top: 8px;
+            right: 8px;
+            font-size: 10px;
+            color: #404040;
+            background: #141414;
+            padding: 4px 8px;
+            border-radius: 6px;
+            opacity: 1;
+            z-index: 10000;
+            font-family: 'DM Sans', monospace;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            pointer-events: none;
+        }
+
+        /* Smooth fade animations */
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Pulse animation for active states */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(200, 255, 0, 0.2); }
+            50% { box-shadow: 0 0 30px rgba(200, 255, 0, 0.4); }
+        }
+
+        .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        /* Header badge styling */
+        .header-badge {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-badge::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(200, 255, 0, 0.1) 0%, rgba(200, 255, 0, 0.02) 100%);
+        }
+
+        .header-badge::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #c8ff00 0%, #a3cc00 100%);
+        }
+
+        /* Exercise complete button */
+        .complete-btn {
+            background: linear-gradient(135deg, rgba(200, 255, 0, 0.1) 0%, rgba(200, 255, 0, 0.05) 100%);
+            border: 1px solid rgba(200, 255, 0, 0.2);
+            color: #c8ff00;
+            transition: all 0.3s ease;
+        }
+
+        .complete-btn:hover {
+            background: linear-gradient(135deg, #c8ff00 0%, #a3cc00 100%);
+            color: #0a0a0a;
+            transform: scale(1.02);
+        }
+
+        .complete-btn.completed {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        /* Number display */
+        .big-number {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+        }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="min-h-screen text-white">
     <!-- Version Badge -->
-    <div id="version-badge" class="version-badge" style="position: fixed !important; top: 8px; right: 8px; font-size: 10px; color: #6b7280; background: white; padding: 2px 6px; border-radius: 4px; opacity: 1; z-index: 99999; font-family: monospace; border: 1px solid #e5e7eb; pointer-events: none;">v2.7 (c19)</div>
-    
-    <div id="app" class="container mx-auto px-4 py-6 max-w-md">
-        
+    <div id="version-badge" class="version-badge">v2.7</div>
+
+    <!-- Background decoration -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-radial from-accent/5 to-transparent rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-radial from-accent/3 to-transparent rounded-full blur-3xl"></div>
+    </div>
+
+    <div id="app" class="container mx-auto px-4 py-6 max-w-md relative z-10">
+
         <!-- Header -->
-        <header class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-primary mb-2">💪 Krafttraining</h1>
-            <p class="text-gray-600">Einfach. Effektiv. Offline.</p>
+        <header class="text-center mb-8 pt-4">
+            <div class="inline-flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center glow-accent">
+                    <span class="text-2xl">💪</span>
+                </div>
+            </div>
+            <h1 class="text-5xl font-display text-white tracking-wider mb-2">KRAFTTRAINING</h1>
+            <p class="text-muted font-light tracking-wide">Einfach • Effektiv • Offline</p>
         </header>
 
         <!-- Navigation -->
-        <nav class="mb-6">
-            <div class="flex bg-white rounded-lg shadow-sm overflow-hidden">
-                <button id="tab-exercises" class="flex-1 py-3 px-4 text-center font-medium bg-primary text-white">
+        <nav class="mb-8">
+            <div class="flex justify-around bg-surface/50 backdrop-blur-sm rounded-2xl border border-white/5 p-1">
+                <button id="tab-exercises" class="tab-btn flex-1 active font-body">
                     Übungen
                 </button>
-                <button id="tab-training" class="flex-1 py-3 px-4 text-center font-medium text-gray-600 hover:bg-gray-50">
+                <button id="tab-training" class="tab-btn flex-1 font-body">
                     Training
                 </button>
-                <button id="tab-calories" class="flex-1 py-3 px-4 text-center font-medium text-gray-600 hover:bg-gray-50">
+                <button id="tab-calories" class="tab-btn flex-1 font-body">
                     Kalorien
                 </button>
             </div>
         </nav>
 
         <!-- Exercises Tab -->
-        <div id="exercises-tab" class="tab-content">
-            <div class="bg-white rounded-lg shadow-sm p-4 mb-4 space-y-3">
-                <div class="flex gap-2">
-                    <button id="add-exercise-btn" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
-                        <span class="text-xl">+</span>
+        <div id="exercises-tab" class="tab-content fade-in">
+            <div class="card rounded-2xl p-5 mb-6">
+                <div class="flex gap-3 mb-4">
+                    <button id="add-exercise-btn" class="flex-1 btn-primary py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 font-semibold">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
                         Neue Übung
                     </button>
-                    <button id="add-header-btn" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
-                        <span class="text-xl">#</span>
+                    <button id="add-header-btn" class="flex-1 btn-secondary py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 font-medium">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+                        </svg>
                         Überschrift
                     </button>
                 </div>
-                
-                <div class="flex gap-2">
-                    <button id="export-btn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm">
-                        📤 Export
+
+                <div class="flex gap-3">
+                    <button id="export-btn" class="flex-1 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-sm border border-white/5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                        </svg>
+                        Export
                     </button>
-                    <button id="import-btn" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm">
-                        📥 Import
+                    <button id="import-btn" class="flex-1 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-sm border border-white/5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Import
                     </button>
                 </div>
                 <input type="file" id="import-file" accept=".json" class="hidden">
@@ -161,59 +557,55 @@
             </div>
 
             <!-- Add/Edit Exercise Modal -->
-            <div id="exercise-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                <div class="bg-white rounded-lg w-full max-w-sm p-6">
-                    <h3 id="modal-title" class="text-lg font-semibold mb-4">Neue Übung</h3>
+            <div id="exercise-modal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+                <div class="modal-content rounded-2xl w-full max-w-sm p-6 fade-in">
+                    <h3 id="modal-title" class="text-2xl font-display tracking-wide text-white mb-6">NEUE ÜBUNG</h3>
                     <form id="exercise-form">
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Übungsname</label>
-                            <input type="text" id="exercise-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-white/60 mb-2">Übungsname</label>
+                            <input type="text" id="exercise-name" class="input-field w-full px-4 py-3 rounded-xl" placeholder="z.B. Bankdrücken" required>
                         </div>
                         <div class="mb-6" id="weight-field">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Basisgewicht (kg)</label>
+                            <label class="block text-sm font-medium text-white/60 mb-2">Basisgewicht (kg)</label>
                             <div class="weight-picker-container">
                                 <div class="weight-picker" id="exercise-weight-picker"></div>
                             </div>
                             <input type="hidden" id="exercise-weight" value="0">
 
-                            <div class="mt-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-3">Zusatzgewichte (2.5 kg Scheiben)</label>
-                                <div class="flex gap-2">
+                            <div class="mt-5">
+                                <label class="block text-sm font-medium text-white/60 mb-3">Zusatzgewichte (2.5 kg Scheiben)</label>
+                                <div class="flex gap-3">
                                     <label class="cursor-pointer">
                                         <input type="checkbox" id="plate-1" class="sr-only peer" onchange="app.updatePlateCheckboxes()">
-                                        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border transition-colors
-                                            peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500
-                                            bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200">
+                                        <span class="chip inline-flex items-center px-4 py-2 rounded-full text-sm font-medium peer-checked:active">
                                             +2,5 kg
                                         </span>
                                     </label>
                                     <label class="cursor-pointer">
                                         <input type="checkbox" id="plate-2" class="sr-only peer" onchange="app.updatePlateCheckboxes()">
-                                        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border transition-colors
-                                            peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500
-                                            bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200">
+                                        <span class="chip inline-flex items-center px-4 py-2 rounded-full text-sm font-medium peer-checked:active">
                                             +2,5 kg
                                         </span>
                                     </label>
                                 </div>
                             </div>
 
-                            <div class="mt-3 text-sm text-gray-600">
-                                <span>Gesamtgewicht: </span>
-                                <span id="total-weight" class="font-semibold text-primary">0 kg</span>
+                            <div class="mt-4 p-3 bg-accent/5 rounded-xl border border-accent/10">
+                                <span class="text-white/50 text-sm">Gesamtgewicht: </span>
+                                <span id="total-weight" class="text-accent font-semibold big-number text-lg">0 KG</span>
                             </div>
 
-                            <div class="mt-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Kalorien pro Satz (optional)</label>
-                                <input type="number" inputmode="numeric" id="exercise-calories" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="z.B. 50">
-                                <p class="text-xs text-gray-500 mt-1">Geschätzte Kalorien, die bei einem Satz verbrannt werden</p>
+                            <div class="mt-5">
+                                <label class="block text-sm font-medium text-white/60 mb-2">Kalorien pro Satz (optional)</label>
+                                <input type="number" inputmode="numeric" id="exercise-calories" class="input-field w-full px-4 py-3 rounded-xl" placeholder="z.B. 50">
+                                <p class="text-xs text-white/30 mt-2">Geschätzte Kalorien pro Satz</p>
                             </div>
                         </div>
                         <div class="flex gap-3">
-                            <button type="button" id="cancel-btn" class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            <button type="button" id="cancel-btn" class="flex-1 py-3 px-4 rounded-xl text-white/60 hover:text-white bg-white/5 hover:bg-white/10 transition-all border border-white/5">
                                 Abbrechen
                             </button>
-                            <button type="submit" class="flex-1 py-2 px-4 bg-primary text-white rounded-lg hover:bg-gray-700">
+                            <button type="submit" class="flex-1 btn-primary py-3 px-4 rounded-xl font-semibold">
                                 Speichern
                             </button>
                         </div>
@@ -224,29 +616,31 @@
 
         <!-- Training Tab -->
         <div id="training-tab" class="tab-content hidden">
-            <div id="no-training" class="text-center py-12">
-                <div class="bg-white rounded-lg shadow-sm p-6">
-                    <div class="text-6xl mb-4">🏋️</div>
-                    <h3 class="text-lg font-semibold mb-2">Bereit für dein Training?</h3>
-                    <p class="text-gray-600 mb-6">Starte dein Workout mit allen verfügbaren Übungen</p>
-                    <button id="start-training-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+            <div id="no-training" class="text-center py-12 fade-in">
+                <div class="card rounded-2xl p-8">
+                    <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center glow-accent">
+                        <span class="text-4xl">🏋️</span>
+                    </div>
+                    <h3 class="text-2xl font-display tracking-wide text-white mb-2">BEREIT FÜR DEIN TRAINING?</h3>
+                    <p class="text-white/50 mb-8">Starte dein Workout mit allen verfügbaren Übungen</p>
+                    <button id="start-training-btn" class="btn-primary py-4 px-8 rounded-xl font-semibold text-lg glow-accent-intense pulse-glow">
                         Training starten
                     </button>
                 </div>
             </div>
 
-            <div id="active-training" class="hidden">
-                <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+            <div id="active-training" class="hidden fade-in">
+                <div class="card rounded-2xl p-5 mb-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="font-semibold text-lg">Aktives Training</h3>
-                            <p class="text-gray-600 text-sm" id="training-progress">0 von 0 Übungen erledigt</p>
+                            <h3 class="font-display text-xl tracking-wide text-white">AKTIVES TRAINING</h3>
+                            <p class="text-white/40 text-sm mt-1" id="training-progress">0 von 0 Übungen erledigt</p>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <button id="toggle-completed-btn" type="button" class="text-sm text-gray-500 hover:text-gray-700 font-medium">
+                        <div class="flex items-center gap-2">
+                            <button id="toggle-completed-btn" type="button" class="text-sm text-white/40 hover:text-white/70 font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5">
                                 Erledigte anzeigen
                             </button>
-                            <button id="end-training-btn" type="button" class="text-red-500 hover:text-red-600 font-medium">
+                            <button id="end-training-btn" type="button" class="btn-danger px-4 py-2 rounded-lg font-medium text-sm">
                                 Beenden
                             </button>
                         </div>
@@ -261,39 +655,44 @@
 
         <!-- Calories Tab -->
         <div id="calories-tab" class="tab-content hidden">
-            <div id="no-training-calories" class="text-center py-12">
-                <div class="bg-white rounded-lg shadow-sm p-6">
-                    <div class="text-6xl mb-4">🔥</div>
-                    <h3 class="text-lg font-semibold mb-2">Kein aktives Training</h3>
-                    <p class="text-gray-600">Starte ein Training, um deine Kalorien zu tracken</p>
+            <div id="no-training-calories" class="text-center py-12 fade-in">
+                <div class="card rounded-2xl p-8">
+                    <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+                        <span class="text-4xl">🔥</span>
+                    </div>
+                    <h3 class="text-2xl font-display tracking-wide text-white mb-2">KEIN AKTIVES TRAINING</h3>
+                    <p class="text-white/50">Starte ein Training, um deine Kalorien zu tracken</p>
                 </div>
             </div>
 
-            <div id="active-calories" class="hidden">
+            <div id="active-calories" class="hidden fade-in">
                 <!-- Kalorien-Zusammenfassung -->
-                <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg shadow-sm p-6 mb-4 text-white">
-                    <div class="text-center">
-                        <p class="text-sm opacity-90 mb-1">Gesamtkalorien verbrannt</p>
-                        <p id="total-calories-display" class="text-5xl font-bold">0</p>
-                        <p class="text-sm opacity-90 mt-1">kcal</p>
-                    </div>
-                    <div class="flex justify-around mt-4 pt-4 border-t border-white/20">
-                        <div class="text-center">
-                            <p class="text-2xl font-semibold" id="exercise-calories-display">0</p>
-                            <p class="text-xs opacity-75">Krafttraining</p>
+                <div class="calories-gradient rounded-2xl p-6 mb-6 text-primary relative">
+                    <div class="relative z-10">
+                        <div class="text-center mb-6">
+                            <p class="text-primary/60 text-sm font-medium mb-2">GESAMTKALORIEN VERBRANNT</p>
+                            <p id="total-calories-display" class="text-7xl font-display tracking-wider">0</p>
+                            <p class="text-primary/60 text-sm font-medium mt-1">KCAL</p>
                         </div>
-                        <div class="text-center">
-                            <p class="text-2xl font-semibold" id="cardio-calories-display">0</p>
-                            <p class="text-xs opacity-75">Cardio</p>
+                        <div class="flex justify-around pt-4 border-t border-primary/10">
+                            <div class="text-center">
+                                <p class="text-3xl font-display" id="exercise-calories-display">0</p>
+                                <p class="text-xs text-primary/50 font-medium mt-1">KRAFTTRAINING</p>
+                            </div>
+                            <div class="w-px bg-primary/10"></div>
+                            <div class="text-center">
+                                <p class="text-3xl font-display" id="cardio-calories-display">0</p>
+                                <p class="text-xs text-primary/50 font-medium mt-1">CARDIO</p>
+                            </div>
                         </div>
                     </div>
                     <!-- E-Mail Eingabe und Senden -->
-                    <div class="mt-4 pt-4 border-t border-white/20">
+                    <div class="relative z-10 mt-6 pt-4 border-t border-primary/10">
                         <div class="flex gap-2">
                             <input type="email" id="email-address-input"
-                                class="flex-1 px-3 py-2 rounded-lg bg-white/20 text-white placeholder-white/60 border border-white/30 focus:outline-none focus:border-white/50"
+                                class="flex-1 px-4 py-3 rounded-xl bg-primary/10 text-primary placeholder-primary/40 border border-primary/20 focus:outline-none focus:border-primary/40 font-medium"
                                 placeholder="E-Mail-Adresse eingeben">
-                            <button id="send-calories-email-btn" class="bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                            <button id="send-calories-email-btn" class="bg-primary/20 hover:bg-primary/30 text-primary font-semibold py-3 px-5 rounded-xl transition-colors">
                                 Senden
                             </button>
                         </div>
@@ -301,49 +700,49 @@
                 </div>
 
                 <!-- Cardio hinzufügen -->
-                <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
-                    <h3 class="font-semibold text-lg mb-3">Cardio hinzufügen</h3>
+                <div class="card rounded-2xl p-5 mb-4">
+                    <h3 class="font-display text-xl tracking-wide text-white mb-4">CARDIO HINZUFÜGEN</h3>
 
                     <!-- Schnellauswahl -->
                     <div class="space-y-3 mb-4">
                         <!-- Crosstrainer -->
-                        <div class="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                            <div class="flex items-center gap-2 mb-2">
-                                <img src="icons/cardio-crosstrainer.svg" alt="Crosstrainer" class="h-6 w-6">
-                                <span class="font-medium text-gray-700">Crosstrainer</span>
+                        <div class="bg-white/3 rounded-xl p-4 border border-white/5 hover:border-orange-500/20 transition-colors">
+                            <div class="flex items-center gap-2 mb-3">
+                                <img src="icons/cardio-crosstrainer.svg" alt="Crosstrainer" class="h-6 w-6 opacity-80">
+                                <span class="font-medium text-white">Crosstrainer</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <input type="number" inputmode="numeric" id="quick-cardio-crosstrainer" class="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Kalorien eingeben">
-                                <span class="text-sm text-gray-500">kcal</span>
-                                <button onclick="app.addQuickCardio('Crosstrainer', 'quick-cardio-crosstrainer')" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
+                                <input type="number" inputmode="numeric" id="quick-cardio-crosstrainer" class="input-field flex-1 px-4 py-2.5 rounded-lg text-sm" placeholder="Kalorien eingeben">
+                                <span class="text-sm text-white/40">kcal</span>
+                                <button onclick="app.addQuickCardio('Crosstrainer', 'quick-cardio-crosstrainer')" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors">
                                     +
                                 </button>
                             </div>
                         </div>
                         <!-- Ergometer -->
-                        <div class="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                            <div class="flex items-center gap-2 mb-2">
-                                <img src="icons/cardio-ergometer.svg" alt="Ergometer" class="h-6 w-6">
-                                <span class="font-medium text-gray-700">Ergometer</span>
+                        <div class="bg-white/3 rounded-xl p-4 border border-white/5 hover:border-orange-500/20 transition-colors">
+                            <div class="flex items-center gap-2 mb-3">
+                                <img src="icons/cardio-ergometer.svg" alt="Ergometer" class="h-6 w-6 opacity-80">
+                                <span class="font-medium text-white">Ergometer</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <input type="number" inputmode="numeric" id="quick-cardio-ergometer" class="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Kalorien eingeben">
-                                <span class="text-sm text-gray-500">kcal</span>
-                                <button onclick="app.addQuickCardio('Ergometer', 'quick-cardio-ergometer')" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
+                                <input type="number" inputmode="numeric" id="quick-cardio-ergometer" class="input-field flex-1 px-4 py-2.5 rounded-lg text-sm" placeholder="Kalorien eingeben">
+                                <span class="text-sm text-white/40">kcal</span>
+                                <button onclick="app.addQuickCardio('Ergometer', 'quick-cardio-ergometer')" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors">
                                     +
                                 </button>
                             </div>
                         </div>
                         <!-- Liege-Ergometer -->
-                        <div class="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                            <div class="flex items-center gap-2 mb-2">
-                                <img src="icons/cardio-liege-ergometer.svg" alt="Liege-Ergometer" class="h-6 w-6">
-                                <span class="font-medium text-gray-700">Liege-Ergometer</span>
+                        <div class="bg-white/3 rounded-xl p-4 border border-white/5 hover:border-orange-500/20 transition-colors">
+                            <div class="flex items-center gap-2 mb-3">
+                                <img src="icons/cardio-liege-ergometer.svg" alt="Liege-Ergometer" class="h-6 w-6 opacity-80">
+                                <span class="font-medium text-white">Liege-Ergometer</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <input type="number" inputmode="numeric" id="quick-cardio-liege" class="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Kalorien eingeben">
-                                <span class="text-sm text-gray-500">kcal</span>
-                                <button onclick="app.addQuickCardio('Liege-Ergometer', 'quick-cardio-liege')" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
+                                <input type="number" inputmode="numeric" id="quick-cardio-liege" class="input-field flex-1 px-4 py-2.5 rounded-lg text-sm" placeholder="Kalorien eingeben">
+                                <span class="text-sm text-white/40">kcal</span>
+                                <button onclick="app.addQuickCardio('Liege-Ergometer', 'quick-cardio-liege')" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors">
                                     +
                                 </button>
                             </div>
@@ -351,18 +750,20 @@
                     </div>
 
                     <!-- Eigenes Cardio (eingeklappt) -->
-                    <details class="border-t border-gray-200 pt-3">
-                        <summary class="cursor-pointer text-gray-600 hover:text-gray-800 font-medium flex items-center gap-2">
-                            <span class="text-sm">▶</span>
+                    <details class="border-t border-white/5 pt-4">
+                        <summary class="cursor-pointer text-white/50 hover:text-white/80 font-medium flex items-center gap-2 transition-colors">
+                            <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
                             Eigenes Cardio hinzufügen
                         </summary>
-                        <div class="mt-3 space-y-3">
+                        <div class="mt-4 space-y-3">
                             <div>
-                                <input type="text" id="cardio-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="z.B. Laufen, Radfahren...">
+                                <input type="text" id="cardio-name" class="input-field w-full px-4 py-3 rounded-xl" placeholder="z.B. Laufen, Radfahren...">
                             </div>
                             <div class="flex gap-2">
-                                <input type="number" inputmode="numeric" id="cardio-calories" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Kalorien">
-                                <button id="add-cardio-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                                <input type="number" inputmode="numeric" id="cardio-calories" class="input-field flex-1 px-4 py-3 rounded-xl" placeholder="Kalorien">
+                                <button id="add-cardio-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-5 rounded-xl transition-colors">
                                     + Hinzufügen
                                 </button>
                             </div>
@@ -372,8 +773,8 @@
 
                 <!-- Cardio-Liste -->
                 <div id="cardio-list-container" class="mb-4 hidden">
-                    <div class="bg-white rounded-lg shadow-sm p-4">
-                        <h3 class="font-semibold text-lg mb-3">Cardio-Einträge</h3>
+                    <div class="card rounded-2xl p-5">
+                        <h3 class="font-display text-xl tracking-wide text-white mb-4">CARDIO-EINTRÄGE</h3>
                         <div id="cardio-list" class="space-y-2">
                             <!-- Cardio-Einträge werden hier dynamisch eingefügt -->
                         </div>
@@ -382,8 +783,8 @@
 
                 <!-- Krafttraining-Kalorien -->
                 <div id="exercise-calories-container" class="hidden">
-                    <div class="bg-white rounded-lg shadow-sm p-4">
-                        <h3 class="font-semibold text-lg mb-3">Krafttraining-Kalorien</h3>
+                    <div class="card rounded-2xl p-5">
+                        <h3 class="font-display text-xl tracking-wide text-white mb-4">KRAFTTRAINING-KALORIEN</h3>
                         <div id="exercise-calories-list" class="space-y-2">
                             <!-- Übungs-Kalorien werden hier dynamisch eingefügt -->
                         </div>
