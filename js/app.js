@@ -144,6 +144,9 @@ class App {
     // Cardio Event-Listener
     document.getElementById('add-cardio-btn').addEventListener('click', () => this.addCardioEntry());
 
+    // E-Mail senden Button
+    document.getElementById('send-calories-email-btn').addEventListener('click', () => this.sendCaloriesSummaryEmail());
+
     document.addEventListener('click', (e) => {
       if (e.target.id === 'exercise-modal') {
         this.hideExerciseModal();
@@ -910,6 +913,85 @@ class App {
       console.error('Error deleting cardio:', error);
       this.showToast('Fehler beim Löschen', 'error');
     }
+  }
+
+  // Kalorien-Übersicht per E-Mail senden
+  async sendCaloriesSummaryEmail() {
+    const summary = await storage.getSessionCaloriesSummary();
+
+    if (summary.totalCalories === 0) {
+      this.showToast('Keine Kalorien zum Senden vorhanden', 'error');
+      return;
+    }
+
+    // E-Mail-Adresse
+    const emailAddress = 'markus.schwarz1993@gmail.com';
+
+    // Datum formatieren
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('de-DE', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    const timeStr = now.toLocaleTimeString('de-DE', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // E-Mail-Betreff
+    const subject = `Trainings-Dokumentation vom ${dateStr}`;
+
+    // Schön formatierter E-Mail-Body
+    let body = '';
+
+    // Header
+    body += `TRAININGS-DOKUMENTATION\n`;
+    body += `========================\n\n`;
+
+    body += `${dateStr}\n`;
+    body += `${timeStr} Uhr\n\n`;
+
+    // Gesamtkalorien-Box
+    body += `----------------------------------------\n`;
+    body += `GESAMTKALORIEN VERBRANNT: ${summary.totalCalories} kcal\n`;
+    body += `----------------------------------------\n\n`;
+
+    // Aufschlüsselung
+    body += `Krafttraining: ${summary.exerciseCalories} kcal\n`;
+    body += `Cardio: ${summary.cardioCalories} kcal\n\n`;
+
+    // Krafttraining-Details
+    const exercisesWithCalories = summary.completedExercises.filter(ex => ex.calories > 0);
+    if (exercisesWithCalories.length > 0) {
+      body += `-- KRAFTTRAINING --\n\n`;
+      exercisesWithCalories.forEach(ex => {
+        const dots = '.'.repeat(Math.max(2, 32 - ex.name.length - String(ex.calories).length));
+        body += `${ex.name} ${dots} ${ex.calories} kcal\n`;
+      });
+      body += `\n`;
+    }
+
+    // Cardio-Details
+    if (summary.cardioEntries.length > 0) {
+      body += `-- CARDIO --\n\n`;
+      summary.cardioEntries.forEach(entry => {
+        const dots = '.'.repeat(Math.max(2, 32 - entry.name.length - String(entry.calories).length));
+        body += `${entry.name} ${dots} ${entry.calories} kcal\n`;
+      });
+      body += `\n`;
+    }
+
+    // Footer
+    body += `----------------------------------------\n`;
+    body += `Gesendet von Krafttraining Tracker\n`;
+
+    // mailto-Link erstellen und öffnen
+    const mailtoLink = `mailto:${emailAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoLink;
+
+    this.showToast('E-Mail-Client wird geöffnet...');
   }
 }
 
