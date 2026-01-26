@@ -343,7 +343,7 @@ class App {
       fragments.push(`
         <div class="bg-white rounded-lg shadow-sm p-4 ${cardStateClasses}">
           <div class="mb-3">
-            <h3 class="font-medium ${nameClasses}">${exercise.name}</h3>
+            <h3 class="font-medium text-lg ${nameClasses}">${exercise.name}</h3>
           </div>
           <hr class="my-2 border-t border-gray-200">
           <div class="flex flex-col gap-2">
@@ -397,7 +397,7 @@ class App {
           <button
             type="button"
             onclick="app.toggleExercise(${exercise.id}, ${!isCompleted})"
-            class="w-full mt-3 py-3 rounded-lg font-medium text-center transition-colors ${
+            class="w-full mt-3 py-2 rounded-lg text-sm text-center transition-colors ${
               isCompleted
                 ? 'bg-green-100 text-green-700 border border-green-300'
                 : 'bg-green-500 text-white hover:bg-green-600 active:bg-green-700'
