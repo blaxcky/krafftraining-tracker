@@ -437,7 +437,19 @@ class App {
     const completed = actualExercises.filter(ex => this.isExerciseCompleted(ex)).length;
     const total = actualExercises.length;
 
-    document.getElementById('training-progress').textContent = `${completed} von ${total} Übungen erledigt`;
+    const progressText = document.getElementById('training-progress');
+    if (progressText) {
+      progressText.textContent = `${completed} von ${total} erledigt`;
+    }
+    const progressBar = document.getElementById('training-progress-bar');
+    const progressTrack = progressBar ? progressBar.closest('.progress-track') : null;
+    const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+    if (progressBar) {
+      progressBar.style.width = `${percentage}%`;
+    }
+    if (progressTrack) {
+      progressTrack.setAttribute('aria-valuenow', String(percentage));
+    }
 
     const container = document.getElementById('training-exercises');
     const showCompleted = this.showCompletedExercises;
@@ -580,13 +592,21 @@ class App {
     const button = document.getElementById('toggle-completed-btn');
     if (!button) return;
 
-    button.textContent = this.showCompletedExercises ? 'Erledigte ausblenden' : 'Erledigte anzeigen';
+    const icon = document.getElementById('toggle-completed-icon');
+    const label = button.querySelector('.toggle-label');
+    const isShowing = this.showCompletedExercises;
+    if (icon) {
+      icon.textContent = isShowing ? 'visibility' : 'visibility_off';
+    }
+    if (label) {
+      label.textContent = 'Erledigte';
+    }
+    const titleText = isShowing ? 'Erledigte ausblenden' : 'Erledigte anzeigen';
+    button.setAttribute('aria-label', titleText);
+    button.setAttribute('title', titleText);
     const shouldDisable = completedCount === 0 && !this.showCompletedExercises;
     button.disabled = shouldDisable;
-    button.classList.toggle('text-gray-500', !shouldDisable);
-    button.classList.toggle('hover:text-gray-700', !shouldDisable);
-    button.classList.toggle('text-gray-300', shouldDisable);
-    button.classList.toggle('cursor-not-allowed', shouldDisable);
+    button.classList.toggle('active', isShowing);
   }
 
   isExerciseCompleted(exercise) {
