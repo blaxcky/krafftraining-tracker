@@ -91,7 +91,7 @@
 
         .app-content {
             flex: 1;
-            padding: 16px 16px 104px;
+            padding: 16px 16px 88px;
             width: 100%;
             max-width: 560px;
             margin: 0 auto;
@@ -108,6 +108,21 @@
             background: rgba(253, 252, 253, 0.92);
             border-bottom: 1px solid var(--md-sys-color-outline-variant);
             backdrop-filter: blur(12px);
+        }
+
+        .top-app-bar__actions {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .top-add-btn {
+            display: none;
+        }
+
+        body[data-tab="exercises"] .top-add-btn {
+            display: flex;
         }
 
         .app-icon {
@@ -207,32 +222,6 @@
 
         .tab-btn:hover:not(.active) {
             background: var(--md-sys-color-surface-container-low);
-        }
-
-        .fab {
-            position: fixed;
-            right: 20px;
-            bottom: calc(88px + env(safe-area-inset-bottom));
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            box-shadow: var(--md-elevation-2);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            z-index: 60;
-        }
-
-        body[data-tab="exercises"] .fab {
-            display: flex;
-        }
-
-        .fab:active {
-            transform: scale(0.97);
-            box-shadow: var(--md-elevation-1);
         }
 
         .card {
@@ -588,6 +577,11 @@
                 <h1>Krafttraining</h1>
                 <p>Offline bereit</p>
             </div>
+            <div class="top-app-bar__actions">
+                <button id="add-exercise-btn" class="icon-btn top-add-btn" aria-label="Neue Übung">
+                    <span class="material-symbols-outlined">add</span>
+                </button>
+            </div>
         </header>
 
         <main class="app-content">
@@ -877,9 +871,6 @@
         </div>
     </nav>
 
-    <button id="add-exercise-btn" class="fab" aria-label="Neue Übung">
-        <span class="material-symbols-outlined">add</span>
-    </button>
     </div>
 
     <script src="js/storage.js"></script>
