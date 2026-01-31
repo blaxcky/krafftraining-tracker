@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9';
+    this.version = '2.9.1';
     this.init();
   }
 
@@ -179,7 +179,7 @@ class App {
   shouldIgnoreSwipe(target) {
     if (!target) return false;
     return Boolean(
-      target.closest('input, textarea, select, button, label, details, summary, .weight-picker, .weight-picker-container')
+      target.closest('[data-swipe-ignore], .weight-picker, .weight-picker-container')
     );
   }
 
