@@ -4,7 +4,7 @@ class App {
     this.editingExercise = null;
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
-    this.version = '2.7';
+    this.version = '2.8';
     this.init();
   }
 
@@ -106,6 +106,7 @@ class App {
     await storage.init();
     this.setupEventListeners();
     this.updateVersionBadge();
+    document.body.dataset.tab = this.currentTab;
     await this.loadExercises();
     await this.loadTraining();
   }
@@ -169,6 +170,7 @@ class App {
 
     const activeBtn = document.getElementById(`tab-${tab}`);
     activeBtn.classList.add('active');
+    document.body.dataset.tab = tab;
 
     // Kalorien-Tab laden wenn ausgewählt
     if (tab === 'calories') {
@@ -183,8 +185,8 @@ class App {
     if (exercises.length === 0) {
       container.innerHTML = `
         <div class="card p-8 text-center">
-          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg mb-4">
-            <span class="text-3xl">🏋️‍♂️</span>
+          <div class="empty-state-icon tone-primary">
+            <span class="material-symbols-outlined text-3xl">fitness_center</span>
           </div>
           <p class="text-gray-600">Noch keine Übungen vorhanden.</p>
           <p class="text-sm text-gray-400 mt-1">Füge deine erste Übung hinzu!</p>
@@ -251,7 +253,7 @@ class App {
       const calories = exercise.calories || 0;
       let weightDisplay = `${this.formatWeight(baseWeight)} kg`;
       if (additionalPlates > 0) {
-        weightDisplay += ` <span class="text-xs text-green-600 font-semibold">+ ${additionalPlates}x 2.5kg</span>`;
+        weightDisplay += ` <span class="text-xs text-primary font-semibold">+ ${additionalPlates}x 2.5kg</span>`;
       }
       const totalWeight = baseWeight + (additionalPlates * 2.5);
 
@@ -264,7 +266,8 @@ class App {
               ${calories > 0 ? `
               <div class="mt-2">
                 <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
-                  🔥 ${calories} kcal
+                  <span class="material-symbols-outlined kcal-icon">local_fire_department</span>
+                  ${calories} kcal
                 </span>
               </div>
             ` : ''}
@@ -386,7 +389,8 @@ class App {
             ${calories > 0 ? `
             <div class="mt-1">
               <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
-                🔥 ${calories} kcal
+                <span class="material-symbols-outlined kcal-icon">local_fire_department</span>
+                ${calories} kcal
               </span>
             </div>
             ` : ''}
@@ -402,7 +406,8 @@ class App {
     });
 
     if (fragments.length === 0) {
-      const messageIcon = total > 0 ? '🎉' : '🏋️';
+      const messageIcon = total > 0 ? 'celebration' : 'fitness_center';
+      const messageTone = total > 0 ? 'tone-tertiary' : 'tone-primary';
       const messageText = total > 0 ? 'Alle Übungen erledigt!' : 'Keine Übungen verfügbar.';
       const messageHint = total > 0
         ? (showCompleted ? 'Blende erledigte Übungen aus, um nur offene zu sehen.' : 'Blende erledigte Übungen ein, wenn du sie erneut sehen möchtest.')
@@ -410,8 +415,8 @@ class App {
 
       container.innerHTML = `
         <div class="card p-8 text-center">
-          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg mb-4">
-            <span class="text-3xl">${messageIcon}</span>
+          <div class="empty-state-icon ${messageTone}">
+            <span class="material-symbols-outlined text-3xl">${messageIcon}</span>
           </div>
           <p class="text-gray-600">${messageText}</p>
           <p class="text-sm text-gray-400 mt-2">${messageHint}</p>
@@ -487,7 +492,7 @@ class App {
 
   wrapIconImg(src, alt) {
     return `
-      <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100">
+      <span class="icon-pill flex h-10 w-10 items-center justify-center rounded-xl">
         <img src="${src}" alt="${alt}" class="h-6 w-6" loading="lazy" decoding="async">
       </span>
     `;
@@ -724,10 +729,10 @@ class App {
   async exportExercises() {
     try {
       const exportData = await storage.exportExercises();
-      this.showToast(`${exportData.exercises.length} Übungen erfolgreich exportiert! 📤`);
+      this.showToast(`${exportData.exercises.length} Übungen erfolgreich exportiert.`);
     } catch (error) {
       console.error('Error exporting exercises:', error);
-      this.showToast('Fehler beim Exportieren der Übungen ❌', 'error');
+      this.showToast('Fehler beim Exportieren der Übungen.', 'error');
     }
   }
 
@@ -743,12 +748,12 @@ class App {
       const result = await storage.importExercises(file);
       await this.loadExercises();
       
-      this.showToast(`Import erfolgreich! ${result.imported} Übungen importiert${result.skipped > 0 ? `, ${result.skipped} übersprungen` : ''} 📥`);
+      this.showToast(`Import erfolgreich! ${result.imported} Übungen importiert${result.skipped > 0 ? `, ${result.skipped} übersprungen` : ''}.`);
       
       event.target.value = '';
     } catch (error) {
       console.error('Error importing exercises:', error);
-      this.showToast(`Import-Fehler: ${error.message} ❌`, 'error');
+      this.showToast(`Import-Fehler: ${error.message}.`, 'error');
       event.target.value = '';
     }
   }
@@ -834,7 +839,7 @@ class App {
         <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
           <div>
             <span class="font-semibold text-gray-900">${entry.name}</span>
-            <span class="text-sm text-orange-500 font-semibold ml-2">${entry.calories} kcal</span>
+            <span class="text-sm text-tertiary font-semibold ml-2">${entry.calories} kcal</span>
           </div>
           <button onclick="app.deleteCardioEntry(${entry.id})" class="icon-btn delete-btn">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -858,7 +863,7 @@ class App {
       exerciseCaloriesList.innerHTML = exercisesWithCalories.map(ex => `
         <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
           <span class="text-gray-900 font-medium">${ex.name}</span>
-          <span class="text-sm text-orange-500 font-semibold">${ex.calories} kcal</span>
+          <span class="text-sm text-tertiary font-semibold">${ex.calories} kcal</span>
         </div>
       `).join('');
     } else {
