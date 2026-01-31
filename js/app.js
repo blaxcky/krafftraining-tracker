@@ -4,7 +4,7 @@ class App {
     this.editingExercise = null;
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
-    this.version = '2.8';
+    this.version = '2.9';
     this.init();
   }
 
@@ -154,6 +154,63 @@ class App {
         this.hideExerciseModal();
       }
     });
+
+    this.setupSwipeNavigation();
+  }
+
+  shouldIgnoreSwipe(target) {
+    if (!target) return false;
+    return Boolean(
+      target.closest('input, textarea, select, button, label, details, summary, .weight-picker, .weight-picker-container')
+    );
+  }
+
+  setupSwipeNavigation() {
+    const content = document.querySelector('.app-content');
+    if (!content) return;
+
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+    let tracking = false;
+
+    content.addEventListener('touchstart', (event) => {
+      if (event.touches.length !== 1) return;
+      if (this.shouldIgnoreSwipe(event.target)) {
+        tracking = false;
+        return;
+      }
+      const touch = event.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      startTime = Date.now();
+      tracking = true;
+    }, { passive: true });
+
+    content.addEventListener('touchend', (event) => {
+      if (!tracking) return;
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      const elapsed = Date.now() - startTime;
+      tracking = false;
+
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      if (elapsed > 500 || absX < 50 || absX < absY * 1.2) return;
+
+      const tabs = ['exercises', 'training', 'calories'];
+      const currentIndex = tabs.indexOf(this.currentTab);
+      if (currentIndex === -1) return;
+
+      if (dx < 0 && currentIndex < tabs.length - 1) {
+        this.switchTab(tabs[currentIndex + 1]);
+      } else if (dx > 0 && currentIndex > 0) {
+        this.switchTab(tabs[currentIndex - 1]);
+      }
+    }, { passive: true });
   }
 
   switchTab(tab) {
