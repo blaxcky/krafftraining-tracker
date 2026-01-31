@@ -87,14 +87,40 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            height: 100vh;
         }
 
         .app-content {
             flex: 1;
-            padding: 16px 16px 88px;
             width: 100%;
             max-width: 560px;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .tab-panels {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .tab-strip {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            transition: transform 0.25s ease;
+            will-change: transform;
+        }
+
+        .tab-panel {
+            flex: 0 0 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 16px 16px calc(88px + env(safe-area-inset-bottom));
+            -webkit-overflow-scrolling: touch;
         }
 
         .top-app-bar {
@@ -585,9 +611,11 @@
         </header>
 
         <main class="app-content">
+            <div id="tab-panels" class="tab-panels">
+                <div id="tab-strip" class="tab-strip">
 
         <!-- Exercises Tab -->
-        <div id="exercises-tab" class="tab-content fade-in">
+        <div id="exercises-tab" class="tab-content tab-panel" aria-hidden="false">
             <div class="card p-5 mb-5">
                 <div class="section-header">
                     <div>
@@ -675,7 +703,7 @@
         </div>
 
         <!-- Training Tab -->
-        <div id="training-tab" class="tab-content hidden">
+        <div id="training-tab" class="tab-content tab-panel" aria-hidden="true">
             <div id="no-training" class="text-center py-10 fade-in">
                 <div class="card p-8">
                     <div class="empty-state-icon tone-primary">
@@ -714,7 +742,7 @@
         </div>
 
         <!-- Calories Tab -->
-        <div id="calories-tab" class="tab-content hidden">
+        <div id="calories-tab" class="tab-content tab-panel" aria-hidden="true">
             <div id="no-training-calories" class="text-center py-10 fade-in">
                 <div class="card p-8">
                     <div class="empty-state-icon tone-tertiary">
@@ -852,6 +880,8 @@
                 </div>
             </div>
         </div>
+    </div>
+    </div>
     </main>
 
     <nav class="bottom-nav">

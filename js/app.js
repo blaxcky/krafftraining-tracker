@@ -4,6 +4,7 @@ class App {
     this.editingExercise = null;
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
+    this.tabOrder = ['exercises', 'training', 'calories'];
     this.version = '2.9';
     this.init();
   }
@@ -107,6 +108,7 @@ class App {
     this.setupEventListeners();
     this.updateVersionBadge();
     document.body.dataset.tab = this.currentTab;
+    this.setTabTransform(this.getTabIndex(this.currentTab), false);
     await this.loadExercises();
     await this.loadTraining();
   }
@@ -158,6 +160,22 @@ class App {
     this.setupSwipeNavigation();
   }
 
+  getTabIndex(tab) {
+    return this.tabOrder.indexOf(tab);
+  }
+
+  setTabTransform(index, animate = true) {
+    const strip = document.getElementById('tab-strip');
+    const panels = document.getElementById('tab-panels');
+    if (!strip || !panels) return;
+
+    const safeIndex = index < 0 ? 0 : index;
+    const width = panels.clientWidth;
+    const offset = -safeIndex * width;
+    strip.style.transition = animate ? 'transform 0.25s ease' : 'none';
+    strip.style.transform = `translate3d(${offset}px, 0, 0)`;
+  }
+
   shouldIgnoreSwipe(target) {
     if (!target) return false;
     return Boolean(
@@ -166,16 +184,31 @@ class App {
   }
 
   setupSwipeNavigation() {
-    const content = document.querySelector('.app-content');
-    if (!content) return;
+    const panels = document.getElementById('tab-panels');
+    const strip = document.getElementById('tab-strip');
+    if (!panels || !strip) return;
 
     let startX = 0;
     let startY = 0;
     let startTime = 0;
+    let startOffset = 0;
     let tracking = false;
+    let isHorizontal = null;
 
-    content.addEventListener('touchstart', (event) => {
+    const getWidth = () => panels.clientWidth;
+    const getBounds = () => {
+      const width = getWidth();
+      return {
+        min: -(this.tabOrder.length - 1) * width,
+        max: 0,
+        width
+      };
+    };
+
+    panels.addEventListener('touchstart', (event) => {
       if (event.touches.length !== 1) return;
+      const modal = document.getElementById('exercise-modal');
+      if (modal && !modal.classList.contains('hidden')) return;
       if (this.shouldIgnoreSwipe(event.target)) {
         tracking = false;
         return;
@@ -184,10 +217,40 @@ class App {
       startX = touch.clientX;
       startY = touch.clientY;
       startTime = Date.now();
+      isHorizontal = null;
       tracking = true;
+
+      const { width } = getBounds();
+      const currentIndex = Math.max(0, this.getTabIndex(this.currentTab));
+      startOffset = -currentIndex * width;
+      strip.style.transition = 'none';
     }, { passive: true });
 
-    content.addEventListener('touchend', (event) => {
+    panels.addEventListener('touchmove', (event) => {
+      if (!tracking) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+
+      if (isHorizontal === null) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.1;
+      }
+
+      if (!isHorizontal) return;
+      event.preventDefault();
+
+      const { min, max, width } = getBounds();
+      const overscroll = width * 0.12;
+      let nextOffset = startOffset + dx;
+      nextOffset = Math.max(min - overscroll, Math.min(max + overscroll, nextOffset));
+
+      strip.style.transform = `translate3d(${nextOffset}px, 0, 0)`;
+    }, { passive: false });
+
+    panels.addEventListener('touchend', (event) => {
       if (!tracking) return;
       const touch = event.changedTouches[0];
       if (!touch) return;
@@ -197,37 +260,56 @@ class App {
       const elapsed = Date.now() - startTime;
       tracking = false;
 
-      const absX = Math.abs(dx);
-      const absY = Math.abs(dy);
-      if (elapsed > 500 || absX < 50 || absX < absY * 1.2) return;
-
-      const tabs = ['exercises', 'training', 'calories'];
-      const currentIndex = tabs.indexOf(this.currentTab);
-      if (currentIndex === -1) return;
-
-      if (dx < 0 && currentIndex < tabs.length - 1) {
-        this.switchTab(tabs[currentIndex + 1]);
-      } else if (dx > 0 && currentIndex > 0) {
-        this.switchTab(tabs[currentIndex - 1]);
+      if (!isHorizontal || Math.abs(dx) < Math.abs(dy)) {
+        this.setTabTransform(this.getTabIndex(this.currentTab), true);
+        return;
       }
+
+      const { width } = getBounds();
+      const velocity = Math.abs(dx) / Math.max(1, elapsed);
+      const movedEnough = Math.abs(dx) > width * 0.25 || velocity > 0.6;
+
+      let nextIndex = this.getTabIndex(this.currentTab);
+      if (movedEnough) {
+        if (dx < 0) {
+          nextIndex = Math.min(this.tabOrder.length - 1, nextIndex + 1);
+        } else if (dx > 0) {
+          nextIndex = Math.max(0, nextIndex - 1);
+        }
+      }
+
+      this.switchTab(this.tabOrder[nextIndex], { animate: true });
     }, { passive: true });
+
+    panels.addEventListener('touchcancel', () => {
+      tracking = false;
+      this.setTabTransform(this.getTabIndex(this.currentTab), true);
+    }, { passive: true });
+
+    window.addEventListener('resize', () => {
+      this.setTabTransform(this.getTabIndex(this.currentTab), false);
+    });
   }
 
-  switchTab(tab) {
+  switchTab(tab, { animate = true } = {}) {
+    if (!this.tabOrder.includes(tab)) return;
     this.currentTab = tab;
 
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-    document.querySelectorAll('nav button').forEach(btn => {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.remove('active');
     });
 
-    const tabContent = document.getElementById(`${tab}-tab`);
-    tabContent.classList.remove('hidden');
-    tabContent.classList.add('fade-in');
-
     const activeBtn = document.getElementById(`tab-${tab}`);
-    activeBtn.classList.add('active');
+    if (activeBtn) {
+      activeBtn.classList.add('active');
+    }
+
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+      panel.setAttribute('aria-hidden', panel.id !== `${tab}-tab`);
+    });
+
     document.body.dataset.tab = tab;
+    this.setTabTransform(this.getTabIndex(tab), animate);
 
     // Kalorien-Tab laden wenn ausgewählt
     if (tab === 'calories') {
