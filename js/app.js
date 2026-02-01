@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.9';
+    this.version = '2.9.10';
     this.init();
   }
 
@@ -115,7 +115,7 @@ class App {
   updateVersionBadge() {
     const badge = document.getElementById('version-badge');
     if (badge) {
-      badge.textContent = `v${this.version} (c19)`;
+      badge.textContent = `v${this.version}`;
     }
   }
 
