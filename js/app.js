@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.15';
+    this.version = '2.9.16';
     this.init();
   }
 
@@ -1008,16 +1008,32 @@ class App {
 
     // E-Mail-Adresse laden
     const emailInput = document.getElementById('email-address-input');
+    const emailAddress = storage.getEmailAddress();
     if (emailInput) {
-      emailInput.value = storage.getEmailAddress();
+      emailInput.value = emailAddress;
     }
+    this.updateEmailSettingsUI(emailAddress);
 
     await this.updateCaloriesDisplay();
   }
 
+  updateEmailSettingsUI(emailValue = '') {
+    const trimmed = String(emailValue || '').trim();
+    const details = document.getElementById('email-settings');
+    const label = document.getElementById('email-settings-label');
+    if (details) {
+      details.open = trimmed.length === 0;
+    }
+    if (label) {
+      label.textContent = trimmed.length > 0 ? 'E-Mail ändern' : 'E-Mail hinzufügen';
+    }
+  }
+
   // E-Mail-Adresse speichern
   saveEmailAddress(email) {
-    storage.saveEmailAddress(email);
+    const trimmed = String(email || '').trim();
+    storage.saveEmailAddress(trimmed);
+    this.updateEmailSettingsUI(trimmed);
   }
 
   // Kalorien-Anzeige aktualisieren
