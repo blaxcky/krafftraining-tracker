@@ -392,6 +392,53 @@
             cursor: not-allowed;
         }
 
+        .update-banner {
+            position: fixed;
+            left: 16px;
+            right: 16px;
+            bottom: calc(72px + env(safe-area-inset-bottom));
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 18px;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            box-shadow: var(--md-elevation-2);
+            z-index: 90;
+        }
+
+        .update-banner__text {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .update-banner__actions {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .update-banner__btn {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        .update-banner__ghost {
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+            background: transparent;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
         .weight-picker-container {
             position: relative;
             height: 140px;

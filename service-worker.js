@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krafttraining-tracker-v31';
+const CACHE_NAME = 'krafttraining-tracker-v32';
 const urlsToCache = [
   './',
   './index.html',
@@ -25,7 +25,6 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('All resources cached');
-        return self.skipWaiting();
       })
   );
 });
@@ -76,4 +75,10 @@ self.addEventListener('activate', (event) => {
       return self.clients.claim();
     })
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
