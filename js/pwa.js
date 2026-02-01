@@ -24,7 +24,6 @@ const forceUpdate = async (registration) => {
 
   if (registration.waiting) {
     registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    return;
   }
 
   if (registration.installing) {
@@ -44,9 +43,9 @@ const forceUpdate = async (registration) => {
   setTimeout(async () => {
     if (!registration.waiting && !registration.installing) {
       await registration.unregister();
-      hardReload();
     }
-  }, 1200);
+    hardReload();
+  }, 900);
 };
 
 const showUpdateAction = (registration) => {
