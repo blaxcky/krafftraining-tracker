@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.13';
+    this.version = '2.9.14';
     this.init();
   }
 
@@ -333,9 +333,11 @@ class App {
       return;
     }
 
+    let listSectionType = 'main';
+    let listLastWasExercise = false;
+
     container.innerHTML = exercises.map((exercise, index) => {
       const isHeader = exercise.type === 'header';
-      const marginTop = isHeader && index > 0 ? 'mt-6' : '';
       const moveUpDisabled = index === 0;
       const moveDownDisabled = index === exercises.length - 1;
 
@@ -369,6 +371,11 @@ class App {
       `;
 
       if (isHeader) {
+        const headerType = this.getHeaderSectionType(exercise.name) || listSectionType;
+        const extraGap = listLastWasExercise && listSectionType === 'main' && headerType === 'optional';
+        const marginTop = index > 0 ? (extraGap ? 'mt-10' : 'mt-6') : '';
+        listSectionType = headerType;
+        listLastWasExercise = false;
         const icon = this.getHeaderIcon(exercise.name);
         return `
           <div class="${marginTop}">
@@ -395,8 +402,9 @@ class App {
       }
       const totalWeight = baseWeight + (additionalPlates * 2.5);
 
+      listLastWasExercise = true;
       return `
-        <div class="card p-4 flex items-start justify-between ${marginTop}">
+        <div class="card p-4 flex items-start justify-between">
           <div class="flex-1 min-w-0 pr-3">
             <h3 class="font-semibold text-gray-900 break-words">${exercise.name}</h3>
             <div class="text-sm text-gray-500 mt-1">
@@ -479,7 +487,7 @@ class App {
 
     const flushPendingHeader = () => {
       if (!pendingHeader) return;
-      const marginTop = fragments.length > 0 ? (pendingHeaderExtraGap ? 'mt-8' : 'mt-6') : '';
+      const marginTop = fragments.length > 0 ? (pendingHeaderExtraGap ? 'mt-10' : 'mt-6') : '';
       const icon = this.getHeaderIcon(pendingHeader.name);
       fragments.push(`
         <div class="${marginTop}">
