@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krafttraining-tracker-v44';
+const CACHE_NAME = 'krafttraining-tracker-v45';
 const urlsToCache = [
   './',
   './index.html',
@@ -23,7 +23,8 @@ const cacheUrl = async (request, response) => {
 
 const networkFirst = async (request, fallbackUrl, shouldCache) => {
   try {
-    const response = await fetch(request);
+    const freshRequest = new Request(request, { cache: 'no-store' });
+    const response = await fetch(freshRequest);
     if (shouldCache) {
       await cacheUrl(request, response.clone());
     }
@@ -55,7 +56,8 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Cache opened');
-        return cache.addAll(urlsToCache);
+        const precacheRequests = urlsToCache.map((url) => new Request(url, { cache: 'reload' }));
+        return cache.addAll(precacheRequests);
       })
       .then(() => {
         console.log('All resources cached');
