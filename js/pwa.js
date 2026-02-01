@@ -1,15 +1,55 @@
+const clearAppCaches = async () => {
+  if (!('caches' in window)) return;
+  const keys = await caches.keys();
+  await Promise.all(keys.map((key) => caches.delete(key)));
+};
+
+const forceUpdate = async (registration) => {
+  await clearAppCaches();
+
+  const attachInstallHandler = (worker) => {
+    if (!worker) return;
+    worker.addEventListener('statechange', () => {
+      if (worker.state === 'installed' && registration.waiting) {
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    });
+  };
+
+  if (registration.waiting) {
+    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    return;
+  }
+
+  if (registration.installing) {
+    attachInstallHandler(registration.installing);
+  } else {
+    registration.addEventListener('updatefound', () => {
+      attachInstallHandler(registration.installing);
+    }, { once: true });
+  }
+
+  try {
+    await registration.update();
+  } catch (error) {
+    console.log('SW update failed: ', error);
+  }
+
+  setTimeout(() => {
+    if (!registration.waiting && !registration.installing) {
+      window.location.reload();
+    }
+  }, 1200);
+};
+
 const showUpdateAction = (registration) => {
   const updateBtn = document.getElementById('update-btn');
   if (!updateBtn) return;
   updateBtn.classList.add('show');
-  updateBtn.onclick = () => {
+  updateBtn.onclick = async () => {
     updateBtn.disabled = true;
     updateBtn.querySelector('.material-symbols-outlined').textContent = 'autorenew';
-    if (registration.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    } else {
-      registration.update();
-    }
+    await forceUpdate(registration);
   };
 };
 
@@ -66,6 +106,8 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')
       .then((registration) => {
         console.log('SW registered: ', registration);
+
+        showUpdateAction(registration);
 
         if (registration.waiting) {
           showUpdateBanner(registration);
