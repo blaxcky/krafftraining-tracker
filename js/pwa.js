@@ -4,6 +4,12 @@ const clearAppCaches = async () => {
   await Promise.all(keys.map((key) => caches.delete(key)));
 };
 
+const hardReload = () => {
+  const url = new URL(window.location.href);
+  url.searchParams.set('v', Date.now().toString());
+  window.location.replace(url.toString());
+};
+
 const forceUpdate = async (registration) => {
   await clearAppCaches();
 
@@ -35,9 +41,10 @@ const forceUpdate = async (registration) => {
     console.log('SW update failed: ', error);
   }
 
-  setTimeout(() => {
+  setTimeout(async () => {
     if (!registration.waiting && !registration.installing) {
-      window.location.reload();
+      await registration.unregister();
+      hardReload();
     }
   }, 1200);
 };
