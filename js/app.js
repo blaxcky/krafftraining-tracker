@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.14';
+    this.version = '2.9.15';
     this.init();
   }
 
@@ -373,12 +373,13 @@ class App {
       if (isHeader) {
         const headerType = this.getHeaderSectionType(exercise.name) || listSectionType;
         const extraGap = listLastWasExercise && listSectionType === 'main' && headerType === 'optional';
-        const marginTop = index > 0 ? (extraGap ? 'mt-10' : 'mt-6') : '';
+        const spacer = extraGap ? '<div class="h-4"></div>' : '';
         listSectionType = headerType;
         listLastWasExercise = false;
         const icon = this.getHeaderIcon(exercise.name);
         return `
-          <div class="${marginTop}">
+          ${spacer}
+          <div>
             <div class="header-badge rounded-xl overflow-hidden">
               <div class="flex items-start justify-between px-5 py-4">
                 <div class="flex items-center gap-3 min-w-0 pr-3">
@@ -487,10 +488,12 @@ class App {
 
     const flushPendingHeader = () => {
       if (!pendingHeader) return;
-      const marginTop = fragments.length > 0 ? (pendingHeaderExtraGap ? 'mt-10' : 'mt-6') : '';
+      if (pendingHeaderExtraGap) {
+        fragments.push('<div class="h-4"></div>');
+      }
       const icon = this.getHeaderIcon(pendingHeader.name);
       fragments.push(`
-        <div class="${marginTop}">
+        <div>
           <div class="header-badge rounded-xl overflow-hidden">
             <div class="flex items-center gap-3 px-5 py-4">
               ${icon}
