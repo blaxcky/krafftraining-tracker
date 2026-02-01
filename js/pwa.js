@@ -1,3 +1,18 @@
+const showUpdateAction = (registration) => {
+  const updateBtn = document.getElementById('update-btn');
+  if (!updateBtn) return;
+  updateBtn.classList.add('show');
+  updateBtn.onclick = () => {
+    updateBtn.disabled = true;
+    updateBtn.querySelector('.material-symbols-outlined').textContent = 'autorenew';
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+      registration.update();
+    }
+  };
+};
+
 const showUpdateBanner = (registration) => {
   if (document.getElementById('update-banner')) return;
 
@@ -43,6 +58,7 @@ const showUpdateBanner = (registration) => {
   banner.appendChild(actions);
 
   document.body.appendChild(banner);
+  showUpdateAction(registration);
 };
 
 if ('serviceWorker' in navigator) {

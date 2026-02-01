@@ -439,6 +439,14 @@
             color: var(--md-sys-color-on-surface-variant);
         }
 
+        .update-btn {
+            display: none;
+        }
+
+        .update-btn.show {
+            display: flex;
+        }
+
         .weight-picker-container {
             position: relative;
             height: 140px;
@@ -691,6 +699,9 @@
                 <p>Offline bereit</p>
             </div>
             <div class="top-app-bar__actions">
+                <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
+                    <span class="material-symbols-outlined">refresh</span>
+                </button>
                 <button id="add-exercise-btn" class="icon-btn top-add-btn" aria-label="Neue Übung">
                     <span class="material-symbols-outlined">add</span>
                 </button>
