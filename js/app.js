@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.4';
+    this.version = '2.9.5';
     this.init();
   }
 
@@ -437,8 +437,6 @@ class App {
     const totalAll = actualExercises.length;
     let mainCompleted = 0;
     let mainTotal = 0;
-    let optionalCompleted = 0;
-    let optionalTotal = 0;
     let sectionType = 'main';
 
     training.exercises.forEach((exercise) => {
@@ -451,10 +449,7 @@ class App {
       }
 
       const isCompleted = this.isExerciseCompleted(exercise);
-      if (sectionType === 'optional') {
-        optionalTotal += 1;
-        if (isCompleted) optionalCompleted += 1;
-      } else {
+      if (sectionType !== 'optional') {
         mainTotal += 1;
         if (isCompleted) mainCompleted += 1;
       }
@@ -463,16 +458,6 @@ class App {
     const progressText = document.getElementById('training-progress');
     if (progressText) {
       progressText.textContent = `${mainCompleted} von ${mainTotal} Hauptübungen erledigt`;
-    }
-    const optionalBadge = document.getElementById('optional-progress-badge');
-    const optionalOpen = Math.max(0, optionalTotal - optionalCompleted);
-    if (optionalBadge) {
-      if (optionalOpen > 0) {
-        optionalBadge.textContent = `Optional: ${optionalOpen} offen`;
-        optionalBadge.classList.remove('hidden');
-      } else {
-        optionalBadge.classList.add('hidden');
-      }
     }
     const progressBar = document.getElementById('training-progress-bar');
     const progressTrack = progressBar ? progressBar.closest('.progress-track') : null;

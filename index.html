@@ -355,18 +355,6 @@
             transition: width 0.25s ease;
         }
 
-        .mini-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: var(--md-sys-color-surface-container-low);
-            color: var(--md-sys-color-on-surface-variant);
-            border: 1px solid var(--md-sys-color-outline-variant);
-            font-size: 11px;
-            font-weight: 600;
-        }
-
         .toggle-btn {
             display: inline-flex;
             align-items: center;
@@ -708,7 +696,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p>Offline bereit <span id="version-badge" class="ml-1 text-xs font-medium text-gray-400">v2.9.4 (c19)</span></p>
+                <p>Offline bereit <span id="version-badge" class="ml-1 text-xs font-medium text-gray-400">v2.9.5 (c19)</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
@@ -775,10 +763,7 @@
                     <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="font-bold text-lg text-gray-900">Aktives Training</h3>
-                                <div class="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
-                                    <p id="training-progress">0 von 0 erledigt</p>
-                                    <span id="optional-progress-badge" class="mini-badge hidden">Optional: 0 offen</span>
-                                </div>
+                                <p class="text-gray-500 text-sm mt-0.5" id="training-progress">0 von 0 erledigt</p>
                                 <div class="progress-track mt-3" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                                     <div id="training-progress-bar" class="progress-fill"></div>
                                 </div>
