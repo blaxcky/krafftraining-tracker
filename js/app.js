@@ -593,13 +593,9 @@ class App {
     if (!button) return;
 
     const icon = document.getElementById('toggle-completed-icon');
-    const label = button.querySelector('.toggle-label');
     const isShowing = this.showCompletedExercises;
     if (icon) {
       icon.textContent = isShowing ? 'visibility' : 'visibility_off';
-    }
-    if (label) {
-      label.textContent = 'Erledigte';
     }
     const titleText = isShowing ? 'Erledigte ausblenden' : 'Erledigte anzeigen';
     button.setAttribute('aria-label', titleText);
