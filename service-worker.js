@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krafttraining-tracker-v42';
+const CACHE_NAME = 'krafttraining-tracker-v43';
 const urlsToCache = [
   './',
   './index.html',
@@ -15,6 +15,40 @@ const urlsToCache = [
   'https://cdn.tailwindcss.com'
 ];
 
+const cacheUrl = async (request, response) => {
+  if (!response || !response.ok) return;
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(request, response);
+};
+
+const networkFirst = async (request, fallbackUrl, shouldCache) => {
+  try {
+    const response = await fetch(request);
+    if (shouldCache) {
+      await cacheUrl(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    if (request.mode === 'navigate' && fallbackUrl) {
+      return caches.match(fallbackUrl);
+    }
+    throw error;
+  }
+};
+
+const cacheFirst = async (request, shouldCache) => {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+
+  const response = await fetch(request);
+  if (shouldCache) {
+    await cacheUrl(request, response.clone());
+  }
+  return response;
+};
+
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
   event.waitUntil(
@@ -30,31 +64,23 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  const scopeUrl = new URL(self.registration.scope);
+  const basePath = scopeUrl.pathname;
+  const isSameOrigin = url.origin === self.location.origin;
+  const isInScope = url.pathname.startsWith(basePath);
+  const isNavigate = event.request.mode === 'navigate' || event.request.destination === 'document';
+  const isScript = isInScope && url.pathname.startsWith(`${basePath}js/`) && url.pathname.endsWith('.js');
+  const fallbackUrl = new URL('index.html', self.registration.scope).toString();
+  const shouldCache = isSameOrigin;
+
+  if (isNavigate || isScript) {
+    event.respondWith(networkFirst(event.request, fallbackUrl, shouldCache));
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        
-        return fetch(event.request).then((response) => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
-        }).catch(() => {
-          if (event.request.destination === 'document') {
-            return caches.match('/index.html');
-          }
-        });
-      })
+    cacheFirst(event.request, shouldCache)
   );
 });
 
