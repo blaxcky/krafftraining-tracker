@@ -341,7 +341,7 @@ class App {
       const moveDownDisabled = index === exercises.length - 1;
 
       const controls = `
-        <div class="flex gap-1">
+        <div class="flex gap-1 items-start shrink-0 self-start">
           <button onclick="app.moveExercise(${exercise.id}, 'up')"
                   class="icon-btn ${moveUpDisabled ? 'opacity-30 cursor-not-allowed' : ''}"
                   ${moveUpDisabled ? 'disabled' : ''}>
@@ -374,10 +374,10 @@ class App {
         return `
           <div class="${marginTop}">
             <div class="header-badge rounded-xl overflow-hidden">
-              <div class="flex items-center justify-between px-5 py-4">
-                <div class="flex items-center gap-3">
+              <div class="flex items-start justify-between px-5 py-4">
+                <div class="flex items-center gap-3 min-w-0 pr-3">
                   ${icon}
-                  <h3 class="text-lg font-bold text-gray-800">${exercise.name}</h3>
+                  <h3 class="text-lg font-bold text-gray-800 break-words">${exercise.name}</h3>
                 </div>
                 ${controls}
               </div>
@@ -397,9 +397,9 @@ class App {
       const totalWeight = baseWeight + (additionalPlates * 2.5);
 
       return `
-        <div class="card p-4 flex items-center justify-between ${marginTop}">
-          <div class="flex-1">
-            <h3 class="font-semibold text-gray-900">${exercise.name}</h3>
+        <div class="card p-4 flex items-start justify-between ${marginTop}">
+          <div class="flex-1 min-w-0 pr-3">
+            <h3 class="font-semibold text-gray-900 break-words">${exercise.name}</h3>
             <div class="text-sm text-gray-500 mt-1">
               <p>${weightDisplay}${additionalPlates > 0 ? ` <span class="text-xs text-gray-400">= ${this.formatWeight(totalWeight)} kg</span>` : ''}</p>
               ${calories > 0 ? `
