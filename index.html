@@ -688,7 +688,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen" data-tab="exercises">
+<body class="min-h-screen" data-tab="training">
     <div id="app" class="app-shell">
         <header class="top-app-bar">
             <div class="app-icon">
@@ -713,7 +713,7 @@
                 <div id="tab-strip" class="tab-strip">
 
         <!-- Exercises Tab -->
-        <div id="exercises-tab" class="tab-content tab-panel" aria-hidden="false">
+        <div id="exercises-tab" class="tab-content tab-panel" aria-hidden="true">
             <div class="card p-5 mb-5">
                 <div class="section-header">
                     <div>
@@ -744,7 +744,7 @@
         </div>
 
         <!-- Training Tab -->
-        <div id="training-tab" class="tab-content tab-panel" aria-hidden="true">
+        <div id="training-tab" class="tab-content tab-panel" aria-hidden="false">
             <div id="no-training" class="text-center py-10 fade-in">
                 <div class="card p-8">
                     <div class="empty-state-icon tone-primary">
@@ -988,11 +988,11 @@
 
     <nav class="bottom-nav">
         <div class="tab-container">
-            <button id="tab-exercises" class="tab-btn active">
+            <button id="tab-exercises" class="tab-btn">
                 <span class="material-symbols-outlined">format_list_bulleted</span>
                 <span>Übungen</span>
             </button>
-            <button id="tab-training" class="tab-btn">
+            <button id="tab-training" class="tab-btn active">
                 <span class="material-symbols-outlined">fitness_center</span>
                 <span>Training</span>
             </button>

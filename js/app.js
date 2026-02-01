@@ -1,6 +1,6 @@
 class App {
   constructor() {
-    this.currentTab = 'exercises';
+    this.currentTab = 'training';
     this.editingExercise = null;
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
@@ -107,8 +107,7 @@ class App {
     await storage.init();
     this.setupEventListeners();
     this.updateVersionBadge();
-    document.body.dataset.tab = this.currentTab;
-    this.setTabTransform(this.getTabIndex(this.currentTab), false);
+    this.switchTab(this.currentTab, { animate: false });
     await this.loadExercises();
     await this.loadTraining();
   }
