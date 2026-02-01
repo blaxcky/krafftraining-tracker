@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.1';
+    this.version = '2.9.2';
     this.init();
   }
 
@@ -433,16 +433,50 @@ class App {
 
   renderTrainingExercises(training) {
     const actualExercises = training.exercises.filter(ex => ex.type !== 'header');
-    const completed = actualExercises.filter(ex => this.isExerciseCompleted(ex)).length;
-    const total = actualExercises.length;
+    const completedAll = actualExercises.filter(ex => this.isExerciseCompleted(ex)).length;
+    const totalAll = actualExercises.length;
+    let mainCompleted = 0;
+    let mainTotal = 0;
+    let optionalCompleted = 0;
+    let optionalTotal = 0;
+    let sectionType = 'main';
+
+    training.exercises.forEach((exercise) => {
+      if (exercise.type === 'header') {
+        const nextSectionType = this.getHeaderSectionType(exercise.name);
+        if (nextSectionType) {
+          sectionType = nextSectionType;
+        }
+        return;
+      }
+
+      const isCompleted = this.isExerciseCompleted(exercise);
+      if (sectionType === 'optional') {
+        optionalTotal += 1;
+        if (isCompleted) optionalCompleted += 1;
+      } else {
+        mainTotal += 1;
+        if (isCompleted) mainCompleted += 1;
+      }
+    });
 
     const progressText = document.getElementById('training-progress');
     if (progressText) {
-      progressText.textContent = `${completed} von ${total} erledigt`;
+      progressText.textContent = `${mainCompleted} von ${mainTotal} Hauptübungen erledigt`;
+    }
+    const optionalBadge = document.getElementById('optional-progress-badge');
+    const optionalOpen = Math.max(0, optionalTotal - optionalCompleted);
+    if (optionalBadge) {
+      if (optionalOpen > 0) {
+        optionalBadge.textContent = `Optional: ${optionalOpen} offen`;
+        optionalBadge.classList.remove('hidden');
+      } else {
+        optionalBadge.classList.add('hidden');
+      }
     }
     const progressBar = document.getElementById('training-progress-bar');
     const progressTrack = progressBar ? progressBar.closest('.progress-track') : null;
-    const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+    const percentage = mainTotal === 0 ? 0 : Math.round((mainCompleted / mainTotal) * 100);
     if (progressBar) {
       progressBar.style.width = `${percentage}%`;
     }
@@ -556,10 +590,10 @@ class App {
     });
 
     if (fragments.length === 0) {
-      const messageIcon = total > 0 ? 'celebration' : 'fitness_center';
-      const messageTone = total > 0 ? 'tone-tertiary' : 'tone-primary';
-      const messageText = total > 0 ? 'Alle Übungen erledigt!' : 'Keine Übungen verfügbar.';
-      const messageHint = total > 0
+      const messageIcon = totalAll > 0 ? 'celebration' : 'fitness_center';
+      const messageTone = totalAll > 0 ? 'tone-tertiary' : 'tone-primary';
+      const messageText = totalAll > 0 ? 'Alle Übungen erledigt!' : 'Keine Übungen verfügbar.';
+      const messageHint = totalAll > 0
         ? (showCompleted ? 'Blende erledigte Übungen aus, um nur offene zu sehen.' : 'Blende erledigte Übungen ein, wenn du sie erneut sehen möchtest.')
         : 'Füge Übungen hinzu, um loszulegen.';
 
@@ -576,7 +610,7 @@ class App {
       container.innerHTML = fragments.join('');
     }
 
-    this.updateToggleCompletedButton(completed);
+    this.updateToggleCompletedButton(completedAll);
   }
 
   async toggleCompletedVisibility() {
@@ -621,6 +655,13 @@ class App {
       .replace(/ö/g, 'oe')
       .replace(/ü/g, 'ue')
       .replace(/ß/g, 'ss');
+  }
+
+  getHeaderSectionType(name) {
+    const normalized = this.normalizeText(name);
+    if (normalized.includes('optional')) return 'optional';
+    if (normalized.includes('haupt')) return 'main';
+    return null;
   }
 
   getHeaderIcon(name) {
