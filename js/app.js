@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.12';
+    this.version = '2.9.13';
     this.init();
   }
 
@@ -473,10 +473,13 @@ class App {
     const showCompleted = this.showCompletedExercises;
     const fragments = [];
     let pendingHeader = null;
+    let pendingHeaderExtraGap = false;
+    let renderSectionType = 'main';
+    let lastItemWasExercise = false;
 
     const flushPendingHeader = () => {
       if (!pendingHeader) return;
-      const marginTop = fragments.length > 0 ? 'mt-6' : '';
+      const marginTop = fragments.length > 0 ? (pendingHeaderExtraGap ? 'mt-8' : 'mt-6') : '';
       const icon = this.getHeaderIcon(pendingHeader.name);
       fragments.push(`
         <div class="${marginTop}">
@@ -489,11 +492,16 @@ class App {
         </div>
       `);
       pendingHeader = null;
+      pendingHeaderExtraGap = false;
     };
 
     training.exercises.forEach((exercise) => {
       if (exercise.type === 'header') {
+        const headerType = this.getHeaderSectionType(exercise.name) || renderSectionType;
+        pendingHeaderExtraGap = lastItemWasExercise && renderSectionType === 'main' && headerType === 'optional';
         pendingHeader = exercise;
+        renderSectionType = headerType;
+        lastItemWasExercise = false;
         return;
       }
 
@@ -572,6 +580,7 @@ class App {
           </button>
         </div>
       `);
+      lastItemWasExercise = true;
     });
 
     if (fragments.length === 0) {
