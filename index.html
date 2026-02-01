@@ -533,6 +533,10 @@
             background: var(--md-sys-color-surface);
             border-radius: 24px 24px 0 0;
             box-shadow: var(--md-elevation-2);
+            max-height: min(85vh, 720px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom));
         }
 
         .sheet-handle {
@@ -679,63 +683,6 @@
                 <!-- Übungen werden hier dynamisch eingefügt -->
             </div>
 
-            <!-- Add/Edit Exercise Modal -->
-            <div id="exercise-modal" class="hidden fixed inset-0 modal-overlay z-50 flex items-end justify-center p-0">
-                <div class="modal-content w-full max-w-sm p-6 fade-in">
-                    <div class="sheet-handle"></div>
-                    <h3 id="modal-title" class="text-xl font-bold text-gray-900 mb-5">Neue Übung</h3>
-                    <form id="exercise-form">
-                        <div class="mb-4">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Übungsname</label>
-                            <input type="text" id="exercise-name" class="input-field w-full px-4 py-3 rounded-xl" placeholder="z.B. Bankdrücken" required>
-                        </div>
-                        <div class="mb-5" id="weight-field">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Basisgewicht (kg)</label>
-                            <div class="weight-picker-container">
-                                <div class="weight-picker" id="exercise-weight-picker"></div>
-                            </div>
-                            <input type="hidden" id="exercise-weight" value="0">
-
-                            <div class="mt-4">
-                                <label class="block text-sm font-semibold text-gray-700 mb-3">Zusatzgewichte (2.5 kg Scheiben)</label>
-                                <div class="flex gap-3">
-                                    <label class="cursor-pointer">
-                                        <input type="checkbox" id="plate-1" class="sr-only peer" onchange="app.updatePlateCheckboxes()">
-                                        <span class="chip inline-flex items-center px-4 py-2.5 rounded-full text-sm peer-checked:active">
-                                            +2,5 kg
-                                        </span>
-                                    </label>
-                                    <label class="cursor-pointer">
-                                        <input type="checkbox" id="plate-2" class="sr-only peer" onchange="app.updatePlateCheckboxes()">
-                                        <span class="chip inline-flex items-center px-4 py-2.5 rounded-full text-sm peer-checked:active">
-                                            +2,5 kg
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="mt-4 p-3 rounded-xl border border-gray-200 bg-white/70">
-                                <span class="text-gray-600 text-sm font-medium">Gesamtgewicht: </span>
-                                <span id="total-weight" class="text-primary font-bold text-lg">0 kg</span>
-                            </div>
-
-                            <div class="mt-4">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Kalorien pro Satz (optional)</label>
-                                <input type="number" inputmode="numeric" id="exercise-calories" class="input-field w-full px-4 py-3 rounded-xl" placeholder="z.B. 50">
-                                <p class="text-xs text-gray-500 mt-2">Geschätzte Kalorien pro Satz</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <button type="button" id="cancel-btn" class="flex-1 py-3 px-4 rounded-xl text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200 transition-all">
-                                Abbrechen
-                            </button>
-                            <button type="submit" class="flex-1 btn-primary py-3 px-4 rounded-xl">
-                                Speichern
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
         </div>
 
         <!-- Training Tab -->
@@ -921,7 +868,64 @@
             </div>
         </div>
     </div>
-    </div>
+
+        <!-- Add/Edit Exercise Modal -->
+        <div id="exercise-modal" class="hidden fixed inset-0 modal-overlay z-50 flex items-end justify-center p-0">
+            <div class="modal-content w-full max-w-sm p-6 fade-in">
+                <div class="sheet-handle"></div>
+                <h3 id="modal-title" class="text-xl font-bold text-gray-900 mb-5">Neue Übung</h3>
+                <form id="exercise-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Übungsname</label>
+                        <input type="text" id="exercise-name" class="input-field w-full px-4 py-3 rounded-xl" placeholder="z.B. Bankdrücken" required>
+                    </div>
+                    <div class="mb-5" id="weight-field">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Basisgewicht (kg)</label>
+                        <div class="weight-picker-container">
+                            <div class="weight-picker" id="exercise-weight-picker"></div>
+                        </div>
+                        <input type="hidden" id="exercise-weight" value="0">
+
+                        <div class="mt-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Zusatzgewichte (2.5 kg Scheiben)</label>
+                            <div class="flex gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="checkbox" id="plate-1" class="sr-only peer" onchange="app.updatePlateCheckboxes()">
+                                    <span class="chip inline-flex items-center px-4 py-2.5 rounded-full text-sm peer-checked:active">
+                                        +2,5 kg
+                                    </span>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="checkbox" id="plate-2" class="sr-only peer" onchange="app.updatePlateCheckboxes()">
+                                    <span class="chip inline-flex items-center px-4 py-2.5 rounded-full text-sm peer-checked:active">
+                                        +2,5 kg
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-3 rounded-xl border border-gray-200 bg-white/70">
+                            <span class="text-gray-600 text-sm font-medium">Gesamtgewicht: </span>
+                            <span id="total-weight" class="text-primary font-bold text-lg">0 kg</span>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Kalorien pro Satz (optional)</label>
+                            <input type="number" inputmode="numeric" id="exercise-calories" class="input-field w-full px-4 py-3 rounded-xl" placeholder="z.B. 50">
+                            <p class="text-xs text-gray-500 mt-2">Geschätzte Kalorien pro Satz</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="button" id="cancel-btn" class="flex-1 py-3 px-4 rounded-xl text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200 transition-all">
+                            Abbrechen
+                        </button>
+                        <button type="submit" class="flex-1 btn-primary py-3 px-4 rounded-xl">
+                            Speichern
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
 
     <nav class="bottom-nav">
