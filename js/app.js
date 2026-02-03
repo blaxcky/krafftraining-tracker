@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.19';
+    this.version = '2.9.20';
     this.init();
   }
 
@@ -438,6 +438,7 @@ class App {
     document.getElementById('no-training').classList.add('hidden');
     document.getElementById('active-training').classList.remove('hidden');
     this.renderTrainingExercises(training);
+    this.setTabTransform(this.getTabIndex(this.currentTab), false);
   }
 
   renderTrainingExercises(training) {
@@ -541,7 +542,7 @@ class App {
             <h3 class="font-bold text-lg ${nameClasses}">${exercise.name}</h3>
           </div>
           <div class="h-px bg-gray-100 mb-4"></div>
-          <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-3" data-swipe-ignore>
             <div class="flex items-center gap-3">
               <label class="text-xs text-gray-500 font-medium w-24">Basisgewicht:</label>
               <div class="flex items-center gap-2">
@@ -588,6 +589,7 @@ class App {
           </div>
           <button
             type="button"
+            data-swipe-ignore
             onclick="app.toggleExercise(${exercise.id}, ${!isCompleted})"
             class="complete-btn w-full mt-5 py-3 rounded-xl text-sm font-semibold text-center ${isCompleted ? 'completed' : ''}">
             ${isCompleted ? '✓ Erledigt' : 'Übung abschließen'}
