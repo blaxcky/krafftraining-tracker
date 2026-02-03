@@ -441,14 +441,17 @@ class App {
   }
 
   renderTrainingExercises(training) {
-    const actualExercises = training.exercises.filter(ex => ex.type !== 'header');
+    const exercises = Array.isArray(training && training.exercises)
+      ? training.exercises.filter(ex => ex && typeof ex === 'object')
+      : [];
+    const actualExercises = exercises.filter(ex => ex.type !== 'header');
     const completedAll = actualExercises.filter(ex => this.isExerciseCompleted(ex)).length;
     const totalAll = actualExercises.length;
     let mainCompleted = 0;
     let mainTotal = 0;
     let sectionType = 'main';
 
-    training.exercises.forEach((exercise) => {
+    exercises.forEach((exercise) => {
       if (exercise.type === 'header') {
         const nextSectionType = this.getHeaderSectionType(exercise.name);
         if (nextSectionType) {
@@ -506,7 +509,7 @@ class App {
       pendingHeaderExtraGap = false;
     };
 
-    training.exercises.forEach((exercise) => {
+    exercises.forEach((exercise) => {
       if (exercise.type === 'header') {
         const headerType = this.getHeaderSectionType(exercise.name) || renderSectionType;
         pendingHeaderExtraGap = lastItemWasExercise && renderSectionType === 'main' && headerType === 'optional';
