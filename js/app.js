@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.18';
+    this.version = '2.9.19';
     this.init();
   }
 
@@ -886,8 +886,18 @@ class App {
   async updateTrainingPlates(exerciseId, plateNumber, checked, completed) {
     try {
       const training = await storage.getCurrentTraining();
-      const exercise = training.exercises.find(ex => ex.id === exerciseId);
-      if (!exercise) return;
+      if (!training || !Array.isArray(training.exercises)) {
+        this.showToast('Kein aktives Training gefunden.', 'error');
+        return;
+      }
+
+      const normalizedId = Number(exerciseId);
+      const exercise = training.exercises.find(ex => ex && ex.id === normalizedId);
+      if (!exercise) {
+        console.warn('Training exercise not found for plates update:', exerciseId);
+        this.showToast('Übung nicht gefunden.', 'error');
+        return;
+      }
 
       let additionalPlates = exercise.additionalPlates || 0;
 
@@ -909,10 +919,11 @@ class App {
       const baseWeight = exercise.baseWeight || 0;
       const completedValue = this.normalizeCompletedValue(completed);
       // Nicht in Master-Daten speichern, nur Training-Session
-      await storage.updateTrainingExercise(exerciseId, baseWeight, completedValue, additionalPlates, false);
+      await storage.updateTrainingExercise(normalizedId, baseWeight, completedValue, additionalPlates, false);
       await this.loadTraining();
     } catch (error) {
       console.error('Error updating training plates:', error);
+      this.showToast('Fehler beim Aktualisieren der Zusatzgewichte.', 'error');
     }
   }
 

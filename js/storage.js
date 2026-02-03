@@ -260,8 +260,10 @@ class Storage {
 
     return new Promise((resolve, reject) => {
       const request = store.put(training);
-      request.onsuccess = () => resolve(training);
       request.onerror = () => reject(request.error);
+      transaction.oncomplete = () => resolve(training);
+      transaction.onerror = () => reject(transaction.error || request.error);
+      transaction.onabort = () => reject(transaction.error || request.error);
     });
   }
 
