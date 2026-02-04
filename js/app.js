@@ -5,21 +5,8 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.21';
+    this.version = '2.9.22';
     this.init();
-  }
-
-  // Stabilisiert die Viewport-Höhe auf Mobile/PWA (vermeidet 100vh-Jumps)
-  initViewportHeight() {
-    const updateHeight = () => {
-      const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      document.documentElement.style.setProperty('--app-height', `${height}px`);
-    };
-    updateHeight();
-    window.addEventListener('resize', updateHeight);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateHeight);
-    }
   }
 
   // Hilfsfunktion: Formatiert Gewicht mit Punkt statt Komma
@@ -117,7 +104,6 @@ class App {
   }
 
   async init() {
-    this.initViewportHeight();
     await storage.init();
     this.setupEventListeners();
     this.updateVersionBadge();
