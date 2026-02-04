@@ -8,6 +8,15 @@ class App {
     this.init();
   }
 
+  // Stabilisiert die Viewport-Höhe auf Mobile/PWA (vermeidet 100vh-Jumps)
+  initViewportHeight() {
+    const setAppHeight = () => {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    };
+    setAppHeight();
+    window.addEventListener('resize', setAppHeight);
+  }
+
   // Hilfsfunktion: Formatiert Gewicht mit Punkt statt Komma
   formatWeight(weight) {
     if (!weight && weight !== 0) return '0';
@@ -103,6 +112,7 @@ class App {
   }
 
   async init() {
+    this.initViewportHeight();
     await storage.init();
     this.setupEventListeners();
     this.updateVersionBadge();
@@ -288,6 +298,12 @@ class App {
     document.getElementById('no-training').classList.add('hidden');
     document.getElementById('active-training').classList.remove('hidden');
     this.renderTrainingExercises(training);
+  }
+
+  async refreshTrainingPreserveScroll() {
+    const scrollY = window.scrollY;
+    await this.loadTraining();
+    requestAnimationFrame(() => window.scrollTo(0, scrollY));
   }
 
   renderTrainingExercises(training) {
@@ -647,7 +663,7 @@ class App {
       // Nur beim Abhaken (completed=true) die Master-Daten aktualisieren
       const saveToMaster = completedValue === true;
       await storage.updateTrainingExercise(exerciseId, baseWeight, completedValue, additionalPlates, saveToMaster);
-      await this.loadTraining();
+      await this.refreshTrainingPreserveScroll();
     } catch (error) {
       console.error('Error toggling exercise:', error);
     }
@@ -672,7 +688,7 @@ class App {
       const completedValue = this.normalizeCompletedValue(completed);
       // Nicht in Master-Daten speichern, nur Training-Session
       await storage.updateTrainingExercise(exerciseId, weight, completedValue, additionalPlates, false);
-      await this.loadTraining();
+      await this.refreshTrainingPreserveScroll();
     } catch (error) {
       console.error('Error updating training weight:', error);
     }
@@ -705,7 +721,7 @@ class App {
       const completedValue = this.normalizeCompletedValue(completed);
       // Nicht in Master-Daten speichern, nur Training-Session
       await storage.updateTrainingExercise(exerciseId, baseWeight, completedValue, additionalPlates, false);
-      await this.loadTraining();
+      await this.refreshTrainingPreserveScroll();
     } catch (error) {
       console.error('Error updating training plates:', error);
     }
@@ -718,7 +734,7 @@ class App {
 
     const newWeight = Math.max(0, Math.min(200, (exercise.baseWeight || 0) + delta));
     await storage.updateTrainingExercise(exerciseId, newWeight, this.normalizeCompletedValue(completed), exercise.additionalPlates || 0, false);
-    await this.loadTraining();
+    await this.refreshTrainingPreserveScroll();
   }
 
   async exportExercises() {
