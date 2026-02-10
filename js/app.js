@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.27';
+    this.version = '2.9.28';
     this.init();
   }
 
@@ -598,7 +598,7 @@ class App {
                 <div class="flex items-center gap-2">
                   <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -1)"
                     class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base">-</button>
-                  <span class="w-16 text-center font-bold text-base text-primary">${this.formatWeight(baseWeight)} kg</span>
+                  <span class="w-16 text-center font-bold text-base text-primary-dark">${this.formatWeight(baseWeight)} kg</span>
                   <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 1)"
                     class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base">+</button>
                 </div>
@@ -626,7 +626,7 @@ class App {
               </div>
               <div class="flex items-center gap-3 mt-0.5">
                 <span class="text-xs text-gray-500 font-medium w-24">Gesamtgewicht:</span>
-                <span class="font-bold text-primary text-base">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
+                <span class="font-bold text-primary-dark text-base">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
               </div>
               ${calories > 0 ? `
               <div class="mt-0.5">
