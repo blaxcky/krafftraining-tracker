@@ -553,8 +553,16 @@
         }
 
         .header-badge {
-            background: linear-gradient(120deg, rgba(242, 169, 0, 0.20), var(--md-sys-color-surface-container-high) 60%);
-            border: 1px solid var(--md-sys-color-outline);
+            background:
+                linear-gradient(120deg, rgba(242, 169, 0, 0.22), var(--md-sys-color-surface-container-high) 62%),
+                repeating-linear-gradient(
+                    135deg,
+                    rgba(42, 26, 0, 0.04) 0px,
+                    rgba(42, 26, 0, 0.04) 6px,
+                    rgba(42, 26, 0, 0) 6px,
+                    rgba(42, 26, 0, 0) 14px
+                );
+            border: 2px solid var(--md-sys-color-outline);
             box-shadow: var(--md-elevation-1);
             position: relative;
             overflow: hidden;
@@ -566,12 +574,40 @@
             left: 0;
             top: 0;
             bottom: 0;
-            width: 6px;
-            background: linear-gradient(180deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
+            width: 8px;
+            background: linear-gradient(180deg, var(--md-sys-color-primary), var(--md-sys-color-secondary));
+        }
+
+        .header-badge::after {
+            content: '';
+            position: absolute;
+            left: 72px;
+            right: 18px;
+            bottom: 14px;
+            height: 7px;
+            border-radius: 999px;
+            background:
+                repeating-linear-gradient(
+                    135deg,
+                    rgba(42, 26, 0, 0.16) 0px,
+                    rgba(42, 26, 0, 0.16) 2px,
+                    rgba(42, 26, 0, 0) 2px,
+                    rgba(42, 26, 0, 0) 7px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(42, 26, 0, 0) 0%,
+                    rgba(42, 26, 0, 0.16) 18%,
+                    rgba(42, 26, 0, 0.16) 82%,
+                    rgba(42, 26, 0, 0) 100%
+                );
+            opacity: 0.55;
+            pointer-events: none;
         }
 
         .header-badge h3 {
-            letter-spacing: 0.2px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
         .icon-pill {
@@ -640,6 +676,19 @@
 
         .exercise-swipe-card {
             will-change: transform;
+        }
+
+        .training-divider {
+            height: 2px;
+            border-radius: 999px;
+            background: linear-gradient(
+                90deg,
+                rgba(242, 169, 0, 0) 0%,
+                rgba(242, 169, 0, 0.55) 20%,
+                rgba(242, 201, 76, 0.45) 50%,
+                rgba(242, 169, 0, 0.55) 80%,
+                rgba(242, 169, 0, 0) 100%
+            );
         }
 
         .modal-overlay {
@@ -759,7 +808,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.24</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.25</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">

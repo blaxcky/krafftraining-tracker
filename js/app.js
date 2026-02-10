@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.24';
+    this.version = '2.9.25';
     this.init();
   }
 
@@ -588,7 +588,7 @@ class App {
                 ` : ''}
               </div>
             </div>
-            <div class="h-px bg-gray-100 mb-3"></div>
+            <div class="training-divider mb-3"></div>
             <div class="flex flex-col gap-2">
               <div class="flex items-center gap-3">
                 <label class="text-xs text-gray-500 font-medium w-24">Basisgewicht:</label>
