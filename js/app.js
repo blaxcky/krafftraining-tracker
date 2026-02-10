@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.32';
+    this.version = '2.9.33';
     this.init();
   }
 
@@ -1144,6 +1144,32 @@ class App {
     document.getElementById('total-calories-display').textContent = summary.totalCalories;
     document.getElementById('exercise-calories-display').textContent = summary.exerciseCalories;
     document.getElementById('cardio-calories-display').textContent = summary.cardioCalories;
+
+    const total = Number(summary.totalCalories) || 0;
+    const strength = Number(summary.exerciseCalories) || 0;
+    const cardio = Number(summary.cardioCalories) || 0;
+    const hasAny = total > 0;
+    const strengthPct = hasAny ? Math.round((strength / total) * 100) : 0;
+    const cardioPct = hasAny ? Math.max(0, 100 - strengthPct) : 0;
+
+    const strengthPercentEl = document.getElementById('exercise-calories-percent');
+    const cardioPercentEl = document.getElementById('cardio-calories-percent');
+    if (strengthPercentEl) strengthPercentEl.textContent = `${strengthPct}%`;
+    if (cardioPercentEl) cardioPercentEl.textContent = `${cardioPct}%`;
+
+    const splitBar = document.getElementById('calories-split-bar');
+    const strengthBar = document.getElementById('calories-split-strength');
+    const cardioBar = document.getElementById('calories-split-cardio');
+    if (splitBar) splitBar.dataset.empty = hasAny ? 'false' : 'true';
+    if (strengthBar && cardioBar) {
+      if (!hasAny) {
+        strengthBar.style.width = '50%';
+        cardioBar.style.width = '50%';
+      } else {
+        strengthBar.style.width = `${strengthPct}%`;
+        cardioBar.style.width = `${cardioPct}%`;
+      }
+    }
 
     // Cardio-Liste rendern
     const cardioListContainer = document.getElementById('cardio-list-container');

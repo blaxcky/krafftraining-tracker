@@ -551,6 +551,7 @@
             color: var(--md-sys-color-on-primary-container);
             position: relative;
             overflow: hidden;
+            border: 1px solid rgba(35, 31, 22, 0.12);
         }
 
         .calories-gradient::before {
@@ -559,6 +560,150 @@
             inset: 0;
             background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.5), transparent 50%);
             opacity: 0.35;
+        }
+
+        .calories-hero__eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 11px;
+            font-weight: 800;
+            color: rgba(42, 26, 0, 0.7);
+        }
+
+        .calories-hero__title {
+            font-size: 14px;
+            font-weight: 700;
+            color: rgba(42, 26, 0, 0.82);
+        }
+
+        .calories-hero__kpi {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .calories-hero__number {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .calories-hero__number-value {
+            font-size: clamp(40px, 9vw, 56px);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            color: rgba(42, 26, 0, 0.92);
+        }
+
+        .calories-hero__number-unit {
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: rgba(42, 26, 0, 0.68);
+        }
+
+        .split-bar {
+            margin-top: 14px;
+            height: 12px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(35, 31, 22, 0.12);
+            display: flex;
+        }
+
+        .split-bar__seg {
+            height: 100%;
+            transition: width 0.25s ease;
+        }
+
+        .split-bar__seg--strength {
+            background: linear-gradient(90deg, var(--md-sys-color-primary), var(--md-sys-color-secondary));
+        }
+
+        .split-bar__seg--cardio {
+            background: linear-gradient(90deg, rgba(42, 26, 0, 0.55), rgba(42, 26, 0, 0.32));
+        }
+
+        .split-bar[data-empty="true"] .split-bar__seg {
+            opacity: 0.35;
+        }
+
+        .calories-stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .calories-stat-tile {
+            background: rgba(255, 255, 255, 0.58);
+            border: 1px solid rgba(35, 31, 22, 0.12);
+            border-radius: 16px;
+            padding: 12px 12px 10px;
+            backdrop-filter: blur(8px);
+        }
+
+        .calories-stat-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .calories-stat-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(35, 31, 22, 0.10);
+            background: rgba(255, 255, 255, 0.55);
+            color: rgba(42, 26, 0, 0.82);
+        }
+
+        .calories-stat-meta {
+            min-width: 0;
+        }
+
+        .calories-stat-label {
+            font-size: 12px;
+            font-weight: 800;
+            color: rgba(42, 26, 0, 0.8);
+            line-height: 1.15;
+        }
+
+        .calories-stat-percent {
+            font-size: 11px;
+            font-weight: 800;
+            color: rgba(42, 26, 0, 0.58);
+            margin-top: 2px;
+        }
+
+        .calories-stat-value {
+            margin-top: 10px;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            color: rgba(42, 26, 0, 0.9);
+        }
+
+        .calories-stat-value strong {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+
+        .calories-stat-value span {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: rgba(42, 26, 0, 0.62);
         }
 
         .header-badge {
@@ -828,7 +973,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.32</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.33</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
@@ -930,49 +1075,89 @@
                 </div>
             </div>
 
-            <div id="active-calories" class="hidden fade-in">
-                <!-- Kalorien-Zusammenfassung -->
-                <div class="calories-gradient rounded-2xl p-6 mb-5 relative shadow-lg">
-                    <div class="relative z-10">
-                        <div class="text-center mb-5">
-                            <p class="text-sm font-medium mb-1">Gesamtkalorien verbrannt</p>
-                            <p id="total-calories-display" class="text-6xl font-extrabold tracking-tight">0</p>
-                            <p class="text-sm font-medium mt-1">kcal</p>
-                        </div>
-                        <div class="flex justify-around pt-4 border-t border-white/30">
-                            <div class="text-center">
-                                <p class="text-3xl font-bold" id="exercise-calories-display">0</p>
-                                <p class="text-xs font-medium mt-1">Krafttraining</p>
-                            </div>
-                            <div class="w-px bg-white/30"></div>
-                            <div class="text-center">
-                                <p class="text-3xl font-bold" id="cardio-calories-display">0</p>
-                                <p class="text-xs font-medium mt-1">Cardio</p>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- E-Mail Eingabe und Senden -->
-                    <div class="relative z-10 mt-5 pt-4 border-t border-white/30">
-                        <div class="flex flex-col gap-3">
-                            <button id="send-calories-email-btn" class="btn-secondary w-full py-3 px-5 rounded-xl shadow-sm">
-                                Senden
-                            </button>
-                            <details id="email-settings" class="email-settings">
-                                <summary id="email-settings-summary" class="cursor-pointer text-gray-500 hover:text-gray-700 font-medium text-xs flex items-center gap-2 transition-colors">
-                                    <svg class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                    <span id="email-settings-label">E-Mail hinzufügen</span>
-                                </summary>
-                                <div class="mt-3">
-                                    <input type="email" id="email-address-input"
-                                        class="input-field w-full px-4 py-3 rounded-xl"
-                                        placeholder="E-Mail-Adresse eingeben">
-                                </div>
-                            </details>
-                        </div>
-                    </div>
-                </div>
+	            <div id="active-calories" class="hidden fade-in">
+	                <!-- Kalorien-Zusammenfassung -->
+	                <div class="calories-gradient rounded-2xl p-6 mb-4 relative shadow-lg">
+	                    <div class="relative z-10">
+	                        <div class="flex items-start justify-between gap-4">
+	                            <div>
+	                                <div class="calories-hero__eyebrow">Übersicht</div>
+	                                <div class="calories-hero__title mt-1">Kalorien dieser Session</div>
+	                            </div>
+	                            <div class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-black/10 bg-white/55 text-xs font-extrabold tracking-wider text-black/70">
+	                                <span class="material-symbols-outlined text-base">local_fire_department</span>
+	                                KCAL
+	                            </div>
+	                        </div>
+
+	                        <div class="calories-hero__kpi">
+	                            <div class="calories-hero__number">
+	                                <div id="total-calories-display" class="calories-hero__number-value">0</div>
+	                                <div class="calories-hero__number-unit">kcal</div>
+	                            </div>
+	                        </div>
+
+	                        <div id="calories-split-bar" class="split-bar" data-empty="true" aria-label="Aufteilung Krafttraining und Cardio">
+	                            <div id="calories-split-strength" class="split-bar__seg split-bar__seg--strength" style="width: 50%"></div>
+	                            <div id="calories-split-cardio" class="split-bar__seg split-bar__seg--cardio" style="width: 50%"></div>
+	                        </div>
+
+	                        <div class="calories-stat-grid">
+	                            <div class="calories-stat-tile">
+	                                <div class="calories-stat-top">
+	                                    <div class="calories-stat-icon">
+	                                        <span class="material-symbols-outlined text-[18px]">fitness_center</span>
+	                                    </div>
+	                                    <div class="calories-stat-meta">
+	                                        <div class="calories-stat-label">Krafttraining</div>
+	                                        <div id="exercise-calories-percent" class="calories-stat-percent">0%</div>
+	                                    </div>
+	                                </div>
+	                                <div class="calories-stat-value">
+	                                    <strong id="exercise-calories-display">0</strong>
+	                                    <span>kcal</span>
+	                                </div>
+	                            </div>
+	                            <div class="calories-stat-tile">
+	                                <div class="calories-stat-top">
+	                                    <div class="calories-stat-icon">
+	                                        <span class="material-symbols-outlined text-[18px]">directions_run</span>
+	                                    </div>
+	                                    <div class="calories-stat-meta">
+	                                        <div class="calories-stat-label">Cardio</div>
+	                                        <div id="cardio-calories-percent" class="calories-stat-percent">0%</div>
+	                                    </div>
+	                                </div>
+	                                <div class="calories-stat-value">
+	                                    <strong id="cardio-calories-display">0</strong>
+	                                    <span>kcal</span>
+	                                </div>
+	                            </div>
+	                        </div>
+	                    </div>
+	                </div>
+
+	                <div class="card p-5 mb-5">
+	                    <h3 class="font-bold text-lg text-gray-900 mb-3">Zusammenfassung senden</h3>
+	                    <div class="flex flex-col gap-3">
+	                        <button id="send-calories-email-btn" class="btn-secondary w-full py-3 px-5 rounded-xl shadow-sm">
+	                            Senden
+	                        </button>
+	                        <details id="email-settings" class="email-settings">
+	                            <summary id="email-settings-summary" class="cursor-pointer text-gray-500 hover:text-gray-700 font-medium text-xs flex items-center gap-2 transition-colors">
+	                                <svg class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+	                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+	                                </svg>
+	                                <span id="email-settings-label">E-Mail hinzufügen</span>
+	                            </summary>
+	                            <div class="mt-3">
+	                                <input type="email" id="email-address-input"
+	                                    class="input-field w-full px-4 py-3 rounded-xl"
+	                                    placeholder="E-Mail-Adresse eingeben">
+	                            </div>
+	                        </details>
+	                    </div>
+	                </div>
 
                 <!-- Cardio hinzufügen -->
                 <div class="card p-5 mb-4">
