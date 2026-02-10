@@ -201,7 +201,6 @@ class App {
       if (event.touches.length !== 1) return;
       const modal = document.getElementById('exercise-modal');
       if (modal && !modal.classList.contains('hidden')) return;
-      if (this.shouldIgnoreSwipe(event.target)) return;
 
       const swipeRoot = event.target.closest('.exercise-swipe');
       if (!swipeRoot) return;
@@ -580,7 +579,7 @@ class App {
               </div>
             </div>
             <div class="h-px bg-gray-100 mb-3"></div>
-            <div class="flex flex-col gap-2" data-swipe-ignore>
+            <div class="flex flex-col gap-2">
               <div class="flex items-center gap-3">
                 <label class="text-xs text-gray-500 font-medium w-24">Basisgewicht:</label>
                 <div class="flex items-center gap-2">
