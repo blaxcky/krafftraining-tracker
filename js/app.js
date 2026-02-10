@@ -190,6 +190,14 @@ class App {
     if (!container) return;
 
     let tracking = null;
+    const isControlTarget = (target) => {
+      if (!target || !(target instanceof Element)) return false;
+      return Boolean(
+        target.closest(
+          '[data-swipe-ignore], button, a, input, select, textarea, label, [role="button"], [role="switch"]'
+        )
+      );
+    };
 
     const resetCard = (card) => {
       if (!card) return;
@@ -219,7 +227,8 @@ class App {
         startX: touch.clientX,
         startY: touch.clientY,
         lastDx: 0,
-        isHorizontal: null
+        isHorizontal: null,
+        startedOnControl: isControlTarget(event.target)
       };
       swipeRoot.dataset.swipeDir = '';
       card.style.transition = 'none';
@@ -234,8 +243,9 @@ class App {
       const dy = touch.clientY - tracking.startY;
 
       if (tracking.isHorizontal === null) {
-        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-        tracking.isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.1;
+        const slop = tracking.startedOnControl ? 18 : 8;
+        if (Math.abs(dx) < slop && Math.abs(dy) < slop) return;
+        tracking.isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.15;
       }
 
       if (!tracking.isHorizontal) return;
