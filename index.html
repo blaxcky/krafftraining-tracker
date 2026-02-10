@@ -88,6 +88,8 @@
         .app-shell {
             display: flex;
             flex-direction: column;
+            height: 100svh;
+            height: 100dvh;
             min-height: 100svh;
             min-height: 100dvh;
         }
@@ -99,12 +101,14 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
+            height: 100%;
             min-height: 0;
         }
 
         .tab-panels {
             position: relative;
             flex: 1;
+            height: 100%;
             min-height: 0;
             overflow: hidden;
         }
@@ -808,7 +812,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.25</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.26</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
