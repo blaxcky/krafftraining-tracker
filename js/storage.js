@@ -209,7 +209,8 @@ class Storage {
         additionalPlates: ex.additionalPlates || 0,
         weight: ex.weight || 0,
         calories: ex.calories || 0, // NEU: Kalorien pro Übung
-        completed: ex.type === 'header' ? null : false
+        completed: ex.type === 'header' ? null : false,
+        skipped: ex.type === 'header' ? null : false
       }))
     };
 
@@ -246,11 +247,21 @@ class Storage {
       exercise.baseWeight = this.parseWeight(weight);
       exercise.additionalPlates = parseInt(additionalPlates) || 0;
       exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
-      const isCompleted = !!completed;
-      exercise.completed = isCompleted;
+      if (typeof completed !== 'undefined') {
+        if (completed === 'skipped') {
+          exercise.completed = false;
+          exercise.skipped = true;
+        } else {
+          const isCompleted = !!completed;
+          exercise.completed = isCompleted;
+          exercise.skipped = false;
+        }
+      } else if (typeof exercise.skipped === 'undefined') {
+        exercise.skipped = false;
+      }
 
       // Nur in Master-Daten speichern wenn explizit gewünscht (beim Abhaken)
-      if (saveToMaster && isCompleted) {
+      if (saveToMaster && exercise.completed === true) {
         await this.updateExercise(exerciseId, exercise.name, exercise.baseWeight, exercise.additionalPlates);
       }
     }

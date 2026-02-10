@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.22';
+    this.version = '2.9.23';
     this.init();
   }
 
@@ -156,7 +156,10 @@ class App {
       }
     });
 
-    this.setupSwipeNavigation();
+    this.setupExerciseSwipeGestures();
+    window.addEventListener('resize', () => {
+      this.setTabTransform(this.getTabIndex(this.currentTab), false);
+    });
   }
 
   getTabIndex(tab) {
@@ -182,112 +185,104 @@ class App {
     );
   }
 
-  setupSwipeNavigation() {
-    const panels = document.getElementById('tab-panels');
-    const strip = document.getElementById('tab-strip');
-    if (!panels || !strip) return;
+  setupExerciseSwipeGestures() {
+    const container = document.getElementById('training-exercises');
+    if (!container) return;
 
-    let startX = 0;
-    let startY = 0;
-    let startTime = 0;
-    let startOffset = 0;
-    let tracking = false;
-    let isHorizontal = null;
+    let tracking = null;
 
-    const getWidth = () => panels.clientWidth;
-    const getBounds = () => {
-      const width = getWidth();
-      return {
-        min: -(this.tabOrder.length - 1) * width,
-        max: 0,
-        width
-      };
+    const resetCard = (card) => {
+      if (!card) return;
+      card.style.transition = 'transform 0.15s ease';
+      card.style.transform = 'translate3d(0, 0, 0)';
     };
 
-    panels.addEventListener('touchstart', (event) => {
+    container.addEventListener('touchstart', (event) => {
       if (event.touches.length !== 1) return;
       const modal = document.getElementById('exercise-modal');
       if (modal && !modal.classList.contains('hidden')) return;
-      if (this.shouldIgnoreSwipe(event.target)) {
-        tracking = false;
-        return;
-      }
-      const touch = event.touches[0];
-      startX = touch.clientX;
-      startY = touch.clientY;
-      startTime = Date.now();
-      isHorizontal = null;
-      tracking = true;
+      if (this.shouldIgnoreSwipe(event.target)) return;
 
-      const { width } = getBounds();
-      const currentIndex = Math.max(0, this.getTabIndex(this.currentTab));
-      startOffset = -currentIndex * width;
-      strip.style.transition = 'none';
+      const swipeRoot = event.target.closest('.exercise-swipe');
+      if (!swipeRoot) return;
+
+      const exerciseId = Number(swipeRoot.dataset.trainingExerciseId);
+      if (!Number.isFinite(exerciseId)) return;
+
+      const card = swipeRoot.querySelector('.exercise-swipe-card');
+      if (!card) return;
+
+      const touch = event.touches[0];
+      tracking = {
+        swipeRoot,
+        card,
+        exerciseId,
+        startX: touch.clientX,
+        startY: touch.clientY,
+        lastDx: 0,
+        isHorizontal: null
+      };
+      swipeRoot.dataset.swipeDir = '';
+      card.style.transition = 'none';
     }, { passive: true });
 
-    panels.addEventListener('touchmove', (event) => {
+    container.addEventListener('touchmove', (event) => {
       if (!tracking) return;
       const touch = event.touches[0];
       if (!touch) return;
 
-      const dx = touch.clientX - startX;
-      const dy = touch.clientY - startY;
+      const dx = touch.clientX - tracking.startX;
+      const dy = touch.clientY - tracking.startY;
 
-      if (isHorizontal === null) {
+      if (tracking.isHorizontal === null) {
         if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-        isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.1;
+        tracking.isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.1;
       }
 
-      if (!isHorizontal) return;
+      if (!tracking.isHorizontal) return;
       event.preventDefault();
 
-      const { min, max, width } = getBounds();
-      const overscroll = width * 0.12;
-      let nextOffset = startOffset + dx;
-      nextOffset = Math.max(min - overscroll, Math.min(max + overscroll, nextOffset));
+      const max = Math.min(160, tracking.swipeRoot.clientWidth * 0.45);
+      const clamped = Math.max(-max, Math.min(max, dx));
+      tracking.lastDx = clamped;
 
-      strip.style.transform = `translate3d(${nextOffset}px, 0, 0)`;
+      tracking.card.style.transform = `translate3d(${clamped}px, 0, 0)`;
+      tracking.swipeRoot.dataset.swipeDir = clamped > 0 ? 'right' : (clamped < 0 ? 'left' : '');
     }, { passive: false });
 
-    panels.addEventListener('touchend', (event) => {
+    const finishSwipe = () => {
       if (!tracking) return;
-      const touch = event.changedTouches[0];
-      if (!touch) return;
+      const { swipeRoot, card, exerciseId, lastDx, isHorizontal } = tracking;
+      tracking = null;
 
-      const dx = touch.clientX - startX;
-      const dy = touch.clientY - startY;
-      const elapsed = Date.now() - startTime;
-      tracking = false;
+      const threshold = Math.min(110, swipeRoot.clientWidth * 0.22);
+      const abs = Math.abs(lastDx);
 
-      if (!isHorizontal || Math.abs(dx) < Math.abs(dy)) {
-        this.setTabTransform(this.getTabIndex(this.currentTab), true);
+      if (!isHorizontal || abs < threshold) {
+        swipeRoot.dataset.swipeDir = '';
+        resetCard(card);
         return;
       }
 
-      const { width } = getBounds();
-      const velocity = Math.abs(dx) / Math.max(1, elapsed);
-      const movedEnough = Math.abs(dx) > width * 0.25 || velocity > 0.6;
+      const dir = lastDx > 0 ? 'right' : 'left';
+      const targetOffset = dir === 'right' ? swipeRoot.clientWidth : -swipeRoot.clientWidth;
+      card.style.transition = 'transform 0.12s ease';
+      card.style.transform = `translate3d(${targetOffset}px, 0, 0)`;
 
-      let nextIndex = this.getTabIndex(this.currentTab);
-      if (movedEnough) {
-        if (dx < 0) {
-          nextIndex = Math.min(this.tabOrder.length - 1, nextIndex + 1);
-        } else if (dx > 0) {
-          nextIndex = Math.max(0, nextIndex - 1);
-        }
-      }
+      window.setTimeout(() => {
+        swipeRoot.dataset.swipeDir = '';
+        this.setExerciseState(exerciseId, dir === 'right' ? 'completed' : 'skipped');
+      }, 120);
+    };
 
-      this.switchTab(this.tabOrder[nextIndex], { animate: true });
+    container.addEventListener('touchend', finishSwipe, { passive: true });
+    container.addEventListener('touchcancel', () => {
+      if (!tracking) return;
+      const { swipeRoot, card } = tracking;
+      tracking = null;
+      swipeRoot.dataset.swipeDir = '';
+      resetCard(card);
     }, { passive: true });
-
-    panels.addEventListener('touchcancel', () => {
-      tracking = false;
-      this.setTabTransform(this.getTabIndex(this.currentTab), true);
-    }, { passive: true });
-
-    window.addEventListener('resize', () => {
-      this.setTabTransform(this.getTabIndex(this.currentTab), false);
-    });
   }
 
   switchTab(tab, { animate = true } = {}) {
@@ -459,7 +454,7 @@ class App {
       ? training.exercises.filter(ex => ex && typeof ex === 'object')
       : [];
     const actualExercises = exercises.filter(ex => ex.type !== 'header');
-    const completedAll = actualExercises.filter(ex => this.isExerciseCompleted(ex)).length;
+    const completedAll = actualExercises.filter(ex => this.isExerciseDone(ex)).length;
     const totalAll = actualExercises.length;
     let mainCompleted = 0;
     let mainTotal = 0;
@@ -474,7 +469,7 @@ class App {
         return;
       }
 
-      const isCompleted = this.isExerciseCompleted(exercise);
+      const isCompleted = this.isExerciseDone(exercise);
       if (sectionType !== 'optional') {
         mainTotal += 1;
         if (isCompleted) mainCompleted += 1;
@@ -533,7 +528,8 @@ class App {
         return;
       }
 
-      const isCompleted = this.isExerciseCompleted(exercise);
+      const isCompleted = this.isExerciseDone(exercise);
+      const isSkipped = this.isExerciseSkipped(exercise);
 
       if (!showCompleted && isCompleted) {
         return;
@@ -548,65 +544,88 @@ class App {
       const baseWeight = exercise.baseWeight || 0;
       const additionalPlates = exercise.additionalPlates || 0;
       const calories = exercise.calories || 0;
+      const stateLabel = isCompleted
+        ? (isSkipped ? 'Übersprungen' : 'Erledigt')
+        : '';
+      const stateLabelTone = isSkipped
+        ? 'bg-gray-100 text-gray-700 border-gray-200'
+        : 'bg-emerald-50 text-emerald-800 border-emerald-100';
 
       fragments.push(`
-        <div class="card p-5 ${cardStateClasses}">
-          <div class="mb-4">
-            <h3 class="font-bold text-lg ${nameClasses}">${exercise.name}</h3>
+        <div class="exercise-swipe" data-training-exercise-id="${exercise.id}">
+          <div class="exercise-swipe-bg exercise-swipe-bg--complete" aria-hidden="true">
+            <span class="material-symbols-outlined">done</span>
+            <span>Erledigt</span>
           </div>
-          <div class="h-px bg-gray-100 mb-4"></div>
-          <div class="flex flex-col gap-3" data-swipe-ignore>
-            <div class="flex items-center gap-3">
-              <label class="text-xs text-gray-500 font-medium w-24">Basisgewicht:</label>
+          <div class="exercise-swipe-bg exercise-swipe-bg--skip" aria-hidden="true">
+            <span>Überspringen</span>
+            <span class="material-symbols-outlined">skip_next</span>
+          </div>
+          <div class="card p-4 exercise-swipe-card ${cardStateClasses}">
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <h3 class="font-semibold text-base leading-snug ${nameClasses}">${exercise.name}</h3>
               <div class="flex items-center gap-2">
-                <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -1, ${isCompleted})"
-                  class="weight-adj-btn w-10 h-10 flex items-center justify-center rounded-lg text-lg">-</button>
-                <span class="w-16 text-center font-bold text-lg text-primary">${this.formatWeight(baseWeight)} kg</span>
-                <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 1, ${isCompleted})"
-                  class="weight-adj-btn w-10 h-10 flex items-center justify-center rounded-lg text-lg">+</button>
+                ${stateLabel ? `
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold border ${stateLabelTone}">
+                    ${stateLabel}
+                  </span>
+                ` : ''}
+                ${isCompleted ? `
+                  <button type="button" data-swipe-ignore onclick="app.setExerciseState(${exercise.id}, 'open')"
+                    class="icon-btn h-9 w-9 rounded-xl flex items-center justify-center"
+                    aria-label="Zurücksetzen" title="Zurücksetzen">
+                    <span class="material-symbols-outlined text-base">restart_alt</span>
+                  </button>
+                ` : ''}
               </div>
             </div>
-            <div class="flex items-center gap-3">
-              <label class="text-xs text-gray-500 font-medium w-24">Zusatzgewichte:</label>
-              <div class="flex gap-2">
-                <label class="cursor-pointer">
-                  <input type="checkbox" ${additionalPlates >= 1 ? 'checked' : ''}
-                    onchange="app.updateTrainingPlates(${exercise.id}, 1, this.checked, ${isCompleted})"
-                    class="sr-only peer">
-                  <span class="chip inline-flex items-center px-3 py-1.5 rounded-full text-xs peer-checked:active">
-                    +2,5 kg
-                  </span>
-                </label>
-                <label class="cursor-pointer">
-                  <input type="checkbox" ${additionalPlates >= 2 ? 'checked' : ''}
-                    onchange="app.updateTrainingPlates(${exercise.id}, 2, this.checked, ${isCompleted})"
-                    class="sr-only peer">
-                  <span class="chip inline-flex items-center px-3 py-1.5 rounded-full text-xs peer-checked:active">
-                    +2,5 kg
-                  </span>
-                </label>
+            <div class="h-px bg-gray-100 mb-3"></div>
+            <div class="flex flex-col gap-2" data-swipe-ignore>
+              <div class="flex items-center gap-3">
+                <label class="text-xs text-gray-500 font-medium w-24">Basisgewicht:</label>
+                <div class="flex items-center gap-2">
+                  <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -1)"
+                    class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base">-</button>
+                  <span class="w-16 text-center font-bold text-base text-primary">${this.formatWeight(baseWeight)} kg</span>
+                  <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 1)"
+                    class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base">+</button>
+                </div>
               </div>
+              <div class="flex items-center gap-3">
+                <label class="text-xs text-gray-500 font-medium w-24">Zusatzgewichte:</label>
+                <div class="flex gap-2">
+                  <label class="cursor-pointer">
+                    <input type="checkbox" ${additionalPlates >= 1 ? 'checked' : ''}
+                      onchange="app.updateTrainingPlates(${exercise.id}, 1, this.checked)"
+                      class="sr-only peer">
+                    <span class="chip inline-flex items-center px-3 py-1 rounded-full text-xs peer-checked:active">
+                      +2,5 kg
+                    </span>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input type="checkbox" ${additionalPlates >= 2 ? 'checked' : ''}
+                      onchange="app.updateTrainingPlates(${exercise.id}, 2, this.checked)"
+                      class="sr-only peer">
+                    <span class="chip inline-flex items-center px-3 py-1 rounded-full text-xs peer-checked:active">
+                      +2,5 kg
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 mt-0.5">
+                <span class="text-xs text-gray-500 font-medium w-24">Gesamtgewicht:</span>
+                <span class="font-bold text-primary text-base">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
+              </div>
+              ${calories > 0 ? `
+              <div class="mt-0.5">
+                <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
+                  <span class="material-symbols-outlined kcal-icon">local_fire_department</span>
+                  ${calories} kcal
+                </span>
+              </div>
+              ` : ''}
             </div>
-            <div class="flex items-center gap-3 mt-1">
-              <span class="text-xs text-gray-500 font-medium w-24">Gesamtgewicht:</span>
-              <span class="font-bold text-primary text-lg">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
-            </div>
-            ${calories > 0 ? `
-            <div class="mt-1">
-              <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
-                <span class="material-symbols-outlined kcal-icon">local_fire_department</span>
-                ${calories} kcal
-              </span>
-            </div>
-            ` : ''}
           </div>
-          <button
-            type="button"
-            data-swipe-ignore
-            onclick="app.toggleExercise(${exercise.id}, ${!isCompleted})"
-            class="complete-btn w-full mt-5 py-3 rounded-xl text-sm font-semibold text-center ${isCompleted ? 'completed' : ''}">
-            ${isCompleted ? '✓ Erledigt' : 'Übung abschließen'}
-          </button>
         </div>
       `);
       lastItemWasExercise = true;
@@ -666,7 +685,20 @@ class App {
     return this.normalizeCompletedValue(exercise.completed);
   }
 
+  isExerciseSkipped(exercise) {
+    if (!exercise) return false;
+    return this.normalizeSkippedValue(exercise.skipped);
+  }
+
+  isExerciseDone(exercise) {
+    return this.isExerciseCompleted(exercise) || this.isExerciseSkipped(exercise);
+  }
+
   normalizeCompletedValue(value) {
+    return value === true || value === 'true' || value === 1 || value === '1';
+  }
+
+  normalizeSkippedValue(value) {
     return value === true || value === 'true' || value === 1 || value === '1';
   }
 
@@ -861,47 +893,75 @@ class App {
 
   async toggleExercise(exerciseId, completed) {
     try {
-      const training = await storage.getCurrentTraining();
-      const exercise = training.exercises.find(ex => ex.id === exerciseId);
-      const completedValue = this.normalizeCompletedValue(completed);
-      const baseWeight = exercise.baseWeight || 0;
-      const additionalPlates = exercise.additionalPlates || 0;
-
-      // Nur beim Abhaken (completed=true) die Master-Daten aktualisieren
-      const saveToMaster = completedValue === true;
-      await storage.updateTrainingExercise(exerciseId, baseWeight, completedValue, additionalPlates, saveToMaster);
-      await this.refreshTrainingPreserveScroll();
+      await this.setExerciseState(exerciseId, this.normalizeCompletedValue(completed) ? 'completed' : 'open');
     } catch (error) {
       console.error('Error toggling exercise:', error);
     }
   }
 
-  async updateWeight(exerciseId, weight, completed) {
+  async setExerciseState(exerciseId, state) {
     try {
-      const completedValue = this.normalizeCompletedValue(completed);
-      // Nicht in Master-Daten speichern, nur Training-Session
-      await storage.updateTrainingExercise(exerciseId, weight, completedValue, 0, false);
+      const training = await storage.getCurrentTraining();
+      if (!training || !Array.isArray(training.exercises)) {
+        this.showToast('Kein aktives Training gefunden.', 'error');
+        return;
+      }
+
+      const normalizedId = Number(exerciseId);
+      if (!Number.isFinite(normalizedId)) {
+        this.showToast('Ungültige Übung-ID.', 'error');
+        return;
+      }
+      const exercise = training.exercises.find(ex => ex && ex.id === normalizedId);
+      if (!exercise) {
+        this.showToast('Übung nicht gefunden.', 'error');
+        return;
+      }
+
+      const baseWeight = exercise.baseWeight || 0;
+      const additionalPlates = exercise.additionalPlates || 0;
+      const completedParam = state === 'skipped' ? 'skipped' : (state === 'completed');
+      const saveToMaster = state === 'completed';
+
+      await storage.updateTrainingExercise(normalizedId, baseWeight, completedParam, additionalPlates, saveToMaster);
       await this.refreshTrainingPreserveScroll();
+
+      if (state === 'completed') this.showToast('✓ Erledigt', 'success');
+      if (state === 'skipped') this.showToast('Übung übersprungen', 'success');
     } catch (error) {
-      console.error('Error updating weight:', error);
+      console.error('Error setting exercise state:', error);
     }
   }
 
-  async updateTrainingWeight(exerciseId, weight, completed) {
+  async updateWeight(exerciseId, weight) {
     try {
       const training = await storage.getCurrentTraining();
-      const exercise = training.exercises.find(ex => ex.id === exerciseId);
+      const exercise = training && Array.isArray(training.exercises)
+        ? training.exercises.find(ex => ex && ex.id === exerciseId)
+        : null;
       const additionalPlates = exercise ? (exercise.additionalPlates || 0) : 0;
-      const completedValue = this.normalizeCompletedValue(completed);
       // Nicht in Master-Daten speichern, nur Training-Session
-      await storage.updateTrainingExercise(exerciseId, weight, completedValue, additionalPlates, false);
+      await storage.updateTrainingExercise(exerciseId, weight, undefined, additionalPlates, false);
       await this.refreshTrainingPreserveScroll();
     } catch (error) {
       console.error('Error updating training weight:', error);
     }
   }
 
-  async updateTrainingPlates(exerciseId, plateNumber, checked, completed) {
+  async updateTrainingWeight(exerciseId, weight) {
+    try {
+      const training = await storage.getCurrentTraining();
+      const exercise = training.exercises.find(ex => ex.id === exerciseId);
+      const additionalPlates = exercise ? (exercise.additionalPlates || 0) : 0;
+      // Nicht in Master-Daten speichern, nur Training-Session
+      await storage.updateTrainingExercise(exerciseId, weight, undefined, additionalPlates, false);
+      await this.refreshTrainingPreserveScroll();
+    } catch (error) {
+      console.error('Error updating training weight:', error);
+    }
+  }
+
+  async updateTrainingPlates(exerciseId, plateNumber, checked) {
     try {
       const training = await storage.getCurrentTraining();
       if (!training || !Array.isArray(training.exercises)) {
@@ -935,9 +995,8 @@ class App {
       }
 
       const baseWeight = exercise.baseWeight || 0;
-      const completedValue = this.normalizeCompletedValue(completed);
       // Nicht in Master-Daten speichern, nur Training-Session
-      await storage.updateTrainingExercise(normalizedId, baseWeight, completedValue, additionalPlates, false);
+      await storage.updateTrainingExercise(normalizedId, baseWeight, undefined, additionalPlates, false);
       await this.refreshTrainingPreserveScroll();
     } catch (error) {
       console.error('Error updating training plates:', error);
@@ -945,13 +1004,13 @@ class App {
     }
   }
 
-  async adjustTrainingWeight(exerciseId, delta, completed) {
+  async adjustTrainingWeight(exerciseId, delta) {
     const training = await storage.getCurrentTraining();
     const exercise = training.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
 
     const newWeight = Math.max(0, Math.min(200, (exercise.baseWeight || 0) + delta));
-    await storage.updateTrainingExercise(exerciseId, newWeight, this.normalizeCompletedValue(completed), exercise.additionalPlates || 0, false);
+    await storage.updateTrainingExercise(exerciseId, newWeight, undefined, exercise.additionalPlates || 0, false);
     await this.refreshTrainingPreserveScroll();
   }
 

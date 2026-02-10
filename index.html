@@ -597,6 +597,50 @@
             border: 1px solid var(--md-sys-color-outline-variant);
         }
 
+        .exercise-swipe {
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            touch-action: pan-y;
+        }
+
+        .exercise-swipe-bg {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-weight: 700;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            pointer-events: none;
+        }
+
+        .exercise-swipe-bg--complete {
+            justify-content: flex-start;
+            gap: 8px;
+            background: rgba(0, 106, 106, 0.10);
+            color: var(--md-sys-color-primary);
+        }
+
+        .exercise-swipe-bg--skip {
+            justify-content: flex-end;
+            gap: 8px;
+            background: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .exercise-swipe[data-swipe-dir="right"] .exercise-swipe-bg--complete,
+        .exercise-swipe[data-swipe-dir="left"] .exercise-swipe-bg--skip {
+            opacity: 1;
+        }
+
+        .exercise-swipe-card {
+            will-change: transform;
+        }
+
         .modal-overlay {
             background: rgba(22, 26, 26, 0.45);
             backdrop-filter: blur(6px);
@@ -714,7 +758,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.22</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.23</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
