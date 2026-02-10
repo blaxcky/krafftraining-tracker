@@ -137,7 +137,8 @@
             align-items: center;
             gap: 12px;
             padding: 16px 20px 12px;
-            background: rgba(253, 252, 253, 0.92);
+            background: rgba(255, 254, 250, 0.92);
+            background: color-mix(in srgb, var(--md-sys-color-surface) 92%, transparent);
             border-bottom: 1px solid var(--md-sys-color-outline-variant);
             backdrop-filter: blur(12px);
         }
@@ -209,7 +210,8 @@
             right: 0;
             bottom: 0;
             padding: 8px 16px calc(10px + env(safe-area-inset-bottom));
-            background: rgba(253, 252, 253, 0.96);
+            background: rgba(255, 254, 250, 0.96);
+            background: color-mix(in srgb, var(--md-sys-color-surface) 96%, transparent);
             border-top: 1px solid var(--md-sys-color-outline-variant);
             backdrop-filter: blur(12px);
             z-index: 45;
@@ -766,19 +768,30 @@
         }
 
         .weight-adj-btn {
-            background: var(--md-sys-color-surface);
-            border: 1px solid var(--md-sys-color-outline-variant);
-            color: var(--md-sys-color-on-surface);
+            background: linear-gradient(180deg, var(--md-sys-color-primary-container) 0%, var(--md-sys-color-secondary-container) 100%);
+            border: 1px solid rgba(42, 26, 0, 0.14);
+            color: var(--md-sys-color-on-primary-container);
             font-weight: 700;
-            transition: all 0.15s ease;
+            box-shadow: var(--md-elevation-1);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
         }
 
         .weight-adj-btn:hover {
-            background: var(--md-sys-color-surface-container-high);
+            background: linear-gradient(180deg, var(--md-sys-color-secondary-container) 0%, var(--md-sys-color-surface-container-low) 100%);
+            border-color: rgba(242, 169, 0, 0.55);
+            box-shadow: var(--md-elevation-2);
+        }
+
+        .weight-adj-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(242, 169, 0, 0.22), var(--md-elevation-2);
         }
 
         .weight-adj-btn:active {
-            transform: scale(0.96);
+            transform: translateY(1px) scale(0.96);
+            background: var(--md-sys-color-primary);
+            border-color: rgba(242, 169, 0, 0.85);
+            box-shadow: none;
         }
 
         .empty-state-icon {
@@ -812,7 +825,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.29</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.30</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
