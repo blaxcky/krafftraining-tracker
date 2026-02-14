@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.39';
+    this.version = '2.9.40';
     this.init();
   }
 
@@ -557,7 +557,7 @@ class App {
           ${spacer}
           <div>
             <div class="header-badge rounded-xl overflow-hidden">
-              <div class="header-badge__row px-5 py-4">
+              <div class="header-badge__row px-5 pt-4 pb-5">
                 <div class="header-badge__title">
                   ${icon}
                   <h3 class="text-lg font-bold text-gray-800 leading-tight">${exercise.name}</h3>
