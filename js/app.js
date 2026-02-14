@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.40';
+    this.version = '2.9.41';
     this.init();
   }
 
@@ -323,7 +323,7 @@ class App {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       const modal = document.getElementById('exercise-modal');
       if (modal && !modal.classList.contains('hidden')) return;
-      if (isControlTarget(event.target)) return;
+      const startedOnControl = isControlTarget(event.target);
 
       const swipeRoot = event.target.closest('.exercise-swipe');
       if (!swipeRoot) return;
@@ -349,7 +349,8 @@ class App {
         holdTimerId: null,
         holdRafId: null,
         holdTriggered: false,
-        actionCommitted: false
+        actionCommitted: false,
+        startedOnControl
       };
       swipeRoot.dataset.swipeDir = '';
       swipeRoot.dataset.holdState = '';
@@ -363,7 +364,9 @@ class App {
         // Pointer capture not supported by all devices, continue without it.
       }
 
-      startHold(tracking);
+      if (!startedOnControl) {
+        startHold(tracking);
+      }
     });
 
     container.addEventListener('pointermove', (event) => {
@@ -381,7 +384,8 @@ class App {
       }
 
       if (tracking.isHorizontal === null) {
-        if (absX < SWIPE_SLOP && absY < SWIPE_SLOP) return;
+        const slop = tracking.startedOnControl ? 18 : SWIPE_SLOP;
+        if (absX < slop && absY < slop) return;
         tracking.isHorizontal = absX > absY * 1.15;
       }
 
