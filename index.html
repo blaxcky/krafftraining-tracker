@@ -770,6 +770,51 @@
             letter-spacing: 0.08em;
             text-transform: uppercase;
             line-height: 1.15;
+            word-break: normal;
+            overflow-wrap: normal;
+            hyphens: none;
+        }
+
+        .header-badge__row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .header-badge__title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .header-badge__title h3 {
+            min-width: 0;
+        }
+
+        .header-badge__controls {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+        }
+
+        @media (min-width: 640px) {
+            .header-badge__row {
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            .header-badge__title {
+                flex: 1 1 auto;
+                padding-right: 8px;
+            }
+
+            .header-badge__controls {
+                width: auto;
+                flex: 0 0 auto;
+            }
         }
 
         .icon-pill {
@@ -989,7 +1034,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.37</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.38</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
