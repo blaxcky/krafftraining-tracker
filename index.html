@@ -1059,18 +1059,21 @@
         }
 
         .quick-cardio-batch-btn {
-            width: 44px;
-            min-width: 44px;
-            height: auto;
-            padding: 0;
+            width: 100%;
+            min-width: 0;
+            height: 40px;
+            padding: 0 14px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             border-radius: 12px;
-            flex: 0 0 auto;
+            flex: 1 1 auto;
             font-size: 24px;
             line-height: 1;
-            align-self: stretch;
+        }
+
+        .quick-cardio-actions {
+            margin-top: 10px;
         }
 
         @media (min-width: 560px) {
@@ -1141,7 +1144,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.43</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.44</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
@@ -1355,6 +1358,8 @@
                                 </div>
                                 <input type="number" inputmode="numeric" id="quick-cardio-liege" class="input-field px-3 py-2 rounded-lg text-sm" placeholder="kcal">
                             </div>
+                        </div>
+                        <div class="quick-cardio-actions">
                             <button onclick="app.addQuickCardioBatch()" class="cardio-add-btn quick-cardio-batch-btn" aria-label="Alle Cardio-Einträge hinzufügen" title="Alle Einträge hinzufügen">
                                 +
                             </button>
