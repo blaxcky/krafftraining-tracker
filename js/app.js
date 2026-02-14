@@ -4,8 +4,10 @@ class App {
     this.editingExercise = null;
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
+    this.plans = [];
+    this.currentPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.45';
+    this.version = '2.10.0';
     this.init();
   }
 
@@ -108,6 +110,7 @@ class App {
     this.setupEventListeners();
     this.updateVersionBadge();
     this.switchTab(this.currentTab, { animate: false });
+    await this.loadPlans();
     await this.loadExercises();
     await this.loadTraining();
   }
@@ -156,6 +159,35 @@ class App {
       }
     });
 
+    const planSelect = document.getElementById('plan-select');
+    if (planSelect) {
+      planSelect.addEventListener('change', (e) => {
+        const planId = e.target && e.target.value ? String(e.target.value) : 'default';
+        this.setCurrentPlan(planId);
+      });
+    }
+
+    const startPlanSelect = document.getElementById('start-plan-select');
+    if (startPlanSelect) {
+      startPlanSelect.addEventListener('change', (e) => {
+        const planId = e.target && e.target.value ? String(e.target.value) : 'default';
+        this.setCurrentPlan(planId);
+      });
+    }
+
+    const newPlanBtn = document.getElementById('plan-new-btn');
+    if (newPlanBtn) {
+      newPlanBtn.addEventListener('click', () => this.createPlan());
+    }
+    const renamePlanBtn = document.getElementById('plan-rename-btn');
+    if (renamePlanBtn) {
+      renamePlanBtn.addEventListener('click', () => this.renameCurrentPlan());
+    }
+    const deletePlanBtn = document.getElementById('plan-delete-btn');
+    if (deletePlanBtn) {
+      deletePlanBtn.addEventListener('click', () => this.deleteCurrentPlan());
+    }
+
     this.setupExerciseSwipeGestures();
     window.addEventListener('resize', () => {
       this.setTabTransform(this.getTabIndex(this.currentTab), false);
@@ -183,6 +215,118 @@ class App {
     return Boolean(
       target.closest('[data-swipe-ignore], .weight-picker, .weight-picker-container')
     );
+  }
+
+  async loadPlans() {
+    try {
+      this.plans = await storage.getPlans();
+      const saved = localStorage.getItem('kraft_currentPlanId');
+      const candidate = saved ? String(saved) : this.currentPlanId;
+      const exists = Array.isArray(this.plans) && this.plans.some(p => p && p.id === candidate);
+      this.currentPlanId = exists ? candidate : 'default';
+      localStorage.setItem('kraft_currentPlanId', this.currentPlanId);
+      this.renderPlanSelects();
+    } catch (error) {
+      console.error('Error loading plans:', error);
+    }
+  }
+
+  renderPlanSelects() {
+    const plans = Array.isArray(this.plans) && this.plans.length > 0
+      ? this.plans
+      : [{ id: 'default', name: 'Standard' }];
+
+    const planSelect = document.getElementById('plan-select');
+    const startPlanSelect = document.getElementById('start-plan-select');
+    const optionsHtml = plans
+      .map(p => `<option value="${p.id}">${this.escapeHtml(p.name || p.id)}</option>`)
+      .join('');
+
+    if (planSelect) {
+      planSelect.innerHTML = optionsHtml;
+      planSelect.value = this.currentPlanId;
+    }
+    if (startPlanSelect) {
+      startPlanSelect.innerHTML = optionsHtml;
+      startPlanSelect.value = this.currentPlanId;
+    }
+
+    const isDefault = this.currentPlanId === 'default';
+    const renameBtn = document.getElementById('plan-rename-btn');
+    const deleteBtn = document.getElementById('plan-delete-btn');
+    if (renameBtn) renameBtn.disabled = isDefault;
+    if (deleteBtn) deleteBtn.disabled = isDefault;
+    if (isDefault) {
+      if (renameBtn) renameBtn.classList.add('opacity-40', 'cursor-not-allowed');
+      if (deleteBtn) deleteBtn.classList.add('opacity-40', 'cursor-not-allowed');
+    } else {
+      if (renameBtn) renameBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+      if (deleteBtn) deleteBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+    }
+  }
+
+  setCurrentPlan(planId, { refreshExercises = true } = {}) {
+    const id = String(planId || '').trim() || 'default';
+    this.currentPlanId = id;
+    localStorage.setItem('kraft_currentPlanId', id);
+    this.renderPlanSelects();
+    if (refreshExercises) {
+      void this.loadExercises();
+    }
+  }
+
+  escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  async createPlan() {
+    const name = prompt('Name für neuen Trainingsplan:');
+    if (!name || !String(name).trim()) return;
+    try {
+      const newId = await storage.addPlan(String(name).trim());
+      await this.loadPlans();
+      this.setCurrentPlan(newId);
+      this.showToast('Trainingsplan erstellt', 'success');
+    } catch (error) {
+      console.error('Error creating plan:', error);
+      this.showToast('Fehler beim Erstellen', 'error');
+    }
+  }
+
+  async renameCurrentPlan() {
+    if (this.currentPlanId === 'default') return;
+    const current = Array.isArray(this.plans) ? this.plans.find(p => p && p.id === this.currentPlanId) : null;
+    const name = prompt('Neuer Name:', current ? current.name : '');
+    if (!name || !String(name).trim()) return;
+    try {
+      await storage.renamePlan(this.currentPlanId, String(name).trim());
+      await this.loadPlans();
+      this.showToast('Trainingsplan umbenannt', 'success');
+    } catch (error) {
+      console.error('Error renaming plan:', error);
+      this.showToast('Fehler beim Umbenennen', 'error');
+    }
+  }
+
+  async deleteCurrentPlan() {
+    if (this.currentPlanId === 'default') return;
+    const current = Array.isArray(this.plans) ? this.plans.find(p => p && p.id === this.currentPlanId) : null;
+    const name = current ? current.name : this.currentPlanId;
+    if (!confirm(`Trainingsplan "${name}" löschen? Alle Übungen dieses Plans werden gelöscht.`)) return;
+    try {
+      await storage.deletePlan(this.currentPlanId);
+      await this.loadPlans();
+      this.setCurrentPlan('default');
+      this.showToast('Trainingsplan gelöscht', 'success');
+    } catch (error) {
+      console.error('Error deleting plan:', error);
+      this.showToast('Fehler beim Löschen', 'error');
+    }
   }
 
   setupExerciseSwipeGestures() {
@@ -467,7 +611,7 @@ class App {
   }
 
   async loadExercises() {
-    const exercises = await storage.getAllExercises();
+    const exercises = await storage.getAllExercises(this.currentPlanId);
     const container = document.getElementById('exercises-list');
 
     if (exercises.length === 0) {
@@ -612,12 +756,20 @@ class App {
     if (!training) {
       document.getElementById('no-training').classList.remove('hidden');
       document.getElementById('active-training').classList.add('hidden');
+      const badge = document.getElementById('training-plan-badge');
+      if (badge) badge.classList.add('hidden');
       return;
     }
     
     document.getElementById('no-training').classList.add('hidden');
     document.getElementById('active-training').classList.remove('hidden');
     this.renderTrainingExercises(training);
+    const badge = document.getElementById('training-plan-badge');
+    if (badge) {
+      const planName = training.planName || '';
+      badge.textContent = planName ? `Plan: ${planName}` : '';
+      badge.classList.toggle('hidden', !planName);
+    }
     this.setTabTransform(this.getTabIndex(this.currentTab), false);
   }
 
@@ -1014,9 +1166,9 @@ class App {
         await storage.updateExercise(this.editingExercise.id, name, weight, additionalPlates, calories);
       } else {
         if (this.editingType === 'header') {
-          await storage.addHeader(name);
+          await storage.addHeader(name, this.currentPlanId);
         } else {
-          await storage.addExercise(name, weight, additionalPlates, calories);
+          await storage.addExercise(name, weight, additionalPlates, calories, this.currentPlanId);
         }
       }
 
@@ -1033,7 +1185,7 @@ class App {
   }
 
   async editExercise(id) {
-    const exercises = await storage.getAllExercises();
+    const exercises = await storage.getAllExercises(this.currentPlanId);
     const exercise = exercises.find(ex => ex.id === id);
     if (exercise) {
       this.showExerciseModal(exercise);
@@ -1058,7 +1210,9 @@ class App {
 
   async startTraining() {
     try {
-      await storage.startTraining();
+      const select = document.getElementById('start-plan-select');
+      const planId = select && select.value ? String(select.value) : this.currentPlanId;
+      await storage.startTraining(planId);
       this.showCompletedExercises = false;
       await this.loadTraining();
       this.switchTab('training');
@@ -1222,6 +1376,7 @@ class App {
 
     try {
       const result = await storage.importExercises(file);
+      await this.loadPlans();
       await this.loadExercises();
       
       this.showToast(`Import erfolgreich! ${result.imported} Übungen importiert${result.skipped > 0 ? `, ${result.skipped} übersprungen` : ''}.`);
@@ -1236,7 +1391,7 @@ class App {
 
   async moveExercise(exerciseId, direction) {
     try {
-      const success = await storage.moveExercise(exerciseId, direction);
+      const success = await storage.moveExercise(exerciseId, direction, this.currentPlanId);
       if (success) {
         await this.loadExercises();
         const training = await storage.getCurrentTraining();

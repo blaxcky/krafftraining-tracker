@@ -1144,7 +1144,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.45</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.10.0</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
@@ -1178,9 +1178,24 @@
                     </div>
                 </div>
                 <div class="section-tools">
-                    <button id="add-header-btn" class="btn-secondary py-2.5 px-4 rounded-xl">
-                        Überschrift hinzufügen
-                    </button>
+                    <div class="flex flex-col gap-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-xs font-semibold text-gray-600">Plan:</span>
+                            <select id="plan-select" class="input-field px-4 py-2.5 rounded-xl text-sm min-w-[180px] flex-1"></select>
+                            <button id="plan-new-btn" type="button" class="btn-secondary py-2.5 px-4 rounded-xl text-sm">
+                                Neu
+                            </button>
+                            <button id="plan-rename-btn" type="button" class="btn-secondary py-2.5 px-4 rounded-xl text-sm">
+                                Umbenennen
+                            </button>
+                            <button id="plan-delete-btn" type="button" class="py-2.5 px-4 rounded-xl text-sm font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors">
+                                Löschen
+                            </button>
+                        </div>
+                        <button id="add-header-btn" class="btn-secondary py-2.5 px-4 rounded-xl">
+                            Überschrift hinzufügen
+                        </button>
+                    </div>
                 </div>
                 <input type="file" id="import-file" accept=".json" class="hidden">
             </div>
@@ -1199,7 +1214,10 @@
                         <span class="material-symbols-outlined text-3xl">sports_gymnastics</span>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Bereit für dein Training?</h3>
-                    <p class="text-gray-500 mb-6">Starte dein Workout mit allen verfügbaren Übungen</p>
+                    <p class="text-gray-500 mb-4">Wähle deinen Trainingsplan und starte dein Workout</p>
+                    <div class="mb-4">
+                        <select id="start-plan-select" class="input-field w-full px-4 py-3 rounded-xl"></select>
+                    </div>
                     <button id="start-training-btn" class="btn-primary py-4 px-8 rounded-xl text-lg">
                         Training starten
                     </button>
@@ -1210,7 +1228,10 @@
                 <div class="card p-5 mb-5">
                     <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="font-bold text-lg text-gray-900">Aktives Training</h3>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-bold text-lg text-gray-900">Aktives Training</h3>
+                                    <span id="training-plan-badge" class="hidden text-[11px] font-extrabold px-2.5 py-1 rounded-full border border-black/10 bg-white/70 text-black/70"></span>
+                                </div>
                                 <p class="text-gray-500 text-sm mt-0.5" id="training-progress">0 von 0 erledigt</p>
                                 <div class="progress-track mt-3" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                                     <div id="training-progress-bar" class="progress-fill"></div>

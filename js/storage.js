@@ -1,7 +1,7 @@
 class Storage {
   constructor() {
     this.dbName = 'KrafttrainingDB';
-    this.dbVersion = 1;
+    this.dbVersion = 2;
     this.db = null;
   }
 
@@ -38,22 +38,198 @@ class Storage {
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
+        const tx = event.target.transaction;
 
+        let exerciseStore = null;
         if (!db.objectStoreNames.contains('exercises')) {
-          const exerciseStore = db.createObjectStore('exercises', { keyPath: 'id', autoIncrement: true });
+          exerciseStore = db.createObjectStore('exercises', { keyPath: 'id', autoIncrement: true });
           exerciseStore.createIndex('name', 'name', { unique: false });
+        } else {
+          exerciseStore = tx.objectStore('exercises');
+        }
+        if (exerciseStore && !exerciseStore.indexNames.contains('planId')) {
+          exerciseStore.createIndex('planId', 'planId', { unique: false });
         }
 
         if (!db.objectStoreNames.contains('training')) {
           const trainingStore = db.createObjectStore('training', { keyPath: 'id' });
           trainingStore.createIndex('active', 'active', { unique: false });
         }
+
+        let plansStore = null;
+        if (!db.objectStoreNames.contains('plans')) {
+          plansStore = db.createObjectStore('plans', { keyPath: 'id' });
+        } else {
+          plansStore = tx.objectStore('plans');
+        }
+
+        // Default plan + migration: existing exercises belong to "default".
+        try {
+          if (plansStore) {
+            plansStore.get('default').onsuccess = (e) => {
+              const existing = e.target.result;
+              if (!existing) {
+                try {
+                  plansStore.add({
+                    id: 'default',
+                    name: 'Standard',
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                  });
+                } catch (error) {
+                  // ignore
+                }
+              }
+            };
+          }
+
+          if (exerciseStore) {
+            exerciseStore.openCursor().onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (!cursor) return;
+              const value = cursor.value;
+              if (value && typeof value.planId === 'undefined') {
+                value.planId = 'default';
+                cursor.update(value);
+              }
+              cursor.continue();
+            };
+          }
+        } catch (error) {
+          console.warn('Upgrade migration warning:', error);
+        }
       };
     });
   }
 
-  async addExercise(name, weight = 0, additionalPlates = 0, calories = 0) {
-    const exercises = await this.getAllExercises();
+  generatePlanId() {
+    try {
+      if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    } catch (error) {
+      // ignore
+    }
+    return `plan_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  async getPlans() {
+    const transaction = this.db.transaction(['plans'], 'readonly');
+    const store = transaction.objectStore('plans');
+
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => {
+        const plans = Array.isArray(request.result) ? request.result : [];
+        plans.sort((a, b) => {
+          const ta = a && a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tb = b && b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return ta - tb;
+        });
+        resolve(plans);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getPlanById(planId) {
+    const id = String(planId || '').trim() || 'default';
+    const transaction = this.db.transaction(['plans'], 'readonly');
+    const store = transaction.objectStore('plans');
+
+    return new Promise((resolve, reject) => {
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async addPlan(name) {
+    const planName = String(name || '').trim();
+    if (!planName) throw new Error('Plan name required');
+
+    const transaction = this.db.transaction(['plans'], 'readwrite');
+    const store = transaction.objectStore('plans');
+    const id = this.generatePlanId();
+    const now = new Date();
+
+    return new Promise((resolve, reject) => {
+      const request = store.add({
+        id,
+        name: planName,
+        createdAt: now,
+        updatedAt: now
+      });
+      request.onsuccess = () => resolve(id);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async renamePlan(planId, name) {
+    const id = String(planId || '').trim();
+    const planName = String(name || '').trim();
+    if (!id) throw new Error('Plan id required');
+    if (!planName) throw new Error('Plan name required');
+
+    const transaction = this.db.transaction(['plans'], 'readwrite');
+    const store = transaction.objectStore('plans');
+
+    return new Promise((resolve, reject) => {
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const plan = getReq.result;
+        if (!plan) return reject(new Error('Plan not found'));
+        plan.name = planName;
+        plan.updatedAt = new Date();
+        const putReq = store.put(plan);
+        putReq.onsuccess = () => resolve();
+        putReq.onerror = () => reject(putReq.error);
+      };
+      getReq.onerror = () => reject(getReq.error);
+    });
+  }
+
+  async deletePlan(planId) {
+    const id = String(planId || '').trim();
+    if (!id) throw new Error('Plan id required');
+    if (id === 'default') throw new Error('Default plan cannot be deleted');
+
+    const transaction = this.db.transaction(['plans', 'exercises'], 'readwrite');
+    const plansStore = transaction.objectStore('plans');
+    const exercisesStore = transaction.objectStore('exercises');
+
+    return new Promise((resolve, reject) => {
+      const delReq = plansStore.delete(id);
+      delReq.onerror = () => reject(delReq.error);
+
+      const idx = exercisesStore.indexNames.contains('planId') ? exercisesStore.index('planId') : null;
+      if (!idx) {
+        const scan = exercisesStore.openCursor();
+        scan.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (!cursor) return;
+          const ex = cursor.value;
+          if (ex && ex.planId === id) cursor.delete();
+          cursor.continue();
+        };
+        scan.onerror = () => reject(scan.error);
+      } else {
+        const cursorReq = idx.openCursor(IDBKeyRange.only(id));
+        cursorReq.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (!cursor) return;
+          cursor.delete();
+          cursor.continue();
+        };
+        cursorReq.onerror = () => reject(cursorReq.error);
+      }
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || delReq.error);
+      transaction.onabort = () => reject(transaction.error || delReq.error);
+    });
+  }
+
+  async addExercise(name, weight = 0, additionalPlates = 0, calories = 0, planId = 'default') {
+    const exercises = await this.getAllExercises(planId);
     const maxOrder = exercises.length > 0 ? Math.max(...exercises.map(e => e.order || 0)) : -1;
 
     const transaction = this.db.transaction(['exercises'], 'readwrite');
@@ -71,6 +247,7 @@ class Storage {
         weight: totalWeight, // Für Rückwärtskompatibilität
         calories: parseInt(calories) || 0,
         type: 'exercise',
+        planId: String(planId || 'default'),
         order: maxOrder + 1,
         createdAt: new Date()
       });
@@ -80,8 +257,8 @@ class Storage {
     });
   }
 
-  async addHeader(name) {
-    const exercises = await this.getAllExercises();
+  async addHeader(name, planId = 'default') {
+    const exercises = await this.getAllExercises(planId);
     const maxOrder = exercises.length > 0 ? Math.max(...exercises.map(e => e.order || 0)) : -1;
     
     const transaction = this.db.transaction(['exercises'], 'readwrite');
@@ -91,6 +268,7 @@ class Storage {
       const request = store.add({
         name: name.trim(),
         type: 'header',
+        planId: String(planId || 'default'),
         order: maxOrder + 1,
         createdAt: new Date()
       });
@@ -100,18 +278,29 @@ class Storage {
     });
   }
 
-  async getAllExercises() {
+  async getAllExercises(planId = 'default') {
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
 
     return new Promise((resolve, reject) => {
-      const request = store.getAll();
+      const safePlanId = String(planId || 'default');
+      const request = store.indexNames.contains('planId')
+        ? store.index('planId').getAll(safePlanId)
+        : store.getAll();
       request.onsuccess = async () => {
-        const exercises = request.result;
+        let exercises = request.result;
+        if (!store.indexNames.contains('planId')) {
+          exercises = Array.isArray(exercises) ? exercises.filter(ex => (ex && (ex.planId || 'default') === safePlanId)) : [];
+        }
+        exercises = Array.isArray(exercises) ? exercises : [];
 
         // Auto-Migration: Fehlende Order-Werte und Gewichtsfelder hinzufügen
         let needsUpdate = false;
         exercises.forEach((exercise, index) => {
+          if (typeof exercise.planId === 'undefined') {
+            exercise.planId = safePlanId;
+            needsUpdate = true;
+          }
           if (exercise.order === undefined || exercise.order === null) {
             exercise.order = index;
             needsUpdate = true;
@@ -137,6 +326,54 @@ class Storage {
         });
 
         // Updates speichern falls nötig
+        if (needsUpdate) {
+          for (const exercise of exercises) {
+            if (exercise.order !== undefined) {
+              store.put(exercise);
+            }
+          }
+        }
+
+        exercises.sort((a, b) => (a.order || 0) - (b.order || 0));
+        resolve(exercises);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAllExercisesAllPlans() {
+    const transaction = this.db.transaction(['exercises'], 'readwrite');
+    const store = transaction.objectStore('exercises');
+
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = async () => {
+        const exercises = Array.isArray(request.result) ? request.result : [];
+
+        let needsUpdate = false;
+        exercises.forEach((exercise, index) => {
+          if (typeof exercise.planId === 'undefined') {
+            exercise.planId = 'default';
+            needsUpdate = true;
+          }
+          if (exercise.order === undefined || exercise.order === null) {
+            exercise.order = index;
+            needsUpdate = true;
+          }
+          if (exercise.type !== 'header' && exercise.baseWeight === undefined) {
+            exercise.baseWeight = exercise.weight || 0;
+            exercise.additionalPlates = 0;
+            needsUpdate = true;
+          }
+          if (exercise.type !== 'header' && exercise.calories === undefined) {
+            exercise.calories = 0;
+            needsUpdate = true;
+          }
+          if (exercise.type !== 'header') {
+            exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
+          }
+        });
+
         if (needsUpdate) {
           for (const exercise of exercises) {
             if (exercise.order !== undefined) {
@@ -194,12 +431,18 @@ class Storage {
     });
   }
 
-  async startTraining() {
-    const exercises = await this.getAllExercises();
+  async startTraining(planId = 'default') {
+    const safePlanId = String(planId || 'default');
+    const [exercises, plan] = await Promise.all([
+      this.getAllExercises(safePlanId),
+      this.getPlanById(safePlanId)
+    ]);
     const trainingData = {
       id: 'current',
       active: true,
       startedAt: new Date(),
+      planId: safePlanId,
+      planName: plan ? plan.name : (safePlanId === 'default' ? 'Standard' : safePlanId),
       cardioEntries: [], // NEU: Cardio-Einträge für diese Session
       exercises: exercises.map(ex => ({
         id: ex.id,
@@ -290,14 +533,21 @@ class Storage {
   }
 
   async exportExercises() {
-    const exercises = await this.getAllExercises();
+    const [exercises, plans] = await Promise.all([
+      this.getAllExercisesAllPlans(),
+      this.getPlans()
+    ]);
     const emailAddress = this.getEmailAddress();
     const exportData = {
-      version: '2.2',
+      version: '2.3',
       exportDate: new Date().toISOString(),
       settings: {
         emailAddress: emailAddress || undefined
       },
+      plans: plans.map(p => ({
+        id: p.id,
+        name: p.name
+      })),
       exercises: exercises.map(ex => ({
         name: ex.name,
         type: ex.type || 'exercise',
@@ -305,7 +555,8 @@ class Storage {
         additionalPlates: ex.type === 'header' ? undefined : ex.additionalPlates,
         weight: ex.type === 'header' ? undefined : ex.weight,
         calories: ex.type === 'header' ? undefined : (ex.calories || 0),
-        order: ex.order
+        order: ex.order,
+        planId: ex.planId || 'default'
       }))
     };
 
@@ -334,6 +585,30 @@ class Storage {
           if (!importData.exercises || !Array.isArray(importData.exercises)) {
             throw new Error('Ungültiges Backup-Format');
           }
+
+          const importPlans = Array.isArray(importData.plans) ? importData.plans : [{ id: 'default', name: 'Standard' }];
+          const existingPlans = await this.getPlans();
+          const existingPlanIds = new Set(existingPlans.map(p => p && p.id).filter(Boolean));
+
+          // Ensure plans exist (do not overwrite existing plans).
+          for (const plan of importPlans) {
+            const planId = String(plan && plan.id ? plan.id : '').trim() || 'default';
+            if (existingPlanIds.has(planId)) continue;
+            const planName = String(plan && plan.name ? plan.name : '').trim() || (planId === 'default' ? 'Standard' : planId);
+
+            try {
+              const transaction = this.db.transaction(['plans'], 'readwrite');
+              const store = transaction.objectStore('plans');
+              await new Promise((res, rej) => {
+                const req = store.add({ id: planId, name: planName, createdAt: new Date(), updatedAt: new Date() });
+                req.onsuccess = () => res();
+                req.onerror = () => rej(req.error);
+              });
+              existingPlanIds.add(planId);
+            } catch (error) {
+              // ignore
+            }
+          }
           
           let importedCount = 0;
           let skippedCount = 0;
@@ -346,14 +621,15 @@ class Storage {
             
             try {
               let newId;
+              const planId = String(exercise.planId || 'default');
               if (exercise.type === 'header') {
-                newId = await this.addHeader(exercise.name);
+                newId = await this.addHeader(exercise.name, planId);
               } else {
                 // Unterstütze sowohl neues Format (baseWeight + additionalPlates) als auch altes (weight)
                 const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : (exercise.weight || 0);
                 const additionalPlates = exercise.additionalPlates !== undefined ? exercise.additionalPlates : 0;
                 const calories = exercise.calories !== undefined ? exercise.calories : 0;
-                newId = await this.addExercise(exercise.name, baseWeight, additionalPlates, calories);
+                newId = await this.addExercise(exercise.name, baseWeight, additionalPlates, calories, planId);
               }
 
               // Order-Feld setzen falls vorhanden
@@ -398,8 +674,8 @@ class Storage {
     });
   }
 
-  async moveExercise(exerciseId, direction) {
-    const exercises = await this.getAllExercises();
+  async moveExercise(exerciseId, direction, planId = 'default') {
+    const exercises = await this.getAllExercises(planId);
     const currentIndex = exercises.findIndex(ex => ex.id === exerciseId);
     
     if (currentIndex === -1) return false;
