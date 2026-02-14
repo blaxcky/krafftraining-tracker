@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.36';
+    this.version = '2.9.37';
     this.init();
   }
 
@@ -715,7 +715,7 @@ class App {
           <div class="card p-4 exercise-swipe-card ${cardStateClasses}">
             <div class="flex items-start justify-between gap-3 mb-2">
               <div class="flex items-start gap-2 min-w-0">
-                <span class="material-symbols-outlined text-[18px] leading-none mt-0.5 opacity-70 ${isCompleted ? 'text-gray-300' : 'text-gray-400'}" aria-hidden="true">fitness_center</span>
+                <span class="material-symbols-outlined text-[18px] leading-none mt-0.5 opacity-70 text-primary-dark" aria-hidden="true">fitness_center</span>
                 <h3 class="font-semibold text-base leading-snug min-w-0 ${nameClasses}">${exercise.name}</h3>
               </div>
               <div class="flex items-center gap-2">
