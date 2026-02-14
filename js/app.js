@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.38';
+    this.version = '2.9.39';
     this.init();
   }
 
@@ -487,7 +487,7 @@ class App {
       const moveUpDisabled = index === 0;
       const moveDownDisabled = index === exercises.length - 1;
 
-      const controls = `
+      const exerciseControls = `
         <div class="flex gap-1 items-start shrink-0 self-start">
           <button onclick="app.moveExercise(${exercise.id}, 'up')"
                   class="icon-btn ${moveUpDisabled ? 'opacity-30 cursor-not-allowed' : ''}"
@@ -515,6 +515,36 @@ class App {
           </button>
         </div>
       `;
+      const headerControls = `
+        <div class="header-actions-grid" role="group" aria-label="Abschnitt Aktionen">
+          <button onclick="app.moveExercise(${exercise.id}, 'up')"
+                  class="icon-btn header-action-btn ${moveUpDisabled ? 'opacity-30 cursor-not-allowed' : ''}"
+                  ${moveUpDisabled ? 'disabled' : ''}
+                  title="Nach oben">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m4.5 15.75 7.5-7.5 7.5 7.5"/>
+            </svg>
+          </button>
+          <button onclick="app.moveExercise(${exercise.id}, 'down')"
+                  class="icon-btn header-action-btn ${moveDownDisabled ? 'opacity-30 cursor-not-allowed' : ''}"
+                  ${moveDownDisabled ? 'disabled' : ''}
+                  title="Nach unten">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+            </svg>
+          </button>
+          <button onclick="app.editExercise(${exercise.id})" class="icon-btn edit-btn header-action-btn" title="Bearbeiten">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+            </svg>
+          </button>
+          <button onclick="app.deleteExercise(${exercise.id})" class="icon-btn delete-btn header-action-btn" title="Löschen">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m19 7-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      `;
 
       if (isHeader) {
         const headerType = this.getHeaderSectionType(exercise.name) || listSectionType;
@@ -532,7 +562,7 @@ class App {
                   ${icon}
                   <h3 class="text-lg font-bold text-gray-800 leading-tight">${exercise.name}</h3>
                 </div>
-                <div class="header-badge__controls">${controls}</div>
+                <div class="header-badge__controls">${headerControls}</div>
               </div>
             </div>
           </div>
@@ -566,7 +596,7 @@ class App {
             ` : ''}
             </div>
           </div>
-          ${controls}
+          ${exerciseControls}
         </div>
       `;
     }).join('');
