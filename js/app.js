@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.35';
+    this.version = '2.9.36';
     this.init();
   }
 
@@ -527,12 +527,12 @@ class App {
           ${spacer}
           <div>
             <div class="header-badge rounded-xl overflow-hidden">
-              <div class="flex items-start justify-between px-5 py-4">
-                <div class="flex items-center gap-3 min-w-0 pr-3">
+              <div class="flex items-start gap-3 px-5 py-4">
+                <div class="flex flex-1 items-center gap-3 min-w-0">
                   ${icon}
-                  <h3 class="text-lg font-bold text-gray-800 break-words">${exercise.name}</h3>
+                  <h3 class="text-lg font-bold text-gray-800 break-words min-w-0 leading-tight">${exercise.name}</h3>
                 </div>
-                ${controls}
+                <div class="pl-2">${controls}</div>
               </div>
             </div>
           </div>
@@ -660,7 +660,7 @@ class App {
           <div class="header-badge rounded-xl overflow-hidden">
             <div class="flex items-center gap-3 px-5 py-4">
               ${icon}
-              <h3 class="text-lg font-bold text-gray-800">${pendingHeader.name}</h3>
+              <h3 class="text-lg font-bold text-gray-800 leading-tight">${pendingHeader.name}</h3>
             </div>
           </div>
         </div>
