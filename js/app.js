@@ -7,7 +7,7 @@ class App {
     this.plans = [];
     this.currentPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.10.0';
+    this.version = '2.10.1';
     this.init();
   }
 
@@ -766,8 +766,18 @@ class App {
     this.renderTrainingExercises(training);
     const badge = document.getElementById('training-plan-badge');
     if (badge) {
-      const planName = training.planName || '';
-      badge.textContent = planName ? `Plan: ${planName}` : '';
+      const planName = (training.planName || '').trim();
+      const nameEl = badge.querySelector('.plan-chip__name');
+      if (nameEl) {
+        nameEl.textContent = planName;
+      } else {
+        badge.textContent = planName ? `Plan: ${planName}` : '';
+      }
+      if (planName) {
+        badge.title = `Plan: ${planName}`;
+      } else {
+        badge.removeAttribute('title');
+      }
       badge.classList.toggle('hidden', !planName);
     }
     this.setTabTransform(this.getTabIndex(this.currentTab), false);
