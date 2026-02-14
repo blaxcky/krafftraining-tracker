@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.34';
+    this.version = '2.9.35';
     this.init();
   }
 
@@ -189,7 +189,7 @@ class App {
     const container = document.getElementById('training-exercises');
     if (!container) return;
 
-    const HOLD_DELAY_MS = 3000;
+    const HOLD_DELAY_MS = 2000;
     const HOLD_MOVE_TOLERANCE = 12;
     const SWIPE_SLOP = 8;
     let tracking = null;
@@ -215,7 +215,7 @@ class App {
       state.card.style.opacity = '1';
     };
 
-    const cancelHold = (state, { animate = true } = {}) => {
+    const cancelHold = (state, { animate = true, forceClear = false } = {}) => {
       if (!state) return;
       if (state.holdTimerId) {
         window.clearTimeout(state.holdTimerId);
@@ -225,7 +225,7 @@ class App {
         window.cancelAnimationFrame(state.holdRafId);
         state.holdRafId = null;
       }
-      if (!state.holdTriggered) {
+      if (forceClear || !state.holdTriggered) {
         clearHoldFeedback(state, { animate });
       }
     };
@@ -250,13 +250,22 @@ class App {
       state.holdTimerId = window.setTimeout(() => {
         if (!tracking || tracking !== state || state.actionCommitted) return;
         state.holdTriggered = true;
+        tracking = null;
+        cancelHold(state, { animate: false, forceClear: true });
+        state.swipeRoot.dataset.holdState = '';
+        const shouldSkip = window.confirm('Übung wirklich überspringen?');
+        if (!shouldSkip) {
+          state.holdTriggered = false;
+          resetCard(state);
+          return;
+        }
         void commitState(state, 'skipped', 'left');
       }, HOLD_DELAY_MS);
     };
 
     const resetCard = (state) => {
       if (!state || !state.card || !state.swipeRoot) return;
-      cancelHold(state, { animate: true });
+      cancelHold(state, { animate: true, forceClear: true });
       state.swipeRoot.dataset.swipeDir = '';
       const card = state.card;
       if (!card) return;
