@@ -1010,78 +1010,76 @@
             padding: 12px;
         }
 
-        .quick-cardio-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
+        .quick-cardio-row {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
         }
 
-        .quick-cardio-item {
-            border-radius: 14px;
+        .quick-cardio-mini {
+            flex: 1 1 0;
+            min-width: 108px;
+            border-radius: 12px;
             border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
             background: color-mix(in srgb, var(--md-sys-color-surface) 84%, rgba(255, 255, 255, 0.4));
-            padding: 10px;
+            padding: 8px;
             min-width: 0;
         }
 
-        .quick-cardio-item__head {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-            min-width: 0;
-        }
-
-        .quick-cardio-item__head img {
-            width: 22px;
-            height: 22px;
-            flex: 0 0 auto;
-        }
-
-        .quick-cardio-item__label {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--md-sys-color-on-surface);
-            line-height: 1.2;
-            min-width: 0;
-        }
-
-        .quick-cardio-item__controls {
+        .quick-cardio-mini__head {
             display: flex;
             align-items: center;
             gap: 6px;
+            margin-bottom: 6px;
             min-width: 0;
         }
 
-        .quick-cardio-item__controls .input-field {
-            min-width: 0;
-        }
-
-        .quick-cardio-unit {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--md-sys-color-on-surface-variant);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
+        .quick-cardio-mini__head img {
+            width: 18px;
+            height: 18px;
             flex: 0 0 auto;
         }
 
-        .quick-cardio-add-btn {
-            width: 34px;
-            height: 34px;
+        .quick-cardio-mini__label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--md-sys-color-on-surface);
+            line-height: 1.15;
+            min-width: 0;
+        }
+
+        .quick-cardio-mini .input-field {
+            min-width: 0;
+            width: 100%;
+            font-size: 13px;
+        }
+
+        .quick-cardio-batch-btn {
+            width: 44px;
+            min-width: 44px;
+            height: auto;
             padding: 0;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 10px;
+            border-radius: 12px;
             flex: 0 0 auto;
-            font-size: 20px;
+            font-size: 24px;
             line-height: 1;
+            align-self: stretch;
         }
 
         @media (min-width: 560px) {
-            .quick-cardio-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+            .quick-cardio-row {
+                overflow-x: visible;
+            }
+
+            .quick-cardio-mini {
+                min-width: 0;
             }
         }
 
@@ -1143,7 +1141,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.42</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.43</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
@@ -1335,46 +1333,31 @@
 
                     <!-- Schnellauswahl -->
                     <div class="quick-cardio-shell mb-4">
-                        <div class="quick-cardio-grid">
-                            <div class="quick-cardio-item">
-                                <div class="quick-cardio-item__head">
+                        <div class="quick-cardio-row">
+                            <div class="quick-cardio-mini">
+                                <div class="quick-cardio-mini__head">
                                     <img src="icons/cardio-crosstrainer.svg" alt="Crosstrainer">
-                                    <span class="quick-cardio-item__label">Crosstrainer</span>
+                                    <span class="quick-cardio-mini__label">Crosstrainer</span>
                                 </div>
-                                <div class="quick-cardio-item__controls">
-                                    <input type="number" inputmode="numeric" id="quick-cardio-crosstrainer" class="input-field flex-1 px-3 py-2 rounded-lg text-sm" placeholder="kcal">
-                                    <span class="quick-cardio-unit">kcal</span>
-                                    <button onclick="app.addQuickCardio('Crosstrainer', 'quick-cardio-crosstrainer')" class="cardio-add-btn quick-cardio-add-btn" aria-label="Crosstrainer hinzufügen">
-                                        +
-                                    </button>
-                                </div>
+                                <input type="number" inputmode="numeric" id="quick-cardio-crosstrainer" class="input-field px-3 py-2 rounded-lg text-sm" placeholder="kcal">
                             </div>
-                            <div class="quick-cardio-item">
-                                <div class="quick-cardio-item__head">
+                            <div class="quick-cardio-mini">
+                                <div class="quick-cardio-mini__head">
                                     <img src="icons/cardio-ergometer.svg" alt="Ergometer">
-                                    <span class="quick-cardio-item__label">Ergometer</span>
+                                    <span class="quick-cardio-mini__label">Ergometer</span>
                                 </div>
-                                <div class="quick-cardio-item__controls">
-                                    <input type="number" inputmode="numeric" id="quick-cardio-ergometer" class="input-field flex-1 px-3 py-2 rounded-lg text-sm" placeholder="kcal">
-                                    <span class="quick-cardio-unit">kcal</span>
-                                    <button onclick="app.addQuickCardio('Ergometer', 'quick-cardio-ergometer')" class="cardio-add-btn quick-cardio-add-btn" aria-label="Ergometer hinzufügen">
-                                        +
-                                    </button>
-                                </div>
+                                <input type="number" inputmode="numeric" id="quick-cardio-ergometer" class="input-field px-3 py-2 rounded-lg text-sm" placeholder="kcal">
                             </div>
-                            <div class="quick-cardio-item">
-                                <div class="quick-cardio-item__head">
+                            <div class="quick-cardio-mini">
+                                <div class="quick-cardio-mini__head">
                                     <img src="icons/cardio-liege-ergometer.svg" alt="Liege-Ergometer">
-                                    <span class="quick-cardio-item__label">Liege-Ergometer</span>
+                                    <span class="quick-cardio-mini__label">Liege-Ergometer</span>
                                 </div>
-                                <div class="quick-cardio-item__controls">
-                                    <input type="number" inputmode="numeric" id="quick-cardio-liege" class="input-field flex-1 px-3 py-2 rounded-lg text-sm" placeholder="kcal">
-                                    <span class="quick-cardio-unit">kcal</span>
-                                    <button onclick="app.addQuickCardio('Liege-Ergometer', 'quick-cardio-liege')" class="cardio-add-btn quick-cardio-add-btn" aria-label="Liege-Ergometer hinzufügen">
-                                        +
-                                    </button>
-                                </div>
+                                <input type="number" inputmode="numeric" id="quick-cardio-liege" class="input-field px-3 py-2 rounded-lg text-sm" placeholder="kcal">
                             </div>
+                            <button onclick="app.addQuickCardioBatch()" class="cardio-add-btn quick-cardio-batch-btn" aria-label="Alle Cardio-Einträge hinzufügen" title="Alle Einträge hinzufügen">
+                                +
+                            </button>
                         </div>
                     </div>
 

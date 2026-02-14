@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.42';
+    this.version = '2.9.43';
     this.init();
   }
 
@@ -1431,6 +1431,54 @@ class App {
       this.showToast(`${name} hinzugefügt: ${calories} kcal`);
     } catch (error) {
       console.error('Error adding quick cardio:', error);
+      this.showToast('Fehler beim Hinzufügen', 'error');
+    }
+  }
+
+  async addQuickCardioBatch() {
+    const quickEntries = [
+      { name: 'Crosstrainer', inputId: 'quick-cardio-crosstrainer' },
+      { name: 'Ergometer', inputId: 'quick-cardio-ergometer' },
+      { name: 'Liege-Ergometer', inputId: 'quick-cardio-liege' }
+    ];
+
+    const entriesToAdd = quickEntries
+      .map((entry) => {
+        const input = document.getElementById(entry.inputId);
+        const calories = parseInt(input && input.value, 10) || 0;
+        return {
+          ...entry,
+          input,
+          calories
+        };
+      })
+      .filter(entry => entry.calories > 0);
+
+    if (entriesToAdd.length === 0) {
+      this.showToast('Bitte mindestens einen Wert > 0 eingeben', 'error');
+      return;
+    }
+
+    try {
+      for (const entry of entriesToAdd) {
+        await storage.addCardioToSession(entry.name, entry.calories);
+      }
+
+      entriesToAdd.forEach((entry) => {
+        if (entry.input) entry.input.value = '';
+      });
+
+      const totalCalories = entriesToAdd.reduce((sum, entry) => sum + entry.calories, 0);
+      await this.updateCaloriesDisplay();
+
+      if (entriesToAdd.length === 1) {
+        const single = entriesToAdd[0];
+        this.showToast(`${single.name} hinzugefügt: ${single.calories} kcal`);
+      } else {
+        this.showToast(`${entriesToAdd.length} Cardio-Einträge hinzugefügt: ${totalCalories} kcal`);
+      }
+    } catch (error) {
+      console.error('Error adding quick cardio batch:', error);
       this.showToast('Fehler beim Hinzufügen', 'error');
     }
   }
