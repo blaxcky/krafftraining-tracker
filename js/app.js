@@ -5,7 +5,7 @@ class App {
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.33';
+    this.version = '2.9.34';
     this.init();
   }
 
@@ -189,7 +189,12 @@ class App {
     const container = document.getElementById('training-exercises');
     if (!container) return;
 
+    const HOLD_DELAY_MS = 3000;
+    const HOLD_MOVE_TOLERANCE = 12;
+    const SWIPE_SLOP = 8;
     let tracking = null;
+
+    const wait = (ms) => new Promise(resolve => window.setTimeout(resolve, ms));
     const isControlTarget = (target) => {
       if (!target || !(target instanceof Element)) return false;
       return Boolean(
@@ -199,19 +204,122 @@ class App {
       );
     };
 
-    const resetCard = (card) => {
-      if (!card) return;
-      card.style.transition = 'transform 0.15s ease';
-      card.style.transform = 'translate3d(0, 0, 0)';
+    const clearHoldFeedback = (state, { animate = true } = {}) => {
+      if (!state || !state.card || !state.swipeRoot) return;
+      state.swipeRoot.dataset.holdState = '';
+      state.card.classList.remove('is-holding');
+      state.card.style.removeProperty('--hold-progress');
+      if (animate) {
+        state.card.style.transition = 'opacity 0.16s ease';
+      }
+      state.card.style.opacity = '1';
     };
 
-    container.addEventListener('touchstart', (event) => {
-      if (event.touches.length !== 1) return;
+    const cancelHold = (state, { animate = true } = {}) => {
+      if (!state) return;
+      if (state.holdTimerId) {
+        window.clearTimeout(state.holdTimerId);
+        state.holdTimerId = null;
+      }
+      if (state.holdRafId) {
+        window.cancelAnimationFrame(state.holdRafId);
+        state.holdRafId = null;
+      }
+      if (!state.holdTriggered) {
+        clearHoldFeedback(state, { animate });
+      }
+    };
+
+    const startHold = (state) => {
+      if (!state || !state.card || !state.swipeRoot) return;
+      state.holdStart = performance.now();
+      state.swipeRoot.dataset.holdState = 'pressing';
+      state.card.classList.add('is-holding');
+      state.card.style.setProperty('--hold-progress', '0');
+
+      const tick = () => {
+        if (!tracking || tracking !== state || state.actionCommitted || state.holdTriggered) return;
+        const elapsed = performance.now() - state.holdStart;
+        const progress = Math.min(1, elapsed / HOLD_DELAY_MS);
+        state.card.style.setProperty('--hold-progress', progress.toFixed(3));
+        state.card.style.opacity = String(Math.max(0.42, 1 - (progress * 0.58)));
+        state.holdRafId = window.requestAnimationFrame(tick);
+      };
+
+      state.holdRafId = window.requestAnimationFrame(tick);
+      state.holdTimerId = window.setTimeout(() => {
+        if (!tracking || tracking !== state || state.actionCommitted) return;
+        state.holdTriggered = true;
+        void commitState(state, 'skipped', 'left');
+      }, HOLD_DELAY_MS);
+    };
+
+    const resetCard = (state) => {
+      if (!state || !state.card || !state.swipeRoot) return;
+      cancelHold(state, { animate: true });
+      state.swipeRoot.dataset.swipeDir = '';
+      const card = state.card;
+      if (!card) return;
+      card.style.transition = 'transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease';
+      card.style.transform = 'translate3d(0, 0, 0)';
+      card.style.opacity = '1';
+    };
+
+    const animateCardExit = async (swipeRoot, card, direction = 'right') => {
+      if (!swipeRoot || !card) return;
+
+      const sign = direction === 'left' ? -1 : 1;
+      const exitDistance = Math.max(160, Math.round(swipeRoot.clientWidth * 0.85)) * sign;
+      card.style.transition = 'transform 0.23s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.23s ease';
+      card.style.transform = `translate3d(${exitDistance}px, 0, 0) scale(0.98)`;
+      card.style.opacity = '0';
+      await wait(220);
+
+      const computed = window.getComputedStyle(swipeRoot);
+      const height = swipeRoot.offsetHeight;
+      const marginTop = parseFloat(computed.marginTop) || 0;
+      const marginBottom = parseFloat(computed.marginBottom) || 0;
+
+      swipeRoot.style.height = `${height}px`;
+      swipeRoot.style.marginTop = `${marginTop}px`;
+      swipeRoot.style.marginBottom = `${marginBottom}px`;
+      swipeRoot.style.overflow = 'hidden';
+      swipeRoot.style.transition = 'height 0.24s cubic-bezier(0.22, 1, 0.36, 1), margin 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease';
+      swipeRoot.offsetHeight;
+      swipeRoot.style.height = '0px';
+      swipeRoot.style.marginTop = '0px';
+      swipeRoot.style.marginBottom = '0px';
+      swipeRoot.style.opacity = '0';
+      await wait(240);
+    };
+
+    const commitState = async (state, action, direction = 'right') => {
+      if (!state || state.actionCommitted || !state.swipeRoot || !state.card) return;
+      state.actionCommitted = true;
+      tracking = null;
+      cancelHold(state, { animate: false });
+      state.swipeRoot.dataset.holdState = '';
+      state.swipeRoot.dataset.swipeDir = '';
+      state.swipeRoot.dataset.animating = 'true';
+      try {
+        await animateCardExit(state.swipeRoot, state.card, direction);
+        await this.setExerciseState(state.exerciseId, action);
+      } finally {
+        state.swipeRoot.dataset.animating = '';
+      }
+    };
+
+    container.addEventListener('pointerdown', (event) => {
+      if (tracking) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
       const modal = document.getElementById('exercise-modal');
       if (modal && !modal.classList.contains('hidden')) return;
+      if (isControlTarget(event.target)) return;
 
       const swipeRoot = event.target.closest('.exercise-swipe');
       if (!swipeRoot) return;
+      if (swipeRoot.dataset.animating === 'true') return;
+      if (swipeRoot.dataset.exerciseDone === 'true') return;
 
       const exerciseId = Number(swipeRoot.dataset.trainingExerciseId);
       if (!Number.isFinite(exerciseId)) return;
@@ -219,79 +327,104 @@ class App {
       const card = swipeRoot.querySelector('.exercise-swipe-card');
       if (!card) return;
 
-      const touch = event.touches[0];
       tracking = {
+        pointerId: event.pointerId,
         swipeRoot,
         card,
         exerciseId,
-        startX: touch.clientX,
-        startY: touch.clientY,
+        startX: event.clientX,
+        startY: event.clientY,
         lastDx: 0,
         isHorizontal: null,
-        startedOnControl: isControlTarget(event.target)
+        holdStart: 0,
+        holdTimerId: null,
+        holdRafId: null,
+        holdTriggered: false,
+        actionCommitted: false
       };
       swipeRoot.dataset.swipeDir = '';
+      swipeRoot.dataset.holdState = '';
       card.style.transition = 'none';
-    }, { passive: true });
+      card.style.transform = 'translate3d(0, 0, 0)';
+      card.style.opacity = '1';
 
-    container.addEventListener('touchmove', (event) => {
+      try {
+        swipeRoot.setPointerCapture(event.pointerId);
+      } catch (error) {
+        // Pointer capture not supported by all devices, continue without it.
+      }
+
+      startHold(tracking);
+    });
+
+    container.addEventListener('pointermove', (event) => {
       if (!tracking) return;
-      const touch = event.touches[0];
-      if (!touch) return;
+      if (event.pointerId !== tracking.pointerId) return;
+      if (tracking.actionCommitted || tracking.holdTriggered) return;
 
-      const dx = touch.clientX - tracking.startX;
-      const dy = touch.clientY - tracking.startY;
+      const dx = event.clientX - tracking.startX;
+      const dy = event.clientY - tracking.startY;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+
+      if (absX > HOLD_MOVE_TOLERANCE || absY > HOLD_MOVE_TOLERANCE) {
+        cancelHold(tracking);
+      }
 
       if (tracking.isHorizontal === null) {
-        const slop = tracking.startedOnControl ? 18 : 8;
-        if (Math.abs(dx) < slop && Math.abs(dy) < slop) return;
-        tracking.isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.15;
+        if (absX < SWIPE_SLOP && absY < SWIPE_SLOP) return;
+        tracking.isHorizontal = absX > absY * 1.15;
       }
 
       if (!tracking.isHorizontal) return;
-      event.preventDefault();
+      cancelHold(tracking, { animate: false });
+      if (event.cancelable) event.preventDefault();
 
       const max = Math.min(160, tracking.swipeRoot.clientWidth * 0.45);
       const clamped = Math.max(-max, Math.min(max, dx));
       tracking.lastDx = clamped;
 
+      tracking.card.style.transition = 'none';
       tracking.card.style.transform = `translate3d(${clamped}px, 0, 0)`;
+      tracking.card.style.opacity = '1';
       tracking.swipeRoot.dataset.swipeDir = clamped > 0 ? 'right' : (clamped < 0 ? 'left' : '');
-    }, { passive: false });
+    });
 
-    const finishSwipe = () => {
+    const finishPointer = (event, cancelled = false) => {
       if (!tracking) return;
-      const { swipeRoot, card, exerciseId, lastDx, isHorizontal } = tracking;
+      if (event.pointerId !== tracking.pointerId) return;
+      const state = tracking;
       tracking = null;
 
-      const threshold = Math.min(110, swipeRoot.clientWidth * 0.22);
-      const abs = Math.abs(lastDx);
+      cancelHold(state);
+      state.swipeRoot.dataset.holdState = '';
 
-      if (!isHorizontal || abs < threshold) {
-        swipeRoot.dataset.swipeDir = '';
-        resetCard(card);
+      try {
+        state.swipeRoot.releasePointerCapture(event.pointerId);
+      } catch (error) {
+        // Nothing to release if pointer capture was never acquired.
+      }
+
+      if (cancelled || state.actionCommitted || state.holdTriggered) return;
+
+      const threshold = Math.min(110, state.swipeRoot.clientWidth * 0.22);
+      const abs = Math.abs(state.lastDx);
+
+      if (!state.isHorizontal || abs < threshold) {
+        resetCard(state);
         return;
       }
 
-      const dir = lastDx > 0 ? 'right' : 'left';
-      const targetOffset = dir === 'right' ? swipeRoot.clientWidth : -swipeRoot.clientWidth;
-      card.style.transition = 'transform 0.12s ease';
-      card.style.transform = `translate3d(${targetOffset}px, 0, 0)`;
-
-      window.setTimeout(() => {
-        swipeRoot.dataset.swipeDir = '';
-        this.setExerciseState(exerciseId, dir === 'right' ? 'completed' : 'skipped');
-      }, 120);
+      const direction = state.lastDx >= 0 ? 'right' : 'left';
+      void commitState(state, 'completed', direction);
     };
 
-    container.addEventListener('touchend', finishSwipe, { passive: true });
-    container.addEventListener('touchcancel', () => {
-      if (!tracking) return;
-      const { swipeRoot, card } = tracking;
-      tracking = null;
-      swipeRoot.dataset.swipeDir = '';
-      resetCard(card);
-    }, { passive: true });
+    container.addEventListener('pointerup', (event) => {
+      finishPointer(event, false);
+    });
+    container.addEventListener('pointercancel', (event) => {
+      finishPointer(event, true);
+    });
   }
 
   switchTab(tab, { animate = true } = {}) {
@@ -561,14 +694,14 @@ class App {
         : 'bg-emerald-50 text-emerald-800 border-emerald-100';
 
       fragments.push(`
-        <div class="exercise-swipe" data-training-exercise-id="${exercise.id}">
-          <div class="exercise-swipe-bg exercise-swipe-bg--complete" aria-hidden="true">
+        <div class="exercise-swipe" data-training-exercise-id="${exercise.id}" data-exercise-done="${isCompleted ? 'true' : 'false'}">
+          <div class="exercise-swipe-bg exercise-swipe-bg--complete exercise-swipe-bg--left" aria-hidden="true">
             <span class="material-symbols-outlined">done</span>
             <span>Erledigt</span>
           </div>
-          <div class="exercise-swipe-bg exercise-swipe-bg--skip" aria-hidden="true">
-            <span>Überspringen</span>
-            <span class="material-symbols-outlined">skip_next</span>
+          <div class="exercise-swipe-bg exercise-swipe-bg--complete exercise-swipe-bg--right" aria-hidden="true">
+            <span>Erledigt</span>
+            <span class="material-symbols-outlined">done</span>
           </div>
           <div class="card p-4 exercise-swipe-card ${cardStateClasses}">
             <div class="flex items-start justify-between gap-3 mb-2">

@@ -793,6 +793,9 @@
             overflow: hidden;
             border-radius: 16px;
             touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         .exercise-swipe-bg {
@@ -805,31 +808,36 @@
             font-weight: 700;
             font-size: 14px;
             opacity: 0;
-            transition: opacity 0.15s ease;
+            transition: opacity 0.18s ease;
             pointer-events: none;
         }
 
         .exercise-swipe-bg--complete {
-            justify-content: flex-start;
             gap: 8px;
             background: rgba(242, 169, 0, 0.18);
             color: var(--md-sys-color-primary);
         }
 
-        .exercise-swipe-bg--skip {
-            justify-content: flex-end;
-            gap: 8px;
-            background: var(--md-sys-color-surface-container-high);
-            color: var(--md-sys-color-on-surface-variant);
+        .exercise-swipe-bg--left {
+            justify-content: flex-start;
         }
 
-        .exercise-swipe[data-swipe-dir="right"] .exercise-swipe-bg--complete,
-        .exercise-swipe[data-swipe-dir="left"] .exercise-swipe-bg--skip {
+        .exercise-swipe-bg--right {
+            justify-content: flex-end;
+        }
+
+        .exercise-swipe[data-swipe-dir="right"] .exercise-swipe-bg--left,
+        .exercise-swipe[data-swipe-dir="left"] .exercise-swipe-bg--right {
             opacity: 1;
         }
 
         .exercise-swipe-card {
-            will-change: transform;
+            will-change: transform, opacity;
+            transform-origin: center;
+        }
+
+        .exercise-swipe-card.is-holding {
+            box-shadow: 0 0 0 1px rgba(242, 169, 0, 0.35), var(--md-elevation-1);
         }
 
         .training-divider {
@@ -973,7 +981,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.33</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.34</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
