@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.11.3';
+    this.version = '2.11.4';
     this.init();
   }
 
@@ -1004,8 +1004,8 @@ class App {
               </div>
               <div class="flex items-center gap-3 mt-0.5">
                 <span class="text-xs text-black font-medium w-24">Gesamtgewicht:</span>
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-medium text-black text-sm">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
+                <div class="training-total-meta">
+                  <span class="training-total-value">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
                   ${calories > 0 ? `
                     <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
                       <span class="material-symbols-outlined kcal-icon">local_fire_department</span>
