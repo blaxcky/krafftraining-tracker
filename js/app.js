@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.12.0';
+    this.version = '2.12.1';
     this.init();
   }
 
@@ -1844,29 +1844,78 @@ class App {
     body += '----------------------------------------\n';
     body += 'Gesendet von Krafttraining Tracker\n';
 
+    let webhookPrettyText = '';
+    webhookPrettyText += '🏋️ TRAININGS-DOKUMENTATION\n';
+    webhookPrettyText += `${dateStr} | ${timeStr} Uhr\n\n`;
+    webhookPrettyText += `🔥 Gesamt: ${summary.totalCalories} kcal\n`;
+    webhookPrettyText += `💪 Krafttraining: ${summary.exerciseCalories} kcal\n`;
+    webhookPrettyText += `🏃 Cardio: ${summary.cardioCalories} kcal\n`;
+
+    if (exercisesWithCalories.length > 0) {
+      webhookPrettyText += '\n💪 Krafttraining-Details:\n';
+      exercisesWithCalories.forEach(ex => {
+        webhookPrettyText += `• ${ex.name}: ${ex.calories} kcal\n`;
+      });
+    }
+
+    if (summary.cardioEntries.length > 0) {
+      webhookPrettyText += '\n🏃 Cardio-Details:\n';
+      summary.cardioEntries.forEach(entry => {
+        webhookPrettyText += `• ${entry.name}: ${entry.calories} kcal\n`;
+      });
+    }
+
+    webhookPrettyText += '\n— Gesendet von Krafttraining Tracker';
+
+    let telegramHtml = '';
+    telegramHtml += '<b>🏋️ Trainings-Dokumentation</b>\n';
+    telegramHtml += `${this.escapeHtml(dateStr)} | ${this.escapeHtml(timeStr)} Uhr\n\n`;
+    telegramHtml += `<b>🔥 Gesamt:</b> ${summary.totalCalories} kcal\n`;
+    telegramHtml += `<b>💪 Krafttraining:</b> ${summary.exerciseCalories} kcal\n`;
+    telegramHtml += `<b>🏃 Cardio:</b> ${summary.cardioCalories} kcal\n`;
+
+    if (exercisesWithCalories.length > 0) {
+      telegramHtml += '\n<b>💪 Krafttraining-Details</b>\n';
+      exercisesWithCalories.forEach(ex => {
+        telegramHtml += `• ${this.escapeHtml(ex.name)}: ${ex.calories} kcal\n`;
+      });
+    }
+
+    if (summary.cardioEntries.length > 0) {
+      telegramHtml += '\n<b>🏃 Cardio-Details</b>\n';
+      summary.cardioEntries.forEach(entry => {
+        telegramHtml += `• ${this.escapeHtml(entry.name)}: ${entry.calories} kcal\n`;
+      });
+    }
+
+    telegramHtml += '\n<i>Gesendet von Krafttraining Tracker</i>';
+
+    const webhookPayload = {
+      source: 'krafttraining-tracker',
+      version: this.version,
+      sentAt: now.toISOString(),
+      summary: {
+        totalCalories: summary.totalCalories,
+        exerciseCalories: summary.exerciseCalories,
+        cardioCalories: summary.cardioCalories
+      },
+      exercises: exercisesWithCalories.map(ex => ({ name: ex.name, calories: ex.calories })),
+      cardio: (summary.cardioEntries || []).map(entry => ({ name: entry.name, calories: entry.calories })),
+      subject,
+      message: body,
+      prettyMessage: webhookPrettyText,
+      telegramText: webhookPrettyText,
+      telegramHtml
+    };
+
     if (webhookUrl) {
       try {
-        const payload = {
-          source: 'krafttraining-tracker',
-          version: this.version,
-          sentAt: now.toISOString(),
-          summary: {
-            totalCalories: summary.totalCalories,
-            exerciseCalories: summary.exerciseCalories,
-            cardioCalories: summary.cardioCalories
-          },
-          exercises: exercisesWithCalories.map(ex => ({ name: ex.name, calories: ex.calories })),
-          cardio: (summary.cardioEntries || []).map(entry => ({ name: entry.name, calories: entry.calories })),
-          subject,
-          message: body
-        };
-
         const response = await fetch(webhookUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(webhookPayload)
         });
 
         if (!response.ok) {
@@ -1884,20 +1933,7 @@ class App {
             headers: {
               'Content-Type': 'text/plain;charset=UTF-8'
             },
-            body: JSON.stringify({
-              source: 'krafttraining-tracker',
-              version: this.version,
-              sentAt: now.toISOString(),
-              summary: {
-                totalCalories: summary.totalCalories,
-                exerciseCalories: summary.exerciseCalories,
-                cardioCalories: summary.cardioCalories
-              },
-              exercises: exercisesWithCalories.map(ex => ({ name: ex.name, calories: ex.calories })),
-              cardio: (summary.cardioEntries || []).map(entry => ({ name: entry.name, calories: entry.calories })),
-              subject,
-              message: body
-            })
+            body: JSON.stringify(webhookPayload)
           });
           this.showToast('Webhook gesendet', 'success');
           return;
