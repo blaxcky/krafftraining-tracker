@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.12.5';
+    this.version = '2.12.7';
     this.init();
   }
 
@@ -1977,13 +1977,13 @@ class App {
     const strengthPercent = totalCalories > 0 ? Math.round((strengthCalories / totalCalories) * 100) : 0;
     const cardioPercent = totalCalories > 0 ? Math.max(0, 100 - strengthPercent) : 0;
 
-    const buildTelegramDetailLines = (entries = []) => entries
+    const buildTelegramCodeLikeLines = (entries = []) => entries
       .map((entry) => {
         const rawName = String(entry && entry.name ? entry.name : '');
         const calories = Number(entry && entry.calories ? entry.calories : 0);
         const compactName = rawName.length > 20 ? `${rawName.slice(0, 17)}...` : rawName;
-        const paddedName = compactName.padEnd(22, ' ');
-        return `• ${this.escapeHtml(paddedName)} ${calories} kcal`;
+        const dots = '.'.repeat(Math.max(3, 24 - compactName.length - String(calories).length));
+        return `<code>• ${this.escapeHtml(compactName)} ${dots} ${calories} kcal</code>`;
       })
       .join('\n');
 
@@ -2019,12 +2019,12 @@ class App {
 
     if (exercisesWithCalories.length > 0) {
       telegramHtml += '\n<b>💪 Krafttraining-Details</b>\n';
-      telegramHtml += `<pre>${buildTelegramDetailLines(exercisesWithCalories)}</pre>\n`;
+      telegramHtml += `${buildTelegramCodeLikeLines(exercisesWithCalories)}\n`;
     }
 
     if (summary.cardioEntries.length > 0) {
       telegramHtml += '\n<b>🏃 Cardio-Details</b>\n';
-      telegramHtml += `<pre>${buildTelegramDetailLines(summary.cardioEntries)}</pre>\n`;
+      telegramHtml += `${buildTelegramCodeLikeLines(summary.cardioEntries)}\n`;
     }
 
     const webhookPayload = {
