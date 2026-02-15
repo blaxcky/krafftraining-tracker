@@ -298,6 +298,106 @@
             color: var(--md-sys-color-on-surface-variant);
         }
 
+        .plan-tools {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .plan-picker {
+            position: relative;
+            border-radius: 18px;
+            border: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 80%, #d6d1c5 20%);
+            background: color-mix(in srgb, var(--md-sys-color-surface) 92%, #efece6 8%);
+            padding: 10px 16px 8px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .plan-picker:focus-within {
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 3px rgba(242, 169, 0, 0.14);
+        }
+
+        .plan-picker__label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 84%, #6e6555 16%);
+            margin-bottom: 6px;
+            line-height: 1;
+        }
+
+        .plan-picker__select-wrap {
+            position: relative;
+        }
+
+        .plan-picker__select {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: #252321;
+            font-size: clamp(1.45rem, 4.1vw, 2rem);
+            font-weight: 500;
+            line-height: 1.2;
+            padding: 0 42px 2px 0;
+            cursor: pointer;
+        }
+
+        .plan-picker__select:focus {
+            outline: none;
+        }
+
+        .plan-picker__icon {
+            position: absolute;
+            right: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 84%, #6e6555 16%);
+            font-size: 34px;
+            line-height: 1;
+        }
+
+        .plan-action-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .plan-action-btn {
+            border-radius: 18px;
+            border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 78%, #d4cdc1 22%);
+            background: color-mix(in srgb, var(--md-sys-color-surface-container) 86%, #e7e2d9 14%);
+            color: #26231f;
+            font-size: 1.06rem;
+            font-weight: 500;
+            padding: 14px 10px;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .plan-action-btn:hover:not(:disabled) {
+            background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 88%, #e8e2d8 12%);
+            border-color: color-mix(in srgb, var(--md-sys-color-outline) 78%, #c9c2b6 22%);
+        }
+
+        .plan-action-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .plan-action-btn--delete {
+            color: #b23a34;
+            border-color: color-mix(in srgb, #cc827c 38%, #d9cfc8 62%);
+            background: color-mix(in srgb, #f1e2e0 80%, var(--md-sys-color-surface-container) 20%);
+        }
+
+        .plan-action-btn--delete:hover:not(:disabled) {
+            background: color-mix(in srgb, #f4d6d2 84%, var(--md-sys-color-surface-container) 16%);
+            border-color: color-mix(in srgb, #bb615c 48%, #d0c3bc 52%);
+        }
+
         .icon-btn {
             width: 40px;
             height: 40px;
@@ -1198,7 +1298,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.10.2</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.10.3</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
@@ -1232,17 +1332,22 @@
                     </div>
                 </div>
                 <div class="section-tools">
-                    <div class="flex flex-col gap-3">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="text-xs font-semibold text-gray-600">Plan:</span>
-                            <select id="plan-select" class="input-field px-4 py-2.5 rounded-xl text-sm min-w-[180px] flex-1"></select>
-                            <button id="plan-new-btn" type="button" class="btn-secondary py-2.5 px-4 rounded-xl text-sm">
+                    <div class="plan-tools">
+                        <div class="plan-picker">
+                            <label for="plan-select" class="plan-picker__label">Plan</label>
+                            <div class="plan-picker__select-wrap">
+                                <select id="plan-select" class="plan-picker__select"></select>
+                                <span class="material-symbols-outlined plan-picker__icon" aria-hidden="true">expand_more</span>
+                            </div>
+                        </div>
+                        <div class="plan-action-row">
+                            <button id="plan-new-btn" type="button" class="plan-action-btn">
                                 Neu
                             </button>
-                            <button id="plan-rename-btn" type="button" class="btn-secondary py-2.5 px-4 rounded-xl text-sm">
-                                Umbenennen
+                            <button id="plan-rename-btn" type="button" class="plan-action-btn">
+                                Umben.
                             </button>
-                            <button id="plan-delete-btn" type="button" class="py-2.5 px-4 rounded-xl text-sm font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors">
+                            <button id="plan-delete-btn" type="button" class="plan-action-btn plan-action-btn--delete">
                                 Löschen
                             </button>
                         </div>
