@@ -587,6 +587,10 @@ class Storage {
           }
 
           const importPlans = Array.isArray(importData.plans) ? importData.plans : [{ id: 'default', name: 'Standard' }];
+
+          // Import ersetzt bestehende Übungen, um Duplikate zu vermeiden.
+          await this.clearAllExercises();
+
           const existingPlans = await this.getPlans();
           const existingPlanIds = new Set(existingPlans.map(p => p && p.id).filter(Boolean));
 

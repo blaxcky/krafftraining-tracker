@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.11.1';
+    this.version = '2.11.2';
     this.init();
   }
 
@@ -1430,7 +1430,7 @@ class App {
       await this.loadPlans();
       await this.loadExercises();
       
-      this.showToast(`Import erfolgreich! ${result.imported} Übungen importiert${result.skipped > 0 ? `, ${result.skipped} übersprungen` : ''}.`);
+      this.showToast(`Import erfolgreich! ${result.imported} Übungen importiert${result.skipped > 0 ? `, ${result.skipped} übersprungen` : ''}. Vorherige Übungen wurden ersetzt.`);
       
       event.target.value = '';
     } catch (error) {

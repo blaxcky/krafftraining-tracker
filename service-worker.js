@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krafttraining-tracker-v86';
+const CACHE_NAME = 'krafttraining-tracker-v87';
 const urlsToCache = [
   './',
   './index.html',
