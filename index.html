@@ -892,25 +892,41 @@
 
         .calories-send-btn {
             margin-top: 2px;
-            border-radius: 999px;
-            border: 1px solid rgba(35, 31, 22, 0.14);
-            background: rgba(255, 255, 255, 0.62);
-            color: rgba(42, 26, 0, 0.82);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 64%, rgba(35, 31, 22, 0.2));
+            background: linear-gradient(140deg, var(--md-sys-color-primary), var(--md-sys-color-secondary));
+            color: var(--md-sys-color-on-primary);
             font-size: 12px;
             font-weight: 800;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            padding: 7px 12px;
-            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+            letter-spacing: 0.01em;
+            padding: 8px 11px;
+            box-shadow: 0 3px 10px rgba(35, 31, 22, 0.18);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
         }
 
-        .calories-send-btn:hover {
-            background: rgba(255, 255, 255, 0.78);
-            border-color: rgba(35, 31, 22, 0.2);
+        .calories-send-btn .material-symbols-outlined {
+            font-size: 16px;
+            line-height: 1;
         }
 
-        .calories-send-btn:active {
+        .calories-send-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 12px rgba(35, 31, 22, 0.22);
+            filter: saturate(1.04);
+        }
+
+        .calories-send-btn:active:not(:disabled) {
             transform: translateY(1px);
+        }
+
+        .calories-send-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            box-shadow: none;
+            filter: grayscale(0.2);
         }
 
         .header-badge {
@@ -1351,7 +1367,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.11.8</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.11.9</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="add-exercise-btn" class="icon-btn top-add-btn" aria-label="Neue Übung">
@@ -1496,7 +1512,10 @@
 	                                    <span class="material-symbols-outlined text-base">local_fire_department</span>
 	                                    KCAL
 	                                </div>
-	                                <button id="send-calories-email-btn" type="button" class="calories-send-btn">Senden</button>
+	                                <button id="send-calories-email-btn" type="button" class="calories-send-btn" title="Zusammenfassung per E-Mail senden">
+	                                    <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+	                                    E-Mail senden
+	                                </button>
 	                            </div>
 	                        </div>
 

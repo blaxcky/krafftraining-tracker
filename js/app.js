@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.11.8';
+    this.version = '2.11.9';
     this.init();
   }
 
@@ -1559,6 +1559,13 @@ class App {
         strengthBar.style.width = `${strengthPct}%`;
         cardioBar.style.width = `${cardioPct}%`;
       }
+    }
+
+    const sendBtn = document.getElementById('send-calories-email-btn');
+    if (sendBtn) {
+      sendBtn.disabled = !hasAny;
+      sendBtn.setAttribute('aria-disabled', hasAny ? 'false' : 'true');
+      sendBtn.title = hasAny ? 'Zusammenfassung per E-Mail senden' : 'Keine Kalorien zum Senden';
     }
 
     // Cardio-Liste rendern
