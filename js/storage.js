@@ -538,11 +538,13 @@ class Storage {
       this.getPlans()
     ]);
     const emailAddress = this.getEmailAddress();
+    const webhookUrl = this.getWebhookUrl();
     const exportData = {
       version: '2.3',
       exportDate: new Date().toISOString(),
       settings: {
-        emailAddress: emailAddress || undefined
+        emailAddress: emailAddress || undefined,
+        webhookUrl: webhookUrl || undefined
       },
       plans: plans.map(p => ({
         id: p.id,
@@ -661,12 +663,16 @@ class Storage {
           if (importData.settings && importData.settings.emailAddress) {
             this.saveEmailAddress(importData.settings.emailAddress);
           }
+          if (importData.settings && importData.settings.webhookUrl) {
+            this.saveWebhookUrl(importData.settings.webhookUrl);
+          }
 
           resolve({
             imported: importedCount,
             skipped: skippedCount,
             total: importData.exercises.length,
-            emailImported: !!(importData.settings && importData.settings.emailAddress)
+            emailImported: !!(importData.settings && importData.settings.emailAddress),
+            webhookImported: !!(importData.settings && importData.settings.webhookUrl)
           });
         } catch (error) {
           reject(new Error('Fehler beim Lesen der Backup-Datei: ' + error.message));
@@ -781,6 +787,16 @@ class Storage {
   // E-Mail-Adresse laden
   getEmailAddress() {
     return localStorage.getItem('krafttraining_email') || '';
+  }
+
+  // Webhook-URL speichern
+  saveWebhookUrl(url) {
+    localStorage.setItem('krafttraining_webhook_url', url.trim());
+  }
+
+  // Webhook-URL laden
+  getWebhookUrl() {
+    return localStorage.getItem('krafttraining_webhook_url') || '';
   }
 
   // Kalorien-Zusammenfassung der aktuellen Session berechnen

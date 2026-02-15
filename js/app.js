@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.11.9';
+    this.version = '2.12.0';
     this.init();
   }
 
@@ -168,6 +168,14 @@ class App {
     const settingsSaveEmailBtn = document.getElementById('settings-save-email-btn');
     if (settingsSaveEmailBtn) {
       settingsSaveEmailBtn.addEventListener('click', () => this.saveEmailFromSettings());
+    }
+    const settingsWebhookInput = document.getElementById('settings-webhook-input');
+    if (settingsWebhookInput) {
+      settingsWebhookInput.addEventListener('change', (e) => this.saveWebhookUrl(e.target.value));
+    }
+    const settingsSaveWebhookBtn = document.getElementById('settings-save-webhook-btn');
+    if (settingsSaveWebhookBtn) {
+      settingsSaveWebhookBtn.addEventListener('click', () => this.saveWebhookFromSettings());
     }
 
     document.addEventListener('click', (e) => {
@@ -1499,7 +1507,13 @@ class App {
     if (emailInput && document.activeElement !== emailInput) {
       emailInput.value = emailAddress;
     }
+    const webhookUrl = storage.getWebhookUrl();
+    const webhookInput = document.getElementById('settings-webhook-input');
+    if (webhookInput && document.activeElement !== webhookInput) {
+      webhookInput.value = webhookUrl;
+    }
     this.updateEmailSettingsUI(emailAddress);
+    this.updateWebhookSettingsUI(webhookUrl);
   }
 
   updateEmailSettingsUI(emailValue = '') {
@@ -1512,6 +1526,16 @@ class App {
     }
   }
 
+  updateWebhookSettingsUI(webhookValue = '') {
+    const trimmed = String(webhookValue || '').trim();
+    const status = document.getElementById('settings-webhook-status');
+    if (status) {
+      status.textContent = trimmed.length > 0
+        ? 'Webhook ist hinterlegt'
+        : 'Noch kein Webhook hinterlegt';
+    }
+  }
+
   saveEmailFromSettings() {
     const emailInput = document.getElementById('settings-email-input');
     const emailAddress = emailInput ? String(emailInput.value || '').trim() : '';
@@ -1519,11 +1543,37 @@ class App {
     this.showToast(emailAddress ? 'E-Mail gespeichert' : 'E-Mail entfernt');
   }
 
+  saveWebhookFromSettings() {
+    const webhookInput = document.getElementById('settings-webhook-input');
+    const webhookUrl = webhookInput ? String(webhookInput.value || '').trim() : '';
+    if (webhookUrl && !this.isValidWebhookUrl(webhookUrl)) {
+      this.showToast('Bitte eine gültige HTTPS-Webhook-URL eingeben', 'error');
+      return;
+    }
+    this.saveWebhookUrl(webhookUrl);
+    this.showToast(webhookUrl ? 'Webhook gespeichert' : 'Webhook entfernt');
+  }
+
   // E-Mail-Adresse speichern
   saveEmailAddress(email) {
     const trimmed = String(email || '').trim();
     storage.saveEmailAddress(trimmed);
     this.updateEmailSettingsUI(trimmed);
+  }
+
+  saveWebhookUrl(url) {
+    const trimmed = String(url || '').trim();
+    storage.saveWebhookUrl(trimmed);
+    this.updateWebhookSettingsUI(trimmed);
+  }
+
+  isValidWebhookUrl(url) {
+    try {
+      const parsed = new URL(String(url || '').trim());
+      return parsed.protocol === 'https:';
+    } catch (error) {
+      return false;
+    }
   }
 
   // Kalorien-Anzeige aktualisieren
@@ -1714,7 +1764,7 @@ class App {
     }
   }
 
-  // Kalorien-Übersicht per E-Mail senden
+  // Kalorien-Übersicht per Webhook oder E-Mail senden
   async sendCaloriesSummaryEmail() {
     const summary = await storage.getSessionCaloriesSummary();
 
@@ -1723,20 +1773,31 @@ class App {
       return;
     }
 
-    // E-Mail-Adresse aus Einstellungen holen
-    const settingsInput = document.getElementById('settings-email-input');
-    const pendingEmail = settingsInput ? settingsInput.value.trim() : '';
-    const emailAddress = pendingEmail || storage.getEmailAddress().trim();
+    const emailInput = document.getElementById('settings-email-input');
+    const webhookInput = document.getElementById('settings-webhook-input');
+    const pendingEmail = emailInput ? String(emailInput.value || '').trim() : '';
+    const pendingWebhook = webhookInput ? String(webhookInput.value || '').trim() : '';
 
-    if (!emailAddress) {
-      this.showToast('Bitte E-Mail in Einstellungen hinterlegen', 'error');
+    const emailAddress = pendingEmail || storage.getEmailAddress().trim();
+    const webhookUrl = pendingWebhook || storage.getWebhookUrl().trim();
+
+    if (webhookUrl && !this.isValidWebhookUrl(webhookUrl)) {
+      this.showToast('Webhook-URL ist ungültig (HTTPS erforderlich)', 'error');
       return;
     }
 
-    // E-Mail-Adresse speichern
-    this.saveEmailAddress(emailAddress);
+    if (!webhookUrl && !emailAddress) {
+      this.showToast('Bitte E-Mail oder Webhook in Einstellungen hinterlegen', 'error');
+      return;
+    }
 
-    // Datum formatieren
+    if (emailAddress) {
+      this.saveEmailAddress(emailAddress);
+    }
+    if (webhookUrl) {
+      this.saveWebhookUrl(webhookUrl);
+    }
+
     const now = new Date();
     const dateStr = now.toLocaleDateString('de-DE', {
       weekday: 'long',
@@ -1749,57 +1810,114 @@ class App {
       minute: '2-digit'
     });
 
-    // E-Mail-Betreff
     const subject = `Trainings-Dokumentation vom ${dateStr}`;
-
-    // Schön formatierter E-Mail-Body
     let body = '';
-
-    // Header
-    body += `TRAININGS-DOKUMENTATION\n`;
-    body += `========================\n\n`;
-
+    body += 'TRAININGS-DOKUMENTATION\n';
+    body += '========================\n\n';
     body += `${dateStr}\n`;
     body += `${timeStr} Uhr\n\n`;
-
-    // Gesamtkalorien-Box
-    body += `----------------------------------------\n`;
+    body += '----------------------------------------\n';
     body += `GESAMTKALORIEN VERBRANNT: ${summary.totalCalories} kcal\n`;
-    body += `----------------------------------------\n\n`;
-
-    // Aufschlüsselung
+    body += '----------------------------------------\n\n';
     body += `Krafttraining: ${summary.exerciseCalories} kcal\n`;
     body += `Cardio: ${summary.cardioCalories} kcal\n\n`;
 
-    // Krafttraining-Details
     const exercisesWithCalories = summary.completedExercises.filter(ex => ex.calories > 0);
     if (exercisesWithCalories.length > 0) {
-      body += `-- KRAFTTRAINING --\n\n`;
+      body += '-- KRAFTTRAINING --\n\n';
       exercisesWithCalories.forEach(ex => {
         const dots = '.'.repeat(Math.max(2, 32 - ex.name.length - String(ex.calories).length));
         body += `${ex.name} ${dots} ${ex.calories} kcal\n`;
       });
-      body += `\n`;
+      body += '\n';
     }
 
-    // Cardio-Details
     if (summary.cardioEntries.length > 0) {
-      body += `-- CARDIO --\n\n`;
+      body += '-- CARDIO --\n\n';
       summary.cardioEntries.forEach(entry => {
         const dots = '.'.repeat(Math.max(2, 32 - entry.name.length - String(entry.calories).length));
         body += `${entry.name} ${dots} ${entry.calories} kcal\n`;
       });
-      body += `\n`;
+      body += '\n';
     }
 
-    // Footer
-    body += `----------------------------------------\n`;
-    body += `Gesendet von Krafttraining Tracker\n`;
+    body += '----------------------------------------\n';
+    body += 'Gesendet von Krafttraining Tracker\n';
 
-    // mailto-Link erstellen und öffnen
+    if (webhookUrl) {
+      try {
+        const payload = {
+          source: 'krafttraining-tracker',
+          version: this.version,
+          sentAt: now.toISOString(),
+          summary: {
+            totalCalories: summary.totalCalories,
+            exerciseCalories: summary.exerciseCalories,
+            cardioCalories: summary.cardioCalories
+          },
+          exercises: exercisesWithCalories.map(ex => ({ name: ex.name, calories: ex.calories })),
+          cardio: (summary.cardioEntries || []).map(entry => ({ name: entry.name, calories: entry.calories })),
+          subject,
+          message: body
+        };
+
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`Webhook antwortete mit HTTP ${response.status}`);
+        }
+
+        this.showToast('Zusammenfassung an Webhook gesendet', 'success');
+        return;
+      } catch (error) {
+        console.error('Error sending webhook:', error);
+        try {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+              'Content-Type': 'text/plain;charset=UTF-8'
+            },
+            body: JSON.stringify({
+              source: 'krafttraining-tracker',
+              version: this.version,
+              sentAt: now.toISOString(),
+              summary: {
+                totalCalories: summary.totalCalories,
+                exerciseCalories: summary.exerciseCalories,
+                cardioCalories: summary.cardioCalories
+              },
+              exercises: exercisesWithCalories.map(ex => ({ name: ex.name, calories: ex.calories })),
+              cardio: (summary.cardioEntries || []).map(entry => ({ name: entry.name, calories: entry.calories })),
+              subject,
+              message: body
+            })
+          });
+          this.showToast('Webhook gesendet', 'success');
+          return;
+        } catch (fallbackError) {
+          console.error('Error sending webhook fallback:', fallbackError);
+        }
+        if (!emailAddress) {
+          this.showToast('Webhook-Senden fehlgeschlagen', 'error');
+          return;
+        }
+      }
+    }
+
+    if (!emailAddress) {
+      this.showToast('Kein E-Mail-Empfänger hinterlegt', 'error');
+      return;
+    }
+
     const mailtoLink = `mailto:${emailAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;
-
     this.showToast('E-Mail-Client wird geöffnet...');
   }
 }
