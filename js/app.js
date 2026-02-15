@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.12.2';
+    this.version = '2.12.3';
     this.init();
   }
 
@@ -1285,9 +1285,25 @@ class App {
   async endTraining() {
     if (confirm('Training beenden?')) {
       try {
+        const webhookInput = document.getElementById('settings-webhook-input');
+        const pendingWebhook = webhookInput ? String(webhookInput.value || '').trim() : '';
+        const webhookUrl = pendingWebhook || storage.getWebhookUrl().trim();
+        let autoWebhookSent = false;
+
+        if (webhookUrl && this.isValidWebhookUrl(webhookUrl)) {
+          const autoSendResult = await this.sendCaloriesSummaryEmail({
+            webhookOnly: true,
+            allowEmailFallback: false,
+            showSuccessToast: false,
+            showErrorToast: false
+          });
+          autoWebhookSent = Boolean(autoSendResult && autoSendResult.sent);
+        }
+
         await storage.endTraining();
         this.showCompletedExercises = false;
         await this.loadTraining();
+        this.showToast(autoWebhookSent ? 'Training beendet · Webhook gesendet' : 'Training beendet', 'success');
       } catch (error) {
         console.error('Error ending training:', error);
       }
@@ -1615,7 +1631,7 @@ class App {
     if (sendBtn) {
       sendBtn.disabled = !hasAny;
       sendBtn.setAttribute('aria-disabled', hasAny ? 'false' : 'true');
-      sendBtn.title = hasAny ? 'Zusammenfassung per E-Mail senden' : 'Keine Kalorien zum Senden';
+      sendBtn.title = hasAny ? 'Zusammenfassung senden' : 'Keine Kalorien zum Senden';
     }
 
     // Cardio-Liste rendern
@@ -1765,12 +1781,21 @@ class App {
   }
 
   // Kalorien-Übersicht per Webhook oder E-Mail senden
-  async sendCaloriesSummaryEmail() {
+  async sendCaloriesSummaryEmail(options = {}) {
+    const {
+      webhookOnly = false,
+      allowEmailFallback = true,
+      showSuccessToast = true,
+      showErrorToast = true
+    } = options;
+
     const summary = await storage.getSessionCaloriesSummary();
 
     if (summary.totalCalories === 0) {
-      this.showToast('Keine Kalorien zum Senden vorhanden', 'error');
-      return;
+      if (showErrorToast) {
+        this.showToast('Keine Kalorien zum Senden vorhanden', 'error');
+      }
+      return { sent: false, reason: 'empty' };
     }
 
     const emailInput = document.getElementById('settings-email-input');
@@ -1782,13 +1807,24 @@ class App {
     const webhookUrl = pendingWebhook || storage.getWebhookUrl().trim();
 
     if (webhookUrl && !this.isValidWebhookUrl(webhookUrl)) {
-      this.showToast('Webhook-URL ist ungültig (HTTPS erforderlich)', 'error');
-      return;
+      if (showErrorToast) {
+        this.showToast('Webhook-URL ist ungültig (HTTPS erforderlich)', 'error');
+      }
+      return { sent: false, reason: 'invalid-webhook' };
+    }
+
+    if (webhookOnly && !webhookUrl) {
+      if (showErrorToast) {
+        this.showToast('Bitte Webhook in Einstellungen hinterlegen', 'error');
+      }
+      return { sent: false, reason: 'missing-webhook' };
     }
 
     if (!webhookUrl && !emailAddress) {
-      this.showToast('Bitte E-Mail oder Webhook in Einstellungen hinterlegen', 'error');
-      return;
+      if (showErrorToast) {
+        this.showToast('Bitte E-Mail oder Webhook in Einstellungen hinterlegen', 'error');
+      }
+      return { sent: false, reason: 'missing-target' };
     }
 
     if (emailAddress) {
@@ -1936,8 +1972,10 @@ class App {
           throw new Error(`Webhook antwortete mit HTTP ${response.status}`);
         }
 
-        this.showToast('Zusammenfassung an Webhook gesendet', 'success');
-        return;
+        if (showSuccessToast) {
+          this.showToast('Zusammenfassung an Webhook gesendet', 'success');
+        }
+        return { sent: true, channel: 'webhook' };
       } catch (error) {
         console.error('Error sending webhook:', error);
         try {
@@ -1949,26 +1987,40 @@ class App {
             },
             body: JSON.stringify(webhookPayload)
           });
-          this.showToast('Webhook gesendet', 'success');
-          return;
+          if (showSuccessToast) {
+            this.showToast('Webhook gesendet', 'success');
+          }
+          return { sent: true, channel: 'webhook' };
         } catch (fallbackError) {
           console.error('Error sending webhook fallback:', fallbackError);
         }
-        if (!emailAddress) {
-          this.showToast('Webhook-Senden fehlgeschlagen', 'error');
-          return;
+
+        if (webhookOnly || !allowEmailFallback || !emailAddress) {
+          if (showErrorToast) {
+            this.showToast('Webhook-Senden fehlgeschlagen', 'error');
+          }
+          return { sent: false, reason: 'webhook-failed' };
         }
       }
     }
 
+    if (webhookOnly || !allowEmailFallback) {
+      return { sent: false, reason: 'webhook-required' };
+    }
+
     if (!emailAddress) {
-      this.showToast('Kein E-Mail-Empfänger hinterlegt', 'error');
-      return;
+      if (showErrorToast) {
+        this.showToast('Kein E-Mail-Empfänger hinterlegt', 'error');
+      }
+      return { sent: false, reason: 'missing-email' };
     }
 
     const mailtoLink = `mailto:${emailAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;
-    this.showToast('E-Mail-Client wird geöffnet...');
+    if (showSuccessToast) {
+      this.showToast('E-Mail-Client wird geöffnet...');
+    }
+    return { sent: true, channel: 'email' };
   }
 }
 
