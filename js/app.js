@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.12.7';
+    this.version = '2.12.8';
     this.init();
   }
 
@@ -1990,9 +1990,11 @@ class App {
     let webhookPrettyText = '';
     webhookPrettyText += '🏋️ TRAININGS-DOKUMENTATION\n';
     webhookPrettyText += `${dateStr} | ${timeStr} Uhr\n\n`;
-    webhookPrettyText += `🔥 Gesamt: ${summary.totalCalories} kcal\n`;
-    webhookPrettyText += `💪 Krafttraining: ${summary.exerciseCalories} kcal\n`;
-    webhookPrettyText += `🏃 Cardio: ${summary.cardioCalories} kcal\n`;
+    webhookPrettyText += '━━━━━━━━━━━━━━━━━━━━\n';
+    webhookPrettyText += `🔥 GESAMT: ${summary.totalCalories} kcal\n`;
+    webhookPrettyText += '━━━━━━━━━━━━━━━━━━━━\n';
+    webhookPrettyText += `💪 Krafttraining: ${summary.exerciseCalories} kcal (${strengthPercent}%)\n`;
+    webhookPrettyText += `🏃 Cardio: ${summary.cardioCalories} kcal (${cardioPercent}%)\n`;
 
     if (exercisesWithCalories.length > 0) {
       webhookPrettyText += '\n💪 Krafttraining-Details:\n';
@@ -2011,11 +2013,12 @@ class App {
     let telegramHtml = '';
     telegramHtml += '<b>🏋️ Trainings-Dokumentation</b>\n';
     telegramHtml += `<i>${this.escapeHtml(dateStr)} • ${this.escapeHtml(timeStr)} Uhr</i>\n\n`;
-    telegramHtml += '<b>------------------------------</b>\n';
-    telegramHtml += `<b>🔥 Gesamt:</b> <b>${summary.totalCalories} kcal</b>\n`;
-    telegramHtml += `<b>💪 Krafttraining:</b> ${summary.exerciseCalories} kcal (${strengthPercent}%)\n`;
-    telegramHtml += `<b>🏃 Cardio:</b> ${summary.cardioCalories} kcal (${cardioPercent}%)\n`;
-    telegramHtml += '<b>------------------------------</b>\n';
+    telegramHtml += '<b>━━━━━━━━━━━━━━━━━━━━━━━━</b>\n';
+    telegramHtml += '<b>🔥 GESAMTKALORIEN</b>\n';
+    telegramHtml += `<b>🏁 ${summary.totalCalories} kcal</b>\n`;
+    telegramHtml += '<b>━━━━━━━━━━━━━━━━━━━━━━━━</b>\n';
+    telegramHtml += `💪 Krafttraining: <b>${summary.exerciseCalories} kcal</b> (${strengthPercent}%)\n`;
+    telegramHtml += `🏃 Cardio: <b>${summary.cardioCalories} kcal</b> (${cardioPercent}%)\n`;
 
     if (exercisesWithCalories.length > 0) {
       telegramHtml += '\n<b>💪 Krafttraining-Details</b>\n';
