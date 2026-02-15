@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.12.3';
+    this.version = '2.12.4';
     this.init();
   }
 
@@ -1285,10 +1285,13 @@ class App {
   async endTraining() {
     if (confirm('Training beenden?')) {
       try {
+        const training = await storage.getCurrentTraining();
+        const summary = await storage.getSessionCaloriesSummary();
         const webhookInput = document.getElementById('settings-webhook-input');
         const pendingWebhook = webhookInput ? String(webhookInput.value || '').trim() : '';
         const webhookUrl = pendingWebhook || storage.getWebhookUrl().trim();
         let autoWebhookSent = false;
+        let webhookStatus = webhookUrl ? 'webhook-failed' : 'missing-webhook';
 
         if (webhookUrl && this.isValidWebhookUrl(webhookUrl)) {
           const autoSendResult = await this.sendCaloriesSummaryEmail({
@@ -1298,6 +1301,37 @@ class App {
             showErrorToast: false
           });
           autoWebhookSent = Boolean(autoSendResult && autoSendResult.sent);
+          webhookStatus = autoWebhookSent
+            ? 'sent'
+            : ((autoSendResult && autoSendResult.reason) || 'webhook-failed');
+        } else if (webhookUrl) {
+          webhookStatus = 'invalid-webhook';
+        }
+
+        if (training && summary) {
+          const snapshot = {
+            endedAt: new Date().toISOString(),
+            startedAt: training.startedAt || null,
+            planId: training.planId || 'default',
+            planName: training.planName || (training.planId === 'default' ? 'Standard' : (training.planId || 'Standard')),
+            totalCalories: Number(summary.totalCalories) || 0,
+            exerciseCalories: Number(summary.exerciseCalories) || 0,
+            cardioCalories: Number(summary.cardioCalories) || 0,
+            exercises: Array.isArray(summary.completedExercises)
+              ? summary.completedExercises.map(ex => ({
+                name: String(ex && ex.name ? ex.name : '').trim(),
+                calories: Number(ex && ex.calories ? ex.calories : 0)
+              })).filter(ex => ex.name)
+              : [],
+            cardio: Array.isArray(summary.cardioEntries)
+              ? summary.cardioEntries.map(entry => ({
+                name: String(entry && entry.name ? entry.name : '').trim(),
+                calories: Number(entry && entry.calories ? entry.calories : 0)
+              })).filter(entry => entry.name)
+              : [],
+            webhookStatus
+          };
+          storage.saveRecentTrainingSnapshot(snapshot);
         }
 
         await storage.endTraining();
@@ -1530,6 +1564,7 @@ class App {
     }
     this.updateEmailSettingsUI(emailAddress);
     this.updateWebhookSettingsUI(webhookUrl);
+    this.renderRecentTrainingSnapshots();
   }
 
   updateEmailSettingsUI(emailValue = '') {
@@ -1550,6 +1585,62 @@ class App {
         ? 'Webhook ist hinterlegt'
         : 'Noch kein Webhook hinterlegt';
     }
+  }
+
+  renderRecentTrainingSnapshots() {
+    const container = document.getElementById('settings-recent-summaries');
+    if (!container) return;
+
+    const snapshots = storage.getRecentTrainingSnapshots(5);
+    if (!Array.isArray(snapshots) || snapshots.length === 0) {
+      container.innerHTML = '<p class="text-sm text-gray-500">Noch keine gespeicherten Trainings vorhanden.</p>';
+      return;
+    }
+
+    const statusText = (status) => {
+      if (status === 'sent') return 'Webhook gesendet';
+      if (status === 'invalid-webhook') return 'Webhook ungültig';
+      if (status === 'missing-webhook') return 'Kein Webhook hinterlegt';
+      if (status === 'webhook-failed') return 'Webhook fehlgeschlagen';
+      if (status === 'empty') return 'Keine Kalorien';
+      return 'Webhook nicht gesendet';
+    };
+
+    container.innerHTML = snapshots.map((entry) => {
+      const endedAt = entry && entry.endedAt ? new Date(entry.endedAt) : null;
+      const dateLabel = endedAt && !Number.isNaN(endedAt.getTime())
+        ? endedAt.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })
+        : 'Unbekanntes Datum';
+      const total = Number(entry && entry.totalCalories) || 0;
+      const strength = Number(entry && entry.exerciseCalories) || 0;
+      const cardio = Number(entry && entry.cardioCalories) || 0;
+      const planName = this.escapeHtml((entry && entry.planName) || 'Standard');
+      const webhookState = statusText(entry && entry.webhookStatus);
+
+      const exercises = Array.isArray(entry && entry.exercises)
+        ? entry.exercises.slice(0, 8).map(ex => `<li class="text-gray-700">${this.escapeHtml(ex.name)}${Number(ex.calories) > 0 ? ` <span class="text-gray-500">(${Number(ex.calories)} kcal)</span>` : ''}</li>`).join('')
+        : '';
+      const cardioEntries = Array.isArray(entry && entry.cardio)
+        ? entry.cardio.slice(0, 8).map(item => `<li class="text-gray-700">${this.escapeHtml(item.name)} <span class="text-gray-500">(${Number(item.calories) || 0} kcal)</span></li>`).join('')
+        : '';
+
+      return `
+        <details class="rounded-xl border border-gray-200 bg-white/75 px-3 py-2">
+          <summary class="cursor-pointer list-none">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-sm font-semibold text-gray-900">${dateLabel}</span>
+              <span class="text-sm font-bold text-gray-900">${total} kcal</span>
+            </div>
+            <div class="mt-1 text-xs text-gray-500">Plan: ${planName} · ${this.escapeHtml(webhookState)}</div>
+          </summary>
+          <div class="mt-3 text-xs space-y-2">
+            <p class="text-gray-600">Krafttraining: <span class="font-semibold text-gray-900">${strength} kcal</span> · Cardio: <span class="font-semibold text-gray-900">${cardio} kcal</span></p>
+            ${exercises ? `<div><p class="font-semibold text-gray-700 mb-1">Übungen</p><ul class="space-y-1">${exercises}</ul></div>` : ''}
+            ${cardioEntries ? `<div><p class="font-semibold text-gray-700 mb-1">Cardio</p><ul class="space-y-1">${cardioEntries}</ul></div>` : ''}
+          </div>
+        </details>
+      `;
+    }).join('');
   }
 
   saveEmailFromSettings() {

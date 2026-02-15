@@ -1367,7 +1367,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.12.3</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.12.4</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="add-exercise-btn" class="icon-btn top-add-btn" aria-label="Neue Übung">
@@ -1658,6 +1658,14 @@
                         <input type="url" id="settings-webhook-input" class="input-field w-full px-4 py-3 rounded-xl" placeholder="Zapier Webhook URL (https://hooks.zapier.com/...)">
                         <button type="button" id="settings-save-webhook-btn" class="btn-secondary w-full py-3 px-5 rounded-xl">Webhook speichern</button>
                         <p id="settings-webhook-status" class="text-xs text-gray-500">Noch kein Webhook hinterlegt</p>
+                    </div>
+                </div>
+
+                <div class="card p-5">
+                    <h3 class="font-bold text-lg text-gray-900 mb-2">Letzte 5 Trainings</h3>
+                    <p class="text-sm text-gray-500 mb-3">Lokales Backup nach Trainingsende - hilfreich falls der Webhook ausfällt.</p>
+                    <div id="settings-recent-summaries" class="space-y-2">
+                        <!-- Letzte Trainings werden hier angezeigt -->
                     </div>
                 </div>
 

@@ -799,6 +799,40 @@ class Storage {
     return localStorage.getItem('krafttraining_webhook_url') || '';
   }
 
+  // Letzte abgeschlossene Trainings lokal als Sicherheits-Backup speichern
+  saveRecentTrainingSnapshot(snapshot) {
+    const key = 'krafttraining_recent_summaries';
+    const safeSnapshot = snapshot && typeof snapshot === 'object' ? snapshot : null;
+    if (!safeSnapshot) return [];
+
+    let existing = [];
+    try {
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : [];
+      existing = Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      existing = [];
+    }
+
+    const updated = [safeSnapshot, ...existing].slice(0, 5);
+    localStorage.setItem(key, JSON.stringify(updated));
+    return updated;
+  }
+
+  // Letzte Trainings-Backups laden
+  getRecentTrainingSnapshots(limit = 5) {
+    const key = 'krafttraining_recent_summaries';
+    try {
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const entries = Array.isArray(parsed) ? parsed : [];
+      const safeLimit = Math.max(1, Number(limit) || 5);
+      return entries.slice(0, safeLimit);
+    } catch (error) {
+      return [];
+    }
+  }
+
   // Kalorien-Zusammenfassung der aktuellen Session berechnen
   async getSessionCaloriesSummary() {
     const training = await this.getCurrentTraining();
