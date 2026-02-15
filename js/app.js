@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.11.7';
+    this.version = '2.11.8';
     this.init();
   }
 
@@ -628,7 +628,6 @@ class App {
   switchTab(tab, { animate = true } = {}) {
     if (!this.tabOrder.includes(tab)) return;
     this.currentTab = tab;
-    this.updateTopAddButtonVisibility(tab);
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.remove('active');
@@ -653,13 +652,6 @@ class App {
     if (tab === 'settings') {
       this.loadSettingsTab();
     }
-  }
-
-  updateTopAddButtonVisibility(tab) {
-    const topAddBtn = document.getElementById('add-exercise-btn');
-    if (!topAddBtn) return;
-    const hideOnExercises = tab === 'exercises';
-    topAddBtn.classList.toggle('hidden', hideOnExercises);
   }
 
   async loadExercises() {
