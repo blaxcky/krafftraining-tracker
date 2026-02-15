@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.11.4';
+    this.version = '2.11.5';
     this.init();
   }
 
@@ -954,7 +954,13 @@ class App {
                 <span class="material-symbols-outlined text-[18px] leading-none mt-0.5 opacity-70 text-primary-dark" aria-hidden="true">fitness_center</span>
                 <h3 class="font-semibold text-base leading-snug min-w-0 ${nameClasses}">${exercise.name}</h3>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 shrink-0">
+                ${calories > 0 ? `
+                  <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
+                    <span class="material-symbols-outlined kcal-icon">local_fire_department</span>
+                    ${calories} kcal
+                  </span>
+                ` : ''}
                 ${stateLabel ? `
                   <span class="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold border ${stateLabelTone}">
                     ${stateLabel}
@@ -1004,15 +1010,7 @@ class App {
               </div>
               <div class="flex items-center gap-3 mt-0.5">
                 <span class="text-xs text-black font-medium w-24">Gesamtgewicht:</span>
-                <div class="training-total-meta">
-                  <span class="training-total-value">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
-                  ${calories > 0 ? `
-                    <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
-                      <span class="material-symbols-outlined kcal-icon">local_fire_department</span>
-                      ${calories} kcal
-                    </span>
-                  ` : ''}
-                </div>
+                <span class="text-[11px] leading-tight font-medium text-black opacity-70">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
               </div>
             </div>
           </div>
