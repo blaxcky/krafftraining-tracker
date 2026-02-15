@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.12.4';
+    this.version = '2.12.5';
     this.init();
   }
 
@@ -2008,8 +2008,6 @@ class App {
       });
     }
 
-    webhookPrettyText += '\n— Gesendet von Krafttraining Tracker';
-
     let telegramHtml = '';
     telegramHtml += '<b>🏋️ Trainings-Dokumentation</b>\n';
     telegramHtml += `<i>${this.escapeHtml(dateStr)} • ${this.escapeHtml(timeStr)} Uhr</i>\n\n`;
@@ -2028,8 +2026,6 @@ class App {
       telegramHtml += '\n<b>🏃 Cardio-Details</b>\n';
       telegramHtml += `<pre>${buildTelegramDetailLines(summary.cardioEntries)}</pre>\n`;
     }
-
-    telegramHtml += '\n<i>Gesendet von Krafttraining Tracker</i>';
 
     const webhookPayload = {
       source: 'krafttraining-tracker',
