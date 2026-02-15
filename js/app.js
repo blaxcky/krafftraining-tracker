@@ -7,8 +7,8 @@ class App {
     this.plans = [];
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
-    this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.10.3';
+    this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
+    this.version = '2.11.0';
     this.init();
   }
 
@@ -114,6 +114,7 @@ class App {
     await this.loadPlans();
     await this.loadExercises();
     await this.loadTraining();
+    this.loadSettingsTab();
   }
 
   updateVersionBadge() {
@@ -127,6 +128,10 @@ class App {
     document.getElementById('tab-exercises').addEventListener('click', () => this.switchTab('exercises'));
     document.getElementById('tab-training').addEventListener('click', () => this.switchTab('training'));
     document.getElementById('tab-calories').addEventListener('click', () => this.switchTab('calories'));
+    const settingsTabBtn = document.getElementById('tab-settings');
+    if (settingsTabBtn) {
+      settingsTabBtn.addEventListener('click', () => this.switchTab('settings'));
+    }
 
     document.getElementById('add-exercise-btn').addEventListener('click', () => this.showExerciseModal());
     document.getElementById('add-header-btn').addEventListener('click', () => this.showHeaderModal());
@@ -152,7 +157,14 @@ class App {
 
     // E-Mail senden Button und Eingabefeld
     document.getElementById('send-calories-email-btn').addEventListener('click', () => this.sendCaloriesSummaryEmail());
-    document.getElementById('email-address-input').addEventListener('change', (e) => this.saveEmailAddress(e.target.value));
+    const settingsEmailInput = document.getElementById('settings-email-input');
+    if (settingsEmailInput) {
+      settingsEmailInput.addEventListener('change', (e) => this.saveEmailAddress(e.target.value));
+    }
+    const settingsSaveEmailBtn = document.getElementById('settings-save-email-btn');
+    if (settingsSaveEmailBtn) {
+      settingsSaveEmailBtn.addEventListener('click', () => this.saveEmailFromSettings());
+    }
 
     document.addEventListener('click', (e) => {
       if (e.target.id === 'exercise-modal') {
@@ -632,6 +644,9 @@ class App {
     // Kalorien-Tab laden wenn ausgewählt
     if (tab === 'calories') {
       this.loadCaloriesTab();
+    }
+    if (tab === 'settings') {
+      this.loadSettingsTab();
     }
   }
 
@@ -1473,27 +1488,33 @@ class App {
     document.getElementById('no-training-calories').classList.add('hidden');
     document.getElementById('active-calories').classList.remove('hidden');
 
-    // E-Mail-Adresse laden
-    const emailInput = document.getElementById('email-address-input');
+    await this.updateCaloriesDisplay();
+  }
+
+  loadSettingsTab() {
     const emailAddress = storage.getEmailAddress();
-    if (emailInput) {
+    const emailInput = document.getElementById('settings-email-input');
+    if (emailInput && document.activeElement !== emailInput) {
       emailInput.value = emailAddress;
     }
     this.updateEmailSettingsUI(emailAddress);
-
-    await this.updateCaloriesDisplay();
   }
 
   updateEmailSettingsUI(emailValue = '') {
     const trimmed = String(emailValue || '').trim();
-    const details = document.getElementById('email-settings');
-    const label = document.getElementById('email-settings-label');
-    if (details) {
-      details.open = trimmed.length === 0;
+    const status = document.getElementById('settings-email-status');
+    if (status) {
+      status.textContent = trimmed.length > 0
+        ? `Aktuell hinterlegt: ${trimmed}`
+        : 'Noch keine E-Mail hinterlegt';
     }
-    if (label) {
-      label.textContent = trimmed.length > 0 ? 'E-Mail ändern' : 'E-Mail hinzufügen';
-    }
+  }
+
+  saveEmailFromSettings() {
+    const emailInput = document.getElementById('settings-email-input');
+    const emailAddress = emailInput ? String(emailInput.value || '').trim() : '';
+    this.saveEmailAddress(emailAddress);
+    this.showToast(emailAddress ? 'E-Mail gespeichert' : 'E-Mail entfernt');
   }
 
   // E-Mail-Adresse speichern
@@ -1693,17 +1714,18 @@ class App {
       return;
     }
 
-    // E-Mail-Adresse aus Eingabefeld holen und speichern
-    const emailInput = document.getElementById('email-address-input');
-    const emailAddress = emailInput ? emailInput.value.trim() : '';
+    // E-Mail-Adresse aus Einstellungen holen
+    const settingsInput = document.getElementById('settings-email-input');
+    const pendingEmail = settingsInput ? settingsInput.value.trim() : '';
+    const emailAddress = pendingEmail || storage.getEmailAddress().trim();
 
     if (!emailAddress) {
-      this.showToast('Bitte E-Mail-Adresse eingeben', 'error');
+      this.showToast('Bitte E-Mail in Einstellungen hinterlegen', 'error');
       return;
     }
 
     // E-Mail-Adresse speichern
-    storage.saveEmailAddress(emailAddress);
+    this.saveEmailAddress(emailAddress);
 
     // Datum formatieren
     const now = new Date();

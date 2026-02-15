@@ -51,10 +51,23 @@ const forceUpdate = async (registration) => {
 const showUpdateAction = (registration) => {
   const updateBtn = document.getElementById('update-btn');
   if (!updateBtn) return;
-  updateBtn.classList.add('show');
+
+  const setBusyState = (isBusy) => {
+    updateBtn.disabled = isBusy;
+    updateBtn.dataset.loading = isBusy ? 'true' : 'false';
+    const icon = updateBtn.querySelector('.material-symbols-outlined');
+    if (icon) {
+      icon.textContent = isBusy ? 'autorenew' : 'system_update';
+    }
+    const label = updateBtn.querySelector('[data-update-label]');
+    if (label) {
+      label.textContent = isBusy ? 'Aktualisiere...' : 'App aktualisieren';
+    }
+  };
+
+  setBusyState(false);
   updateBtn.onclick = async () => {
-    updateBtn.disabled = true;
-    updateBtn.querySelector('.material-symbols-outlined').textContent = 'autorenew';
+    setBusyState(true);
     await forceUpdate(registration);
   };
 };
