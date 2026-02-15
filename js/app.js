@@ -6,8 +6,9 @@ class App {
     this.showCompletedExercises = false;
     this.plans = [];
     this.currentPlanId = 'default';
+    this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.10.1';
+    this.version = '2.10.2';
     this.init();
   }
 
@@ -171,7 +172,7 @@ class App {
     if (startPlanSelect) {
       startPlanSelect.addEventListener('change', (e) => {
         const planId = e.target && e.target.value ? String(e.target.value) : 'default';
-        this.setCurrentPlan(planId);
+        this.setStartPlan(planId);
       });
     }
 
@@ -220,11 +221,16 @@ class App {
   async loadPlans() {
     try {
       this.plans = await storage.getPlans();
-      const saved = localStorage.getItem('kraft_currentPlanId');
-      const candidate = saved ? String(saved) : this.currentPlanId;
-      const exists = Array.isArray(this.plans) && this.plans.some(p => p && p.id === candidate);
-      this.currentPlanId = exists ? candidate : 'default';
+      const savedCurrentPlan = localStorage.getItem('kraft_currentPlanId');
+      const currentCandidate = savedCurrentPlan ? String(savedCurrentPlan) : this.currentPlanId;
+      this.currentPlanId = this.resolvePlanId(currentCandidate);
       localStorage.setItem('kraft_currentPlanId', this.currentPlanId);
+
+      const savedStartPlan = localStorage.getItem('kraft_startPlanId');
+      const startCandidate = savedStartPlan ? String(savedStartPlan) : this.currentPlanId;
+      this.startPlanId = this.resolvePlanId(startCandidate);
+      localStorage.setItem('kraft_startPlanId', this.startPlanId);
+
       this.renderPlanSelects();
     } catch (error) {
       console.error('Error loading plans:', error);
@@ -248,7 +254,7 @@ class App {
     }
     if (startPlanSelect) {
       startPlanSelect.innerHTML = optionsHtml;
-      startPlanSelect.value = this.currentPlanId;
+      startPlanSelect.value = this.startPlanId;
     }
 
     const isDefault = this.currentPlanId === 'default';
@@ -266,13 +272,28 @@ class App {
   }
 
   setCurrentPlan(planId, { refreshExercises = true } = {}) {
-    const id = String(planId || '').trim() || 'default';
+    const id = this.resolvePlanId(planId);
     this.currentPlanId = id;
     localStorage.setItem('kraft_currentPlanId', id);
     this.renderPlanSelects();
     if (refreshExercises) {
       void this.loadExercises();
     }
+    return id;
+  }
+
+  setStartPlan(planId) {
+    const id = this.resolvePlanId(planId);
+    this.startPlanId = id;
+    localStorage.setItem('kraft_startPlanId', id);
+    this.renderPlanSelects();
+    return id;
+  }
+
+  resolvePlanId(planId) {
+    const id = String(planId || '').trim() || 'default';
+    const exists = Array.isArray(this.plans) && this.plans.some(p => p && p.id === id);
+    return exists ? id : 'default';
   }
 
   escapeHtml(value) {
@@ -315,12 +336,16 @@ class App {
 
   async deleteCurrentPlan() {
     if (this.currentPlanId === 'default') return;
-    const current = Array.isArray(this.plans) ? this.plans.find(p => p && p.id === this.currentPlanId) : null;
+    const deletedPlanId = this.currentPlanId;
+    const current = Array.isArray(this.plans) ? this.plans.find(p => p && p.id === deletedPlanId) : null;
     const name = current ? current.name : this.currentPlanId;
     if (!confirm(`Trainingsplan "${name}" löschen? Alle Übungen dieses Plans werden gelöscht.`)) return;
     try {
-      await storage.deletePlan(this.currentPlanId);
+      await storage.deletePlan(deletedPlanId);
       await this.loadPlans();
+      if (this.startPlanId === deletedPlanId) {
+        this.setStartPlan('default');
+      }
       this.setCurrentPlan('default');
       this.showToast('Trainingsplan gelöscht', 'success');
     } catch (error) {
@@ -1221,7 +1246,8 @@ class App {
   async startTraining() {
     try {
       const select = document.getElementById('start-plan-select');
-      const planId = select && select.value ? String(select.value) : this.currentPlanId;
+      const selectedPlanId = select && select.value ? String(select.value) : this.startPlanId;
+      const planId = this.setStartPlan(selectedPlanId);
       await storage.startTraining(planId);
       this.showCompletedExercises = false;
       await this.loadTraining();
