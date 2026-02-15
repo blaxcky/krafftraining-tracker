@@ -8,7 +8,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.12.1';
+    this.version = '2.12.2';
     this.init();
   }
 
@@ -1844,6 +1844,22 @@ class App {
     body += '----------------------------------------\n';
     body += 'Gesendet von Krafttraining Tracker\n';
 
+    const totalCalories = Number(summary.totalCalories) || 0;
+    const strengthCalories = Number(summary.exerciseCalories) || 0;
+    const cardioCalories = Number(summary.cardioCalories) || 0;
+    const strengthPercent = totalCalories > 0 ? Math.round((strengthCalories / totalCalories) * 100) : 0;
+    const cardioPercent = totalCalories > 0 ? Math.max(0, 100 - strengthPercent) : 0;
+
+    const buildTelegramDetailLines = (entries = []) => entries
+      .map((entry) => {
+        const rawName = String(entry && entry.name ? entry.name : '');
+        const calories = Number(entry && entry.calories ? entry.calories : 0);
+        const compactName = rawName.length > 20 ? `${rawName.slice(0, 17)}...` : rawName;
+        const paddedName = compactName.padEnd(22, ' ');
+        return `• ${this.escapeHtml(paddedName)} ${calories} kcal`;
+      })
+      .join('\n');
+
     let webhookPrettyText = '';
     webhookPrettyText += '🏋️ TRAININGS-DOKUMENTATION\n';
     webhookPrettyText += `${dateStr} | ${timeStr} Uhr\n\n`;
@@ -1869,23 +1885,21 @@ class App {
 
     let telegramHtml = '';
     telegramHtml += '<b>🏋️ Trainings-Dokumentation</b>\n';
-    telegramHtml += `${this.escapeHtml(dateStr)} | ${this.escapeHtml(timeStr)} Uhr\n\n`;
-    telegramHtml += `<b>🔥 Gesamt:</b> ${summary.totalCalories} kcal\n`;
-    telegramHtml += `<b>💪 Krafttraining:</b> ${summary.exerciseCalories} kcal\n`;
-    telegramHtml += `<b>🏃 Cardio:</b> ${summary.cardioCalories} kcal\n`;
+    telegramHtml += `<i>${this.escapeHtml(dateStr)} • ${this.escapeHtml(timeStr)} Uhr</i>\n\n`;
+    telegramHtml += '<b>------------------------------</b>\n';
+    telegramHtml += `<b>🔥 Gesamt:</b> <b>${summary.totalCalories} kcal</b>\n`;
+    telegramHtml += `<b>💪 Krafttraining:</b> ${summary.exerciseCalories} kcal (${strengthPercent}%)\n`;
+    telegramHtml += `<b>🏃 Cardio:</b> ${summary.cardioCalories} kcal (${cardioPercent}%)\n`;
+    telegramHtml += '<b>------------------------------</b>\n';
 
     if (exercisesWithCalories.length > 0) {
       telegramHtml += '\n<b>💪 Krafttraining-Details</b>\n';
-      exercisesWithCalories.forEach(ex => {
-        telegramHtml += `• ${this.escapeHtml(ex.name)}: ${ex.calories} kcal\n`;
-      });
+      telegramHtml += `<pre>${buildTelegramDetailLines(exercisesWithCalories)}</pre>\n`;
     }
 
     if (summary.cardioEntries.length > 0) {
       telegramHtml += '\n<b>🏃 Cardio-Details</b>\n';
-      summary.cardioEntries.forEach(entry => {
-        telegramHtml += `• ${this.escapeHtml(entry.name)}: ${entry.calories} kcal\n`;
-      });
+      telegramHtml += `<pre>${buildTelegramDetailLines(summary.cardioEntries)}</pre>\n`;
     }
 
     telegramHtml += '\n<i>Gesendet von Krafttraining Tracker</i>';
