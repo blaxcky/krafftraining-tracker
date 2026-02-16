@@ -298,6 +298,106 @@
             color: var(--md-sys-color-on-surface-variant);
         }
 
+        .plan-tools {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .plan-picker {
+            position: relative;
+            border-radius: 18px;
+            border: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 80%, #d6d1c5 20%);
+            background: color-mix(in srgb, var(--md-sys-color-surface) 92%, #efece6 8%);
+            padding: 10px 16px 8px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .plan-picker:focus-within {
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 3px rgba(242, 169, 0, 0.14);
+        }
+
+        .plan-picker__label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 84%, #6e6555 16%);
+            margin-bottom: 6px;
+            line-height: 1;
+        }
+
+        .plan-picker__select-wrap {
+            position: relative;
+        }
+
+        .plan-picker__select {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: #252321;
+            font-size: clamp(1.45rem, 4.1vw, 2rem);
+            font-weight: 500;
+            line-height: 1.2;
+            padding: 0 42px 2px 0;
+            cursor: pointer;
+        }
+
+        .plan-picker__select:focus {
+            outline: none;
+        }
+
+        .plan-picker__icon {
+            position: absolute;
+            right: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 84%, #6e6555 16%);
+            font-size: 34px;
+            line-height: 1;
+        }
+
+        .plan-action-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .plan-action-btn {
+            border-radius: 18px;
+            border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 78%, #d4cdc1 22%);
+            background: color-mix(in srgb, var(--md-sys-color-surface-container) 86%, #e7e2d9 14%);
+            color: #26231f;
+            font-size: 1.06rem;
+            font-weight: 500;
+            padding: 14px 10px;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .plan-action-btn:hover:not(:disabled) {
+            background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 88%, #e8e2d8 12%);
+            border-color: color-mix(in srgb, var(--md-sys-color-outline) 78%, #c9c2b6 22%);
+        }
+
+        .plan-action-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .plan-action-btn--delete {
+            color: #b23a34;
+            border-color: color-mix(in srgb, #cc827c 38%, #d9cfc8 62%);
+            background: color-mix(in srgb, #f1e2e0 80%, var(--md-sys-color-surface-container) 20%);
+        }
+
+        .plan-action-btn--delete:hover:not(:disabled) {
+            background: color-mix(in srgb, #f4d6d2 84%, var(--md-sys-color-surface-container) 16%);
+            border-color: color-mix(in srgb, #bb615c 48%, #d0c3bc 52%);
+        }
+
         .icon-btn {
             width: 40px;
             height: 40px;
@@ -340,10 +440,6 @@
 
         .top-add-btn {
             display: none;
-        }
-
-        body[data-tab="exercises"] .top-add-btn {
-            display: flex;
         }
 
         .progress-track {
@@ -400,18 +496,6 @@
             cursor: not-allowed;
         }
 
-        .email-settings summary {
-            list-style: none;
-        }
-
-        .email-settings summary::-webkit-details-marker {
-            display: none;
-        }
-
-        .email-settings[open] summary svg {
-            transform: rotate(90deg);
-        }
-
         .update-banner {
             position: fixed;
             left: 16px;
@@ -459,12 +543,58 @@
             color: var(--md-sys-color-on-surface-variant);
         }
 
-        .update-btn {
-            display: none;
+        .settings-stack {
+            display: grid;
+            gap: 14px;
         }
 
-        .update-btn.show {
-            display: flex;
+        .settings-card-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .settings-hint {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .settings-update-btn {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 14px;
+            padding: 12px 14px;
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            font-weight: 700;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .settings-update-btn:hover:not(:disabled) {
+            background: color-mix(in srgb, var(--md-sys-color-secondary-container) 82%, var(--md-sys-color-surface-container-high) 18%);
+        }
+
+        .settings-update-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .settings-update-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .settings-update-btn[data-loading="true"] .material-symbols-outlined {
+            animation: settings-spin 1s linear infinite;
+        }
+
+        @keyframes settings-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         .weight-picker-container {
@@ -544,6 +674,60 @@
             color: var(--md-sys-color-on-secondary-container);
             border-color: var(--md-sys-color-secondary-container);
             box-shadow: var(--md-elevation-1);
+        }
+
+        .plan-chip {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px 6px 8px;
+            border-radius: 999px;
+            border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 72%, transparent);
+            background:
+                radial-gradient(18px 18px at 18px 12px, rgba(242, 169, 0, 0.22) 0%, rgba(242, 169, 0, 0) 70%),
+                linear-gradient(
+                    120deg,
+                    color-mix(in srgb, var(--md-sys-color-primary-container) 62%, var(--md-sys-color-surface) 38%),
+                    color-mix(in srgb, var(--md-sys-color-secondary-container) 55%, var(--md-sys-color-surface) 45%)
+                );
+            color: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 82%, var(--md-sys-color-on-surface) 18%);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.66) inset, var(--md-elevation-1);
+            line-height: 1;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            user-select: none;
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+        }
+
+        .plan-chip:hover {
+            border-color: color-mix(in srgb, var(--md-sys-color-primary) 55%, var(--md-sys-color-outline-variant) 45%);
+            transform: translateY(-1px);
+        }
+
+        .plan-chip__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            border: 1px solid rgba(35, 31, 22, 0.10);
+            background: rgba(255, 255, 255, 0.55);
+            font-size: 16px;
+            opacity: 0.9;
+            flex: 0 0 auto;
+        }
+
+        .plan-chip__name {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 200px;
         }
 
         .calories-gradient {
@@ -706,6 +890,45 @@
             color: rgba(42, 26, 0, 0.62);
         }
 
+        .calories-send-btn {
+            margin-top: 2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 64%, rgba(35, 31, 22, 0.2));
+            background: linear-gradient(140deg, var(--md-sys-color-primary), var(--md-sys-color-secondary));
+            color: var(--md-sys-color-on-primary);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.01em;
+            padding: 8px 11px;
+            box-shadow: 0 3px 10px rgba(35, 31, 22, 0.18);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+
+        .calories-send-btn .material-symbols-outlined {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .calories-send-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 12px rgba(35, 31, 22, 0.22);
+            filter: saturate(1.04);
+        }
+
+        .calories-send-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .calories-send-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            box-shadow: none;
+            filter: grayscale(0.2);
+        }
+
         .header-badge {
             background:
                 linear-gradient(120deg, rgba(242, 169, 0, 0.22), var(--md-sys-color-surface-container-high) 62%),
@@ -722,6 +945,11 @@
             overflow: hidden;
         }
 
+        .header-badge > * {
+            position: relative;
+            z-index: 1;
+        }
+
         .header-badge::before {
             content: '';
             position: absolute;
@@ -730,6 +958,7 @@
             bottom: 0;
             width: 8px;
             background: linear-gradient(180deg, var(--md-sys-color-primary), var(--md-sys-color-secondary));
+            z-index: 0;
         }
 
         .header-badge::after {
@@ -737,8 +966,8 @@
             position: absolute;
             left: 72px;
             right: 18px;
-            bottom: 14px;
-            height: 7px;
+            bottom: 5px;
+            height: 5px;
             border-radius: 999px;
             background:
                 repeating-linear-gradient(
@@ -755,13 +984,85 @@
                     rgba(42, 26, 0, 0.16) 82%,
                     rgba(42, 26, 0, 0) 100%
                 );
-            opacity: 0.55;
+            opacity: 0.34;
             pointer-events: none;
+            z-index: 0;
         }
 
         .header-badge h3 {
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            letter-spacing: 0.015em;
+            text-transform: none;
+            line-height: 1.2;
+            word-break: normal;
+            overflow-wrap: normal;
+            hyphens: none;
+        }
+
+        .header-badge__row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .header-badge__title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            flex: 1 1 auto;
+            padding-right: 14px;
+        }
+
+        .header-badge__title h3 {
+            min-width: 0;
+        }
+
+        .header-badge__controls {
+            display: flex;
+            flex: 0 0 auto;
+            align-self: center;
+        }
+
+        .header-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 40px);
+            gap: 6px;
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid rgba(35, 31, 22, 0.14);
+            background: color-mix(in srgb, var(--md-sys-color-surface) 82%, rgba(35, 31, 22, 0.12));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .header-actions-grid .header-action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            box-shadow: none;
+        }
+
+        @media (max-width: 390px) {
+            .header-badge__row {
+                gap: 12px;
+            }
+
+            .header-actions-grid {
+                grid-template-columns: repeat(2, 36px);
+                gap: 5px;
+                padding: 4px;
+            }
+
+            .header-actions-grid .header-action-btn {
+                width: 36px;
+                height: 36px;
+                border-radius: 9px;
+            }
+
+            .header-actions-grid .header-action-btn svg {
+                width: 16px;
+                height: 16px;
+            }
         }
 
         .icon-pill {
@@ -793,6 +1094,9 @@
             overflow: hidden;
             border-radius: 16px;
             touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         .exercise-swipe-bg {
@@ -805,31 +1109,36 @@
             font-weight: 700;
             font-size: 14px;
             opacity: 0;
-            transition: opacity 0.15s ease;
+            transition: opacity 0.18s ease;
             pointer-events: none;
         }
 
         .exercise-swipe-bg--complete {
-            justify-content: flex-start;
             gap: 8px;
             background: rgba(242, 169, 0, 0.18);
             color: var(--md-sys-color-primary);
         }
 
-        .exercise-swipe-bg--skip {
-            justify-content: flex-end;
-            gap: 8px;
-            background: var(--md-sys-color-surface-container-high);
-            color: var(--md-sys-color-on-surface-variant);
+        .exercise-swipe-bg--left {
+            justify-content: flex-start;
         }
 
-        .exercise-swipe[data-swipe-dir="right"] .exercise-swipe-bg--complete,
-        .exercise-swipe[data-swipe-dir="left"] .exercise-swipe-bg--skip {
+        .exercise-swipe-bg--right {
+            justify-content: flex-end;
+        }
+
+        .exercise-swipe[data-swipe-dir="right"] .exercise-swipe-bg--left,
+        .exercise-swipe[data-swipe-dir="left"] .exercise-swipe-bg--right {
             opacity: 1;
         }
 
         .exercise-swipe-card {
-            will-change: transform;
+            will-change: transform, opacity;
+            transform-origin: center;
+        }
+
+        .exercise-swipe-card.is-holding {
+            box-shadow: 0 0 0 1px rgba(242, 169, 0, 0.35), var(--md-elevation-1);
         }
 
         .training-divider {
@@ -897,19 +1206,6 @@
             color: var(--md-sys-color-on-tertiary-container);
             font-weight: 600;
             box-shadow: var(--md-elevation-1);
-            border: 1px solid transparent;
-            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .kcal-badge--toggle {
-            cursor: pointer;
-        }
-
-        .kcal-badge--unlock-active {
-            background: color-mix(in srgb, var(--md-sys-color-error) 18%, var(--md-sys-color-surface) 82%);
-            color: var(--md-sys-color-error);
-            border-color: color-mix(in srgb, var(--md-sys-color-error) 32%, var(--md-sys-color-surface) 68%);
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--md-sys-color-error) 16%, transparent);
         }
 
         .kcal-icon {
@@ -926,6 +1222,91 @@
 
         .cardio-add-btn:hover {
             box-shadow: var(--md-elevation-2);
+        }
+
+        .quick-cardio-shell {
+            border-radius: 16px;
+            border: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 45%, transparent);
+            background:
+                linear-gradient(170deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.52)),
+                var(--md-sys-color-surface-container-low);
+            padding: 12px;
+        }
+
+        .quick-cardio-row {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        .quick-cardio-mini {
+            flex: 1 1 0;
+            min-width: 108px;
+            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
+            background: color-mix(in srgb, var(--md-sys-color-surface) 84%, rgba(255, 255, 255, 0.4));
+            padding: 8px;
+            min-width: 0;
+        }
+
+        .quick-cardio-mini__head {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            min-width: 0;
+        }
+
+        .quick-cardio-mini__head img {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+        }
+
+        .quick-cardio-mini__label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--md-sys-color-on-surface);
+            line-height: 1.15;
+            min-width: 0;
+        }
+
+        .quick-cardio-mini .input-field {
+            min-width: 0;
+            width: 100%;
+            font-size: 13px;
+        }
+
+        .quick-cardio-batch-btn {
+            width: 100%;
+            min-width: 0;
+            height: 40px;
+            padding: 0 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            flex: 1 1 auto;
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        .quick-cardio-actions {
+            margin-top: 10px;
+        }
+
+        @media (min-width: 560px) {
+            .quick-cardio-row {
+                overflow-x: visible;
+            }
+
+            .quick-cardio-mini {
+                min-width: 0;
+            }
         }
 
         .weight-adj-btn {
@@ -986,12 +1367,9 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.34</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.12.8</span></p>
             </div>
             <div class="top-app-bar__actions">
-                <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
-                    <span class="material-symbols-outlined">refresh</span>
-                </button>
                 <button id="add-exercise-btn" class="icon-btn top-add-btn" aria-label="Neue Übung">
                     <span class="material-symbols-outlined">add</span>
                 </button>
@@ -1020,9 +1398,32 @@
                     </div>
                 </div>
                 <div class="section-tools">
-                    <button id="add-header-btn" class="btn-secondary py-2.5 px-4 rounded-xl">
-                        Überschrift hinzufügen
-                    </button>
+                    <div class="plan-tools">
+                        <div class="plan-picker">
+                            <label for="plan-select" class="plan-picker__label">Plan</label>
+                            <div class="plan-picker__select-wrap">
+                                <select id="plan-select" class="plan-picker__select"></select>
+                                <span class="material-symbols-outlined plan-picker__icon" aria-hidden="true">expand_more</span>
+                            </div>
+                        </div>
+                        <div class="plan-action-row">
+                            <button id="plan-new-btn" type="button" class="plan-action-btn">
+                                Neu
+                            </button>
+                            <button id="plan-rename-btn" type="button" class="plan-action-btn">
+                                Umben.
+                            </button>
+                            <button id="plan-delete-btn" type="button" class="plan-action-btn plan-action-btn--delete">
+                                Löschen
+                            </button>
+                        </div>
+                        <button id="add-header-btn" class="btn-secondary py-2.5 px-4 rounded-xl">
+                            Überschrift hinzufügen
+                        </button>
+                        <button id="add-exercise-inline-btn" class="btn-primary py-2.5 px-4 rounded-xl">
+                            Übung hinzufügen
+                        </button>
+                    </div>
                 </div>
                 <input type="file" id="import-file" accept=".json" class="hidden">
             </div>
@@ -1041,7 +1442,10 @@
                         <span class="material-symbols-outlined text-3xl">sports_gymnastics</span>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Bereit für dein Training?</h3>
-                    <p class="text-gray-500 mb-6">Starte dein Workout mit allen verfügbaren Übungen</p>
+                    <p class="text-gray-500 mb-4">Wähle deinen Trainingsplan und starte dein Workout</p>
+                    <div class="mb-4">
+                        <select id="start-plan-select" class="input-field w-full px-4 py-3 rounded-xl"></select>
+                    </div>
                     <button id="start-training-btn" class="btn-primary py-4 px-8 rounded-xl text-lg">
                         Training starten
                     </button>
@@ -1052,7 +1456,13 @@
                 <div class="card p-5 mb-5">
                     <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="font-bold text-lg text-gray-900">Aktives Training</h3>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-bold text-lg text-gray-900">Aktives Training</h3>
+                                    <span id="training-plan-badge" class="plan-chip hidden" aria-label="Trainingsplan">
+                                        <span class="material-symbols-outlined plan-chip__icon" aria-hidden="true">route</span>
+                                        <span class="plan-chip__name"></span>
+                                    </span>
+                                </div>
                                 <p class="text-gray-500 text-sm mt-0.5" id="training-progress">0 von 0 erledigt</p>
                                 <div class="progress-track mt-3" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                                     <div id="training-progress-bar" class="progress-fill"></div>
@@ -1097,9 +1507,15 @@
 	                                <div class="calories-hero__eyebrow">Übersicht</div>
 	                                <div class="calories-hero__title mt-1">Kalorien dieser Session</div>
 	                            </div>
-	                            <div class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-black/10 bg-white/55 text-xs font-extrabold tracking-wider text-black/70">
-	                                <span class="material-symbols-outlined text-base">local_fire_department</span>
-	                                KCAL
+	                            <div class="flex flex-col items-end gap-2">
+	                                <div class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-black/10 bg-white/55 text-xs font-extrabold tracking-wider text-black/70">
+	                                    <span class="material-symbols-outlined text-base">local_fire_department</span>
+	                                    KCAL
+	                                </div>
+                                <button id="send-calories-email-btn" type="button" class="calories-send-btn" title="Zusammenfassung senden">
+                                    <span class="material-symbols-outlined" aria-hidden="true">send</span>
+                                    Senden
+                                </button>
 	                            </div>
 	                        </div>
 
@@ -1150,75 +1566,32 @@
 	                    </div>
 	                </div>
 
-	                <div class="card p-5 mb-5">
-	                    <h3 class="font-bold text-lg text-gray-900 mb-3">Zusammenfassung senden</h3>
-	                    <div class="flex flex-col gap-3">
-	                        <button id="send-calories-email-btn" class="btn-secondary w-full py-3 px-5 rounded-xl shadow-sm">
-	                            Senden
-	                        </button>
-	                        <details id="email-settings" class="email-settings">
-	                            <summary id="email-settings-summary" class="cursor-pointer text-gray-500 hover:text-gray-700 font-medium text-xs flex items-center gap-2 transition-colors">
-	                                <svg class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-	                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-	                                </svg>
-	                                <span id="email-settings-label">E-Mail hinzufügen</span>
-	                            </summary>
-	                            <div class="mt-3">
-	                                <input type="email" id="email-address-input"
-	                                    class="input-field w-full px-4 py-3 rounded-xl"
-	                                    placeholder="E-Mail-Adresse eingeben">
-	                            </div>
-	                        </details>
-	                    </div>
-	                </div>
-
                 <!-- Cardio hinzufügen -->
                 <div class="card p-5 mb-4">
                     <h3 class="font-bold text-lg text-gray-900 mb-4">Cardio hinzufügen</h3>
 
                     <!-- Schnellauswahl -->
-                    <div class="space-y-3 mb-4">
-                        <!-- Crosstrainer -->
-                        <div class="bg-white/70 rounded-xl p-4 border border-gray-100">
-                            <div class="flex items-center gap-2 mb-3">
-                                <img src="icons/cardio-crosstrainer.svg" alt="Crosstrainer" class="h-6 w-6">
-                                <span class="font-semibold text-gray-800">Crosstrainer</span>
+                    <div class="quick-cardio-shell mb-4">
+                        <div class="quick-cardio-row">
+                            <div class="quick-cardio-mini">
+                                <div class="quick-cardio-mini__head">
+                                    <img src="icons/cardio-crosstrainer.svg" alt="Crosstrainer">
+                                    <span class="quick-cardio-mini__label">Crosstrainer</span>
+                                </div>
+                                <input type="number" inputmode="numeric" id="quick-cardio-crosstrainer" class="input-field px-3 py-2 rounded-lg text-sm" placeholder="kcal">
                             </div>
-                            <div class="flex items-center gap-2">
-                                <input type="number" inputmode="numeric" id="quick-cardio-crosstrainer" class="input-field flex-1 px-4 py-2.5 rounded-lg text-sm" placeholder="Kalorien eingeben">
-                                <span class="text-sm text-gray-500 font-medium">kcal</span>
-                                <button onclick="app.addQuickCardio('Crosstrainer', 'quick-cardio-crosstrainer')" class="cardio-add-btn py-2.5 px-4 rounded-lg">
-                                    +
-                                </button>
-                            </div>
-                        </div>
-                        <!-- Ergometer -->
-                        <div class="bg-white/70 rounded-xl p-4 border border-gray-100">
-                            <div class="flex items-center gap-2 mb-3">
-                                <img src="icons/cardio-ergometer.svg" alt="Ergometer" class="h-6 w-6">
-                                <span class="font-semibold text-gray-800">Ergometer</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <input type="number" inputmode="numeric" id="quick-cardio-ergometer" class="input-field flex-1 px-4 py-2.5 rounded-lg text-sm" placeholder="Kalorien eingeben">
-                                <span class="text-sm text-gray-500 font-medium">kcal</span>
-                                <button onclick="app.addQuickCardio('Ergometer', 'quick-cardio-ergometer')" class="cardio-add-btn py-2.5 px-4 rounded-lg">
-                                    +
-                                </button>
+                            <div class="quick-cardio-mini">
+                                <div class="quick-cardio-mini__head">
+                                    <img src="icons/cardio-ergometer.svg" alt="Ergometer">
+                                    <span class="quick-cardio-mini__label">Ergometer</span>
+                                </div>
+                                <input type="number" inputmode="numeric" id="quick-cardio-ergometer" class="input-field px-3 py-2 rounded-lg text-sm" placeholder="kcal">
                             </div>
                         </div>
-                        <!-- Liege-Ergometer -->
-                        <div class="bg-white/70 rounded-xl p-4 border border-gray-100">
-                            <div class="flex items-center gap-2 mb-3">
-                                <img src="icons/cardio-liege-ergometer.svg" alt="Liege-Ergometer" class="h-6 w-6">
-                                <span class="font-semibold text-gray-800">Liege-Ergometer</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <input type="number" inputmode="numeric" id="quick-cardio-liege" class="input-field flex-1 px-4 py-2.5 rounded-lg text-sm" placeholder="Kalorien eingeben">
-                                <span class="text-sm text-gray-500 font-medium">kcal</span>
-                                <button onclick="app.addQuickCardio('Liege-Ergometer', 'quick-cardio-liege')" class="cardio-add-btn py-2.5 px-4 rounded-lg">
-                                    +
-                                </button>
-                            </div>
+                        <div class="quick-cardio-actions">
+                            <button onclick="app.addQuickCardioBatch()" class="cardio-add-btn quick-cardio-batch-btn" aria-label="Alle Cardio-Einträge hinzufügen" title="Alle Einträge hinzufügen">
+                                +
+                            </button>
                         </div>
                     </div>
 
@@ -1262,6 +1635,47 @@
                             <!-- Übungs-Kalorien werden hier dynamisch eingefügt -->
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-content tab-panel" aria-hidden="true">
+            <div class="settings-stack">
+                <div class="card p-5">
+                    <h3 class="settings-card-title">Einstellungen</h3>
+                    <p class="settings-hint">Verwalte App-Update, E-Mail und Zapier-Webhook an einem Ort.</p>
+                </div>
+
+                <div class="card p-5">
+                    <h3 class="font-bold text-lg text-gray-900 mb-2">Versand</h3>
+                    <p class="text-sm text-gray-500 mb-3">Nutze optional einen Zapier-Webhook (z. B. für Telegram). Ohne Webhook wird E-Mail verwendet.</p>
+                    <div class="flex flex-col gap-3">
+                        <input type="email" id="settings-email-input" class="input-field w-full px-4 py-3 rounded-xl" placeholder="E-Mail-Adresse eingeben">
+                        <button type="button" id="settings-save-email-btn" class="btn-secondary w-full py-3 px-5 rounded-xl">E-Mail speichern</button>
+                        <p id="settings-email-status" class="text-xs text-gray-500">Noch keine E-Mail hinterlegt</p>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <input type="url" id="settings-webhook-input" class="input-field w-full px-4 py-3 rounded-xl" placeholder="Zapier Webhook URL (https://hooks.zapier.com/...)">
+                        <button type="button" id="settings-save-webhook-btn" class="btn-secondary w-full py-3 px-5 rounded-xl">Webhook speichern</button>
+                        <p id="settings-webhook-status" class="text-xs text-gray-500">Noch kein Webhook hinterlegt</p>
+                    </div>
+                </div>
+
+                <div class="card p-5">
+                    <h3 class="font-bold text-lg text-gray-900 mb-2">Letzte 5 Trainings</h3>
+                    <p class="text-sm text-gray-500 mb-3">Lokales Backup nach Trainingsende - hilfreich falls der Webhook ausfällt.</p>
+                    <div id="settings-recent-summaries" class="space-y-2">
+                        <!-- Letzte Trainings werden hier angezeigt -->
+                    </div>
+                </div>
+
+                <div class="card p-5">
+                    <h3 class="font-bold text-lg text-gray-900 mb-2">App aktualisieren</h3>
+                    <p class="text-sm text-gray-500 mb-3">Lädt die neueste Version und setzt Service-Worker-Cache zurück.</p>
+                    <button id="update-btn" class="settings-update-btn" aria-label="App aktualisieren" title="App aktualisieren" disabled>
+                        <span class="material-symbols-outlined">system_update</span>
+                        <span data-update-label>App aktualisieren</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1339,6 +1753,10 @@
             <button id="tab-calories" class="tab-btn">
                 <span class="material-symbols-outlined">local_fire_department</span>
                 <span>Kalorien</span>
+            </button>
+            <button id="tab-settings" class="tab-btn">
+                <span class="material-symbols-outlined">settings</span>
+                <span>Einst.</span>
             </button>
         </div>
     </nav>
