@@ -4,8 +4,9 @@ class App {
     this.editingExercise = null;
     this.editingType = 'exercise';
     this.showCompletedExercises = false;
+    this.unlockedTrainingExercises = new Set();
     this.tabOrder = ['exercises', 'training', 'calories'];
-    this.version = '2.9.33';
+    this.version = '2.9.34';
     this.init();
   }
 
@@ -13,6 +14,55 @@ class App {
   formatWeight(weight) {
     if (!weight && weight !== 0) return '0';
     return String(weight).replace(',', '.');
+  }
+
+  normalizeExerciseId(exerciseId) {
+    const normalizedId = Number(exerciseId);
+    return Number.isFinite(normalizedId) ? normalizedId : null;
+  }
+
+  isTrainingExerciseUnlocked(exerciseId) {
+    const normalizedId = this.normalizeExerciseId(exerciseId);
+    if (normalizedId === null) return false;
+    return this.unlockedTrainingExercises.has(normalizedId);
+  }
+
+  isTrainingExerciseEditable(exerciseId, showToast = false) {
+    const isUnlocked = this.isTrainingExerciseUnlocked(exerciseId);
+    if (!isUnlocked && showToast) {
+      this.showToast('Tippe auf den kcal-Badge, um Gewichte zu entsperren.', 'error');
+    }
+    return isUnlocked;
+  }
+
+  toggleTrainingExerciseLock(exerciseId) {
+    const normalizedId = this.normalizeExerciseId(exerciseId);
+    if (normalizedId === null) return;
+
+    if (this.unlockedTrainingExercises.has(normalizedId)) {
+      this.unlockedTrainingExercises.delete(normalizedId);
+    } else {
+      this.unlockedTrainingExercises.add(normalizedId);
+    }
+
+    this.refreshTrainingPreserveScroll();
+  }
+
+  syncUnlockedTrainingExercises(training) {
+    const validExerciseIds = new Set(
+      Array.isArray(training && training.exercises)
+        ? training.exercises
+            .filter(ex => ex && ex.type !== 'header')
+            .map(ex => this.normalizeExerciseId(ex.id))
+            .filter(id => id !== null)
+        : []
+    );
+
+    this.unlockedTrainingExercises.forEach((exerciseId) => {
+      if (!validExerciseIds.has(exerciseId)) {
+        this.unlockedTrainingExercises.delete(exerciseId);
+      }
+    });
   }
 
   // Aktualisiert die Checkboxen für Zusatzgewichte (cascading logic)
@@ -434,11 +484,13 @@ class App {
     const training = await storage.getCurrentTraining();
     
     if (!training) {
+      this.unlockedTrainingExercises.clear();
       document.getElementById('no-training').classList.remove('hidden');
       document.getElementById('active-training').classList.add('hidden');
       return;
     }
     
+    this.syncUnlockedTrainingExercises(training);
     document.getElementById('no-training').classList.add('hidden');
     document.getElementById('active-training').classList.remove('hidden');
     this.renderTrainingExercises(training);
@@ -553,6 +605,8 @@ class App {
       const baseWeight = exercise.baseWeight || 0;
       const additionalPlates = exercise.additionalPlates || 0;
       const calories = exercise.calories || 0;
+      const isUnlocked = this.isTrainingExerciseUnlocked(exercise.id);
+      const lockToggleLabel = isUnlocked ? 'Bearbeitung sperren' : 'Bearbeitung entsperren';
       const stateLabel = isCompleted
         ? (isSkipped ? 'Übersprungen' : 'Erledigt')
         : '';
@@ -597,26 +651,34 @@ class App {
                 <label class="text-xs text-gray-500 font-medium w-24">Basisgewicht:</label>
                 <div class="flex items-center gap-2">
                   <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -1)"
-                    class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base">-</button>
+                    class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base ${isUnlocked ? '' : 'opacity-45 cursor-not-allowed'}"
+                    ${isUnlocked ? '' : 'disabled'}
+                    ${isUnlocked ? 'data-swipe-ignore' : ''}>-</button>
                   <span class="w-16 text-center font-bold text-base text-primary-dark">${this.formatWeight(baseWeight)} kg</span>
                   <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 1)"
-                    class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base">+</button>
+                    class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base ${isUnlocked ? '' : 'opacity-45 cursor-not-allowed'}"
+                    ${isUnlocked ? '' : 'disabled'}
+                    ${isUnlocked ? 'data-swipe-ignore' : ''}>+</button>
                 </div>
               </div>
               <div class="flex items-center gap-3">
                 <label class="text-xs text-gray-500 font-medium w-24">Zusatzgewichte:</label>
                 <div class="flex gap-2">
-                  <label class="cursor-pointer">
+                  <label class="${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'}">
                     <input type="checkbox" ${additionalPlates >= 1 ? 'checked' : ''}
                       onchange="app.updateTrainingPlates(${exercise.id}, 1, this.checked)"
+                      ${isUnlocked ? 'data-swipe-ignore' : ''}
+                      ${isUnlocked ? '' : 'disabled'}
                       class="sr-only peer">
                     <span class="chip inline-flex items-center px-3 py-1 rounded-full text-xs peer-checked:active">
                       +2,5 kg
                     </span>
                   </label>
-                  <label class="cursor-pointer">
+                  <label class="${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'}">
                     <input type="checkbox" ${additionalPlates >= 2 ? 'checked' : ''}
                       onchange="app.updateTrainingPlates(${exercise.id}, 2, this.checked)"
+                      ${isUnlocked ? 'data-swipe-ignore' : ''}
+                      ${isUnlocked ? '' : 'disabled'}
                       class="sr-only peer">
                     <span class="chip inline-flex items-center px-3 py-1 rounded-full text-xs peer-checked:active">
                       +2,5 kg
@@ -628,14 +690,14 @@ class App {
                 <span class="text-xs text-gray-500 font-medium w-24">Gesamtgewicht:</span>
                 <span class="font-bold text-primary-dark text-base">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
               </div>
-              ${calories > 0 ? `
               <div class="mt-0.5">
-                <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
+                <button type="button" data-swipe-ignore onclick="app.toggleTrainingExerciseLock(${exercise.id})"
+                  class="kcal-badge kcal-badge--toggle ${isUnlocked ? 'kcal-badge--unlock-active' : ''} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs"
+                  aria-label="${lockToggleLabel}" title="${lockToggleLabel}">
                   <span class="material-symbols-outlined kcal-icon">local_fire_department</span>
                   ${calories} kcal
-                </span>
+                </button>
               </div>
-              ` : ''}
             </div>
           </div>
         </div>
@@ -884,6 +946,7 @@ class App {
     try {
       await storage.startTraining();
       this.showCompletedExercises = false;
+      this.unlockedTrainingExercises.clear();
       await this.loadTraining();
       this.switchTab('training');
     } catch (error) {
@@ -896,6 +959,7 @@ class App {
       try {
         await storage.endTraining();
         this.showCompletedExercises = false;
+        this.unlockedTrainingExercises.clear();
         await this.loadTraining();
       } catch (error) {
         console.error('Error ending training:', error);
@@ -934,6 +998,7 @@ class App {
       const additionalPlates = exercise.additionalPlates || 0;
       const completedParam = state === 'skipped' ? 'skipped' : (state === 'completed');
       const saveToMaster = state === 'completed';
+      this.unlockedTrainingExercises.delete(normalizedId);
 
       await storage.updateTrainingExercise(normalizedId, baseWeight, completedParam, additionalPlates, saveToMaster);
       await this.refreshTrainingPreserveScroll();
@@ -947,6 +1012,7 @@ class App {
 
   async updateWeight(exerciseId, weight) {
     try {
+      if (!this.isTrainingExerciseEditable(exerciseId, true)) return;
       const training = await storage.getCurrentTraining();
       const exercise = training && Array.isArray(training.exercises)
         ? training.exercises.find(ex => ex && ex.id === exerciseId)
@@ -962,6 +1028,7 @@ class App {
 
   async updateTrainingWeight(exerciseId, weight) {
     try {
+      if (!this.isTrainingExerciseEditable(exerciseId, true)) return;
       const training = await storage.getCurrentTraining();
       const exercise = training.exercises.find(ex => ex.id === exerciseId);
       const additionalPlates = exercise ? (exercise.additionalPlates || 0) : 0;
@@ -975,6 +1042,7 @@ class App {
 
   async updateTrainingPlates(exerciseId, plateNumber, checked) {
     try {
+      if (!this.isTrainingExerciseEditable(exerciseId, true)) return;
       const training = await storage.getCurrentTraining();
       if (!training || !Array.isArray(training.exercises)) {
         this.showToast('Kein aktives Training gefunden.', 'error');
@@ -1017,6 +1085,7 @@ class App {
   }
 
   async adjustTrainingWeight(exerciseId, delta) {
+    if (!this.isTrainingExerciseEditable(exerciseId, true)) return;
     const training = await storage.getCurrentTraining();
     const exercise = training.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;

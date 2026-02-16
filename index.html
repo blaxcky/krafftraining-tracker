@@ -897,6 +897,19 @@
             color: var(--md-sys-color-on-tertiary-container);
             font-weight: 600;
             box-shadow: var(--md-elevation-1);
+            border: 1px solid transparent;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .kcal-badge--toggle {
+            cursor: pointer;
+        }
+
+        .kcal-badge--unlock-active {
+            background: color-mix(in srgb, var(--md-sys-color-error) 18%, var(--md-sys-color-surface) 82%);
+            color: var(--md-sys-color-error);
+            border-color: color-mix(in srgb, var(--md-sys-color-error) 32%, var(--md-sys-color-surface) 68%);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--md-sys-color-error) 16%, transparent);
         }
 
         .kcal-icon {
@@ -973,7 +986,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.33</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.9.34</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="update-btn" class="icon-btn update-btn" aria-label="App aktualisieren" title="App aktualisieren">
