@@ -3,13 +3,15 @@ class App {
     this.currentTab = 'training';
     this.editingExercise = null;
     this.editingType = 'exercise';
+    this.exerciseLoadMode = 'weight';
+    this.trainingDetailExerciseId = null;
     this.showCompletedExercises = false;
     this.unlockedTrainingExercises = new Set();
     this.plans = [];
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.12.10';
+    this.version = '2.13.0';
     this.init();
   }
 
@@ -33,7 +35,7 @@ class App {
   isTrainingExerciseEditable(exerciseId, showToast = false) {
     const isUnlocked = this.isTrainingExerciseUnlocked(exerciseId);
     if (!isUnlocked && showToast) {
-      this.showToast('Tippe auf den kcal-Badge, um Gewichte zu entsperren.', 'error');
+      this.showToast('Tippe auf den kcal-Badge, um die Übung zu entsperren.', 'error');
     }
     return isUnlocked;
   }
@@ -84,33 +86,41 @@ class App {
   // Berechnet und aktualisiert die Anzeige des Gesamtgewichts
   updateTotalWeight() {
     const weightInput = document.getElementById('exercise-weight');
+    const dumbbellWeightInput = document.getElementById('exercise-dumbbell-weight');
     const plate1 = document.getElementById('plate-1');
     const plate2 = document.getElementById('plate-2');
     const totalWeightSpan = document.getElementById('total-weight');
+    const dumbbellTotalWeightSpan = document.getElementById('dumbbell-total-weight');
 
-    if (!weightInput || !totalWeightSpan) return;
-
-    const baseWeight = parseFloat(weightInput.value.replace(',', '.')) || 0;
+    const baseWeight = weightInput ? (parseFloat(weightInput.value.replace(',', '.')) || 0) : 0;
     let additionalPlates = 0;
 
     if (plate1 && plate1.checked) additionalPlates++;
     if (plate2 && plate2.checked) additionalPlates++;
 
-    const totalWeight = baseWeight + (additionalPlates * 2.5);
-    totalWeightSpan.textContent = `${totalWeight} kg`;
+    if (totalWeightSpan) {
+      const totalWeight = baseWeight + (additionalPlates * 2.5);
+      totalWeightSpan.textContent = `${this.formatWeight(totalWeight)} kg`;
+    }
+
+    if (dumbbellTotalWeightSpan && dumbbellWeightInput) {
+      const dumbbellWeight = parseFloat(dumbbellWeightInput.value.replace(',', '.')) || 0;
+      dumbbellTotalWeightSpan.textContent = `${this.formatWeight(dumbbellWeight)} kg`;
+    }
   }
 
   // Initialisiert den Weight-Picker
   initWeightPicker(pickerId, inputId) {
     const picker = document.getElementById(pickerId);
     const input = document.getElementById(inputId);
-    if (!picker) return;
+    if (!picker || !input || picker.dataset.initialized === 'true') return;
 
     picker.innerHTML = '<div class="weight-picker-spacer"></div>';
     for (let w = 0; w <= 200; w += 1) {
       picker.innerHTML += `<div class="weight-picker-item" data-value="${w}">${w} kg</div>`;
     }
     picker.innerHTML += '<div class="weight-picker-spacer"></div>';
+    picker.dataset.initialized = 'true';
 
     picker.addEventListener('scroll', () => {
       clearTimeout(this.pickerTimeout);
@@ -159,6 +169,8 @@ class App {
   async init() {
     await storage.init();
     this.setupEventListeners();
+    this.initWeightPicker('exercise-weight-picker', 'exercise-weight');
+    this.initWeightPicker('exercise-dumbbell-weight-picker', 'exercise-dumbbell-weight');
     this.updateVersionBadge();
     this.switchTab(this.currentTab, { animate: false });
     await this.loadPlans();
@@ -191,9 +203,15 @@ class App {
     document.getElementById('add-header-btn').addEventListener('click', () => this.showHeaderModal());
     document.getElementById('cancel-btn').addEventListener('click', () => this.hideExerciseModal());
     document.getElementById('exercise-form').addEventListener('submit', (e) => this.saveExercise(e));
+    document.getElementById('training-detail-cancel-btn').addEventListener('click', () => this.hideTrainingDetailModal());
+    document.getElementById('training-detail-form').addEventListener('submit', (e) => this.saveTrainingDetail(e));
 
-    // Event-Listener für Gewichtsberechnung
+    document.querySelectorAll('[data-load-mode-btn]').forEach((button) => {
+      button.addEventListener('click', () => this.setExerciseLoadMode(button.dataset.loadModeBtn));
+    });
+
     document.getElementById('exercise-weight').addEventListener('input', () => this.updateTotalWeight());
+    document.getElementById('exercise-dumbbell-weight').addEventListener('input', () => this.updateTotalWeight());
 
     document.getElementById('start-training-btn').addEventListener('click', () => this.startTraining());
     document.getElementById('end-training-btn').addEventListener('click', () => this.endTraining());
@@ -231,6 +249,9 @@ class App {
     document.addEventListener('click', (e) => {
       if (e.target.id === 'exercise-modal') {
         this.hideExerciseModal();
+      }
+      if (e.target.id === 'training-detail-modal') {
+        this.hideTrainingDetailModal();
       }
     });
 
@@ -377,6 +398,201 @@ class App {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  normalizeLoadMode(loadMode) {
+    return ['weight', 'dumbbell', 'band'].includes(loadMode) ? loadMode : 'weight';
+  }
+
+  getExerciseLoadMode(exercise) {
+    return this.normalizeLoadMode(exercise && exercise.loadMode);
+  }
+
+  setExerciseLoadMode(loadMode) {
+    const mode = this.normalizeLoadMode(loadMode);
+    this.exerciseLoadMode = mode;
+
+    document.querySelectorAll('[data-load-mode-btn]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.loadModeBtn === mode);
+    });
+
+    const weightFields = document.getElementById('load-mode-weight-fields');
+    const dumbbellFields = document.getElementById('load-mode-dumbbell-fields');
+    const bandFields = document.getElementById('load-mode-band-fields');
+
+    if (weightFields) weightFields.classList.toggle('hidden', mode !== 'weight');
+    if (dumbbellFields) dumbbellFields.classList.toggle('hidden', mode !== 'dumbbell');
+    if (bandFields) bandFields.classList.toggle('hidden', mode !== 'band');
+
+    this.updateTotalWeight();
+  }
+
+  getSelectedExerciseLoadMode() {
+    return this.normalizeLoadMode(this.exerciseLoadMode);
+  }
+
+  getExerciseLoadSummary(exercise) {
+    const mode = this.getExerciseLoadMode(exercise);
+    const baseWeight = exercise && exercise.baseWeight ? exercise.baseWeight : 0;
+    const additionalPlates = exercise && exercise.additionalPlates ? exercise.additionalPlates : 0;
+    const loadNote = String(exercise && exercise.loadNote ? exercise.loadNote : '').trim();
+    const bandLevel = String(exercise && exercise.bandLevel ? exercise.bandLevel : '').trim();
+
+    if (mode === 'band') {
+      return {
+        mode,
+        primary: bandLevel ? `Band: ${bandLevel}` : 'Band/Physio ohne Level',
+        secondary: loadNote || ''
+      };
+    }
+
+    if (mode === 'dumbbell') {
+      return {
+        mode,
+        primary: `${this.formatWeight(baseWeight)} kg`,
+        secondary: loadNote ? `Setup: ${loadNote}` : 'Setup noch nicht notiert'
+      };
+    }
+
+    let primary = `${this.formatWeight(baseWeight)} kg`;
+    if (additionalPlates > 0) {
+      primary += ` + ${additionalPlates}x 2.5kg`;
+    }
+
+    return {
+      mode,
+      primary,
+      secondary: additionalPlates > 0 ? `Gesamt: ${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg` : ''
+    };
+  }
+
+  renderExerciseLoadSummary(exercise) {
+    const summary = this.getExerciseLoadSummary(exercise);
+    const primary = this.escapeHtml(summary.primary);
+    const secondary = summary.secondary ? this.escapeHtml(summary.secondary) : '';
+
+    if (summary.mode === 'weight') {
+      const baseWeight = exercise.baseWeight || 0;
+      const additionalPlates = exercise.additionalPlates || 0;
+      return `
+        <p>
+          ${this.escapeHtml(`${this.formatWeight(baseWeight)} kg`)}
+          ${additionalPlates > 0 ? `<span class="text-xs text-primary font-semibold">+ ${additionalPlates}x 2.5kg</span>` : ''}
+          ${additionalPlates > 0 ? `<span class="text-xs text-gray-400">= ${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>` : ''}
+        </p>
+      `;
+    }
+
+    return `
+      <p>${primary}</p>
+      ${secondary ? `<p class="text-xs text-gray-400 mt-1 leading-relaxed">${secondary}</p>` : ''}
+    `;
+  }
+
+  renderTrainingLoadControls(exercise, isUnlocked) {
+    const mode = this.getExerciseLoadMode(exercise);
+    const baseWeight = exercise.baseWeight || 0;
+    const additionalPlates = exercise.additionalPlates || 0;
+    const loadNote = this.escapeHtml(String(exercise.loadNote || '').trim() || 'Noch keine Details hinterlegt.');
+    const bandLevel = this.escapeHtml(String(exercise.bandLevel || '').trim() || 'Noch kein Level hinterlegt.');
+    const actionStateClass = isUnlocked ? '' : 'opacity-45 cursor-not-allowed';
+    const actionDisabled = isUnlocked ? '' : 'disabled';
+
+    if (mode === 'dumbbell') {
+      return `
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <label class="text-xs text-black font-medium w-24">Gesamtgewicht:</label>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -1)"
+                class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base ${actionStateClass}"
+                ${actionDisabled}>-</button>
+              <span class="w-16 text-center font-bold text-base text-black">${this.formatWeight(baseWeight)} kg</span>
+              <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 1)"
+                class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base ${actionStateClass}"
+                ${actionDisabled}>+</button>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-black/5 bg-white/65 px-4 py-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Setup</p>
+                <p class="text-sm text-gray-700 leading-relaxed mt-1">${loadNote}</p>
+              </div>
+              <button type="button" data-swipe-ignore onclick="app.showTrainingDetailModal(${exercise.id})"
+                class="chip inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 ${actionStateClass}"
+                ${actionDisabled}>Details</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    if (mode === 'band') {
+      return `
+        <div class="flex flex-col gap-3">
+          <div class="rounded-2xl border border-black/5 bg-white/65 px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Bandstärke</p>
+            <p class="text-sm text-gray-800 font-semibold mt-1">${bandLevel}</p>
+          </div>
+          <div class="rounded-2xl border border-black/5 bg-white/65 px-4 py-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Notiz</p>
+                <p class="text-sm text-gray-700 leading-relaxed mt-1">${loadNote}</p>
+              </div>
+              <button type="button" data-swipe-ignore onclick="app.showTrainingDetailModal(${exercise.id})"
+                class="chip inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 ${actionStateClass}"
+                ${actionDisabled}>Details</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center gap-3">
+          <label class="text-xs text-black font-medium w-24">Basisgewicht:</label>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -1)"
+              class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base ${actionStateClass}"
+              ${actionDisabled}>-</button>
+            <span class="w-16 text-center font-bold text-base text-black">${this.formatWeight(baseWeight)} kg</span>
+            <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 1)"
+              class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base ${actionStateClass}"
+              ${actionDisabled}>+</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <label class="text-xs text-gray-500 font-medium w-24">Zusatzgewichte:</label>
+          <div class="flex gap-2">
+            <label class="${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'}">
+              <input type="checkbox" ${additionalPlates >= 1 ? 'checked' : ''}
+                onchange="app.updateTrainingPlates(${exercise.id}, 1, this.checked)"
+                ${actionDisabled}
+                class="sr-only peer">
+              <span class="chip inline-flex items-center px-3 py-1 rounded-full text-xs peer-checked:active">
+                +2,5 kg
+              </span>
+            </label>
+            <label class="${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'}">
+              <input type="checkbox" ${additionalPlates >= 2 ? 'checked' : ''}
+                onchange="app.updateTrainingPlates(${exercise.id}, 2, this.checked)"
+                ${actionDisabled}
+                class="sr-only peer">
+              <span class="chip inline-flex items-center px-3 py-1 rounded-full text-xs peer-checked:active">
+                +2,5 kg
+              </span>
+            </label>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 mt-0.5">
+          <span class="text-xs text-gray-500 font-medium w-24">Gesamtgewicht:</span>
+          <span class="text-[11px] leading-tight font-medium text-black opacity-70">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
+        </div>
+      </div>
+    `;
   }
 
   async createPlan() {
@@ -819,15 +1035,7 @@ class App {
         `;
       }
 
-      // Anzeige der Zusatzgewichte
-      const baseWeight = exercise.baseWeight || 0;
-      const additionalPlates = exercise.additionalPlates || 0;
       const calories = exercise.calories || 0;
-      let weightDisplay = `${this.formatWeight(baseWeight)} kg`;
-      if (additionalPlates > 0) {
-        weightDisplay += ` <span class="text-xs text-primary font-semibold">+ ${additionalPlates}x 2.5kg</span>`;
-      }
-      const totalWeight = baseWeight + (additionalPlates * 2.5);
 
       listLastWasExercise = true;
       return `
@@ -835,7 +1043,7 @@ class App {
           <div class="flex-1 min-w-0 pr-3">
             <h3 class="font-semibold text-gray-900 break-words">${exercise.name}</h3>
             <div class="text-sm text-gray-500 mt-1">
-              <p>${weightDisplay}${additionalPlates > 0 ? ` <span class="text-xs text-gray-400">= ${this.formatWeight(totalWeight)} kg</span>` : ''}</p>
+              ${this.renderExerciseLoadSummary(exercise)}
               ${calories > 0 ? `
               <div class="mt-2">
                 <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
@@ -992,8 +1200,6 @@ class App {
 
       const cardStateClasses = isCompleted ? 'opacity-70' : '';
       const nameClasses = isCompleted ? 'line-through text-gray-400' : 'text-gray-900';
-      const baseWeight = exercise.baseWeight || 0;
-      const additionalPlates = exercise.additionalPlates || 0;
       const calories = exercise.calories || 0;
       const isUnlocked = this.isTrainingExerciseUnlocked(exercise.id);
       const lockToggleLabel = isUnlocked ? 'Bearbeitung sperren' : 'Bearbeitung entsperren';
@@ -1042,47 +1248,7 @@ class App {
               </div>
             </div>
             <div class="training-divider mb-3"></div>
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-3">
-                <label class="text-xs text-black font-medium w-24">Basisgewicht:</label>
-                <div class="flex items-center gap-2">
-                  <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, -1)"
-                    class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base ${isUnlocked ? '' : 'opacity-45 cursor-not-allowed'}"
-                    ${isUnlocked ? '' : 'disabled'}>-</button>
-                  <span class="w-16 text-center font-bold text-base text-black">${this.formatWeight(baseWeight)} kg</span>
-                  <button type="button" onclick="app.adjustTrainingWeight(${exercise.id}, 1)"
-                    class="weight-adj-btn w-9 h-9 flex items-center justify-center rounded-lg text-base ${isUnlocked ? '' : 'opacity-45 cursor-not-allowed'}"
-                    ${isUnlocked ? '' : 'disabled'}>+</button>
-                </div>
-              </div>
-              <div class="flex items-center gap-3">
-                <label class="text-xs text-gray-500 font-medium w-24">Zusatzgewichte:</label>
-                <div class="flex gap-2">
-                  <label class="${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'}">
-                    <input type="checkbox" ${additionalPlates >= 1 ? 'checked' : ''}
-                      onchange="app.updateTrainingPlates(${exercise.id}, 1, this.checked)"
-                      ${isUnlocked ? '' : 'disabled'}
-                      class="sr-only peer">
-                    <span class="chip inline-flex items-center px-3 py-1 rounded-full text-xs peer-checked:active">
-                      +2,5 kg
-                    </span>
-                  </label>
-                  <label class="${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'}">
-                    <input type="checkbox" ${additionalPlates >= 2 ? 'checked' : ''}
-                      onchange="app.updateTrainingPlates(${exercise.id}, 2, this.checked)"
-                      ${isUnlocked ? '' : 'disabled'}
-                      class="sr-only peer">
-                    <span class="chip inline-flex items-center px-3 py-1 rounded-full text-xs peer-checked:active">
-                      +2,5 kg
-                    </span>
-                  </label>
-                </div>
-              </div>
-              <div class="flex items-center gap-3 mt-0.5">
-                <span class="text-xs text-gray-500 font-medium w-24">Gesamtgewicht:</span>
-                <span class="text-[11px] leading-tight font-medium text-black opacity-70">${this.formatWeight(baseWeight + (additionalPlates * 2.5))} kg</span>
-              </div>
-            </div>
+            ${this.renderTrainingLoadControls(exercise, isUnlocked)}
           </div>
         </div>
       `);
@@ -1215,9 +1381,13 @@ class App {
     const title = document.getElementById('modal-title');
     const nameInput = document.getElementById('exercise-name');
     const weightInput = document.getElementById('exercise-weight');
+    const dumbbellWeightInput = document.getElementById('exercise-dumbbell-weight');
     const weightField = document.getElementById('weight-field');
     const plate1 = document.getElementById('plate-1');
     const plate2 = document.getElementById('plate-2');
+    const dumbbellNoteInput = document.getElementById('exercise-load-note-dumbbell');
+    const bandLevelInput = document.getElementById('exercise-band-level');
+    const bandNoteInput = document.getElementById('exercise-load-note-band');
     const caloriesInput = document.getElementById('exercise-calories');
 
     if (this.editingType === 'header') {
@@ -1231,27 +1401,39 @@ class App {
     if (exercise) {
       nameInput.value = exercise.name;
       if (this.editingType === 'exercise') {
-        weightInput.value = this.formatWeight(exercise.baseWeight || 0);
+        const mode = this.getExerciseLoadMode(exercise);
+        const baseWeight = this.formatWeight(exercise.baseWeight || 0);
+        weightInput.value = baseWeight;
+        dumbbellWeightInput.value = baseWeight;
         const additionalPlates = exercise.additionalPlates || 0;
         if (plate1) plate1.checked = additionalPlates >= 1;
         if (plate2) plate2.checked = additionalPlates >= 2;
+        if (dumbbellNoteInput) dumbbellNoteInput.value = mode === 'dumbbell' ? (exercise.loadNote || '') : '';
+        if (bandLevelInput) bandLevelInput.value = mode === 'band' ? (exercise.bandLevel || '') : '';
+        if (bandNoteInput) bandNoteInput.value = mode === 'band' ? (exercise.loadNote || '') : '';
         if (caloriesInput) caloriesInput.value = exercise.calories || '';
+        this.setExerciseLoadMode(mode);
       }
     } else {
       nameInput.value = '';
-      weightInput.value = '';
+      weightInput.value = '0';
+      dumbbellWeightInput.value = '0';
       if (plate1) plate1.checked = false;
       if (plate2) plate2.checked = false;
+      if (dumbbellNoteInput) dumbbellNoteInput.value = '';
+      if (bandLevelInput) bandLevelInput.value = '';
+      if (bandNoteInput) bandNoteInput.value = '';
       if (caloriesInput) caloriesInput.value = '';
+      this.setExerciseLoadMode('weight');
     }
 
     this.updateTotalWeight();
     modal.classList.remove('hidden');
 
     if (this.editingType !== 'header') {
-      this.initWeightPicker('exercise-weight-picker', 'exercise-weight');
       const weight = exercise ? (exercise.baseWeight || 0) : 0;
       setTimeout(() => this.setPickerValue('exercise-weight-picker', weight), 50);
+      setTimeout(() => this.setPickerValue('exercise-dumbbell-weight-picker', weight), 50);
     }
 
     nameInput.focus();
@@ -1267,13 +1449,94 @@ class App {
     document.getElementById('exercise-modal').classList.add('hidden');
     this.editingExercise = null;
     this.editingType = 'exercise';
+    this.setExerciseLoadMode('weight');
+  }
+
+  async showTrainingDetailModal(exerciseId) {
+    if (!this.isTrainingExerciseEditable(exerciseId, true)) return;
+
+    const training = await storage.getCurrentTraining();
+    const normalizedId = this.normalizeExerciseId(exerciseId);
+    const exercise = training && Array.isArray(training.exercises)
+      ? training.exercises.find(ex => ex && ex.id === normalizedId)
+      : null;
+    if (!exercise) {
+      this.showToast('Übung nicht gefunden.', 'error');
+      return;
+    }
+
+    const mode = this.getExerciseLoadMode(exercise);
+    if (mode === 'weight') return;
+
+    this.trainingDetailExerciseId = normalizedId;
+    const modal = document.getElementById('training-detail-modal');
+    const title = document.getElementById('training-detail-title');
+    const name = document.getElementById('training-detail-name');
+    const dumbbellFields = document.getElementById('training-detail-dumbbell-fields');
+    const bandFields = document.getElementById('training-detail-band-fields');
+    const dumbbellNote = document.getElementById('training-detail-dumbbell-note');
+    const bandLevel = document.getElementById('training-detail-band-level');
+    const bandNote = document.getElementById('training-detail-band-note');
+
+    title.textContent = mode === 'dumbbell' ? 'Kurzhantel-Details' : 'Band/Physio-Details';
+    name.textContent = exercise.name || '';
+    dumbbellFields.classList.toggle('hidden', mode !== 'dumbbell');
+    bandFields.classList.toggle('hidden', mode !== 'band');
+    dumbbellNote.value = mode === 'dumbbell' ? (exercise.loadNote || '') : '';
+    bandLevel.value = mode === 'band' ? (exercise.bandLevel || '') : '';
+    bandNote.value = mode === 'band' ? (exercise.loadNote || '') : '';
+
+    modal.classList.remove('hidden');
+  }
+
+  hideTrainingDetailModal() {
+    document.getElementById('training-detail-modal').classList.add('hidden');
+    this.trainingDetailExerciseId = null;
+  }
+
+  async saveTrainingDetail(e) {
+    e.preventDefault();
+    if (!this.trainingDetailExerciseId) return;
+
+    try {
+      const training = await storage.getCurrentTraining();
+      const exercise = training && Array.isArray(training.exercises)
+        ? training.exercises.find(ex => ex && ex.id === this.trainingDetailExerciseId)
+        : null;
+      if (!exercise) {
+        this.showToast('Übung nicht gefunden.', 'error');
+        return;
+      }
+
+      const mode = this.getExerciseLoadMode(exercise);
+      const updates = {};
+
+      if (mode === 'dumbbell') {
+        updates.loadNote = document.getElementById('training-detail-dumbbell-note').value;
+      } else if (mode === 'band') {
+        updates.bandLevel = document.getElementById('training-detail-band-level').value;
+        updates.loadNote = document.getElementById('training-detail-band-note').value;
+      }
+
+      await storage.updateTrainingExercise(this.trainingDetailExerciseId, updates, false);
+      this.hideTrainingDetailModal();
+      await this.refreshTrainingPreserveScroll();
+      this.showToast('Details gespeichert', 'success');
+    } catch (error) {
+      console.error('Error saving training detail:', error);
+      this.showToast('Fehler beim Speichern der Details.', 'error');
+    }
   }
 
   async saveExercise(e) {
     e.preventDefault();
     const name = document.getElementById('exercise-name').value.trim();
-    const weight = document.getElementById('exercise-weight').value;
-    const additionalPlates = this.getAdditionalPlates();
+    const loadMode = this.getSelectedExerciseLoadMode();
+    const weightInput = document.getElementById('exercise-weight');
+    const dumbbellWeightInput = document.getElementById('exercise-dumbbell-weight');
+    const dumbbellNoteInput = document.getElementById('exercise-load-note-dumbbell');
+    const bandLevelInput = document.getElementById('exercise-band-level');
+    const bandNoteInput = document.getElementById('exercise-load-note-band');
     const caloriesInput = document.getElementById('exercise-calories');
     const calories = caloriesInput ? caloriesInput.value : 0;
 
@@ -1281,12 +1544,56 @@ class App {
 
     try {
       if (this.editingExercise) {
-        await storage.updateExercise(this.editingExercise.id, name, weight, additionalPlates, calories);
+        const exerciseData = {
+          weight: loadMode === 'dumbbell'
+            ? dumbbellWeightInput.value
+            : (loadMode === 'weight' ? weightInput.value : 0),
+          additionalPlates: loadMode === 'weight' ? this.getAdditionalPlates() : 0,
+          loadMode,
+          loadNote: loadMode === 'dumbbell'
+            ? dumbbellNoteInput.value
+            : (loadMode === 'band' ? bandNoteInput.value : ''),
+          bandLevel: loadMode === 'band' ? bandLevelInput.value : ''
+        };
+        await storage.updateExercise(
+          this.editingExercise.id,
+          name,
+          exerciseData.weight,
+          exerciseData.additionalPlates,
+          calories,
+          {
+            loadMode: exerciseData.loadMode,
+            loadNote: exerciseData.loadNote,
+            bandLevel: exerciseData.bandLevel
+          }
+        );
       } else {
         if (this.editingType === 'header') {
           await storage.addHeader(name, this.currentPlanId);
         } else {
-          await storage.addExercise(name, weight, additionalPlates, calories, this.currentPlanId);
+          const exerciseData = {
+            weight: loadMode === 'dumbbell'
+              ? dumbbellWeightInput.value
+              : (loadMode === 'weight' ? weightInput.value : 0),
+            additionalPlates: loadMode === 'weight' ? this.getAdditionalPlates() : 0,
+            loadMode,
+            loadNote: loadMode === 'dumbbell'
+              ? dumbbellNoteInput.value
+              : (loadMode === 'band' ? bandNoteInput.value : ''),
+            bandLevel: loadMode === 'band' ? bandLevelInput.value : ''
+          };
+          await storage.addExercise(
+            name,
+            exerciseData.weight,
+            exerciseData.additionalPlates,
+            calories,
+            this.currentPlanId,
+            {
+              loadMode: exerciseData.loadMode,
+              loadNote: exerciseData.loadNote,
+              bandLevel: exerciseData.bandLevel
+            }
+          );
         }
       }
 
@@ -1431,13 +1738,19 @@ class App {
         return;
       }
 
-      const baseWeight = exercise.baseWeight || 0;
-      const additionalPlates = exercise.additionalPlates || 0;
       const completedParam = state === 'skipped' ? 'skipped' : (state === 'completed');
       const saveToMaster = state === 'completed';
       this.unlockedTrainingExercises.delete(normalizedId);
 
-      await storage.updateTrainingExercise(normalizedId, baseWeight, completedParam, additionalPlates, saveToMaster);
+      await storage.updateTrainingExercise(normalizedId, {
+        weight: exercise.baseWeight || 0,
+        additionalPlates: exercise.additionalPlates || 0,
+        loadMode: this.getExerciseLoadMode(exercise),
+        loadNote: exercise.loadNote || '',
+        bandLevel: exercise.bandLevel || '',
+        calories: exercise.calories || 0,
+        completed: completedParam
+      }, saveToMaster);
       await this.refreshTrainingPreserveScroll();
 
       if (state === 'completed') this.showToast('✓ Erledigt', 'success');
@@ -1454,9 +1767,15 @@ class App {
       const exercise = training && Array.isArray(training.exercises)
         ? training.exercises.find(ex => ex && ex.id === exerciseId)
         : null;
-      const additionalPlates = exercise ? (exercise.additionalPlates || 0) : 0;
-      // Nicht in Master-Daten speichern, nur Training-Session
-      await storage.updateTrainingExercise(exerciseId, weight, undefined, additionalPlates, false);
+      if (!exercise) return;
+      await storage.updateTrainingExercise(exerciseId, {
+        weight,
+        additionalPlates: exercise.additionalPlates || 0,
+        loadMode: this.getExerciseLoadMode(exercise),
+        loadNote: exercise.loadNote || '',
+        bandLevel: exercise.bandLevel || '',
+        calories: exercise.calories || 0
+      }, false);
       await this.refreshTrainingPreserveScroll();
     } catch (error) {
       console.error('Error updating training weight:', error);
@@ -1468,9 +1787,15 @@ class App {
       if (!this.isTrainingExerciseEditable(exerciseId, true)) return;
       const training = await storage.getCurrentTraining();
       const exercise = training.exercises.find(ex => ex.id === exerciseId);
-      const additionalPlates = exercise ? (exercise.additionalPlates || 0) : 0;
-      // Nicht in Master-Daten speichern, nur Training-Session
-      await storage.updateTrainingExercise(exerciseId, weight, undefined, additionalPlates, false);
+      if (!exercise) return;
+      await storage.updateTrainingExercise(exerciseId, {
+        weight,
+        additionalPlates: exercise.additionalPlates || 0,
+        loadMode: this.getExerciseLoadMode(exercise),
+        loadNote: exercise.loadNote || '',
+        bandLevel: exercise.bandLevel || '',
+        calories: exercise.calories || 0
+      }, false);
       await this.refreshTrainingPreserveScroll();
     } catch (error) {
       console.error('Error updating training weight:', error);
@@ -1512,8 +1837,14 @@ class App {
       }
 
       const baseWeight = exercise.baseWeight || 0;
-      // Nicht in Master-Daten speichern, nur Training-Session
-      await storage.updateTrainingExercise(normalizedId, baseWeight, undefined, additionalPlates, false);
+      await storage.updateTrainingExercise(normalizedId, {
+        weight: baseWeight,
+        additionalPlates,
+        loadMode: this.getExerciseLoadMode(exercise),
+        loadNote: exercise.loadNote || '',
+        bandLevel: exercise.bandLevel || '',
+        calories: exercise.calories || 0
+      }, false);
       await this.refreshTrainingPreserveScroll();
     } catch (error) {
       console.error('Error updating training plates:', error);
@@ -1528,7 +1859,14 @@ class App {
     if (!exercise) return;
 
     const newWeight = Math.max(0, Math.min(200, (exercise.baseWeight || 0) + delta));
-    await storage.updateTrainingExercise(exerciseId, newWeight, undefined, exercise.additionalPlates || 0, false);
+    await storage.updateTrainingExercise(exerciseId, {
+      weight: newWeight,
+      additionalPlates: exercise.additionalPlates || 0,
+      loadMode: this.getExerciseLoadMode(exercise),
+      loadNote: exercise.loadNote || '',
+      bandLevel: exercise.bandLevel || '',
+      calories: exercise.calories || 0
+    }, false);
     await this.refreshTrainingPreserveScroll();
   }
 

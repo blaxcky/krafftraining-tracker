@@ -26,6 +26,157 @@ class Storage {
     return base + (plates * 2.5);
   }
 
+  normalizeLoadMode(loadMode) {
+    return ['weight', 'dumbbell', 'band'].includes(loadMode) ? loadMode : 'weight';
+  }
+
+  buildExerciseFields({
+    weight = 0,
+    additionalPlates = 0,
+    calories = 0,
+    loadMode = 'weight',
+    loadNote = '',
+    bandLevel = ''
+  } = {}) {
+    const mode = this.normalizeLoadMode(loadMode);
+    const parsedCalories = parseInt(calories) || 0;
+    const note = String(loadNote || '').trim();
+    const level = String(bandLevel || '').trim();
+    let baseWeight = this.parseWeight(weight);
+    let plates = parseInt(additionalPlates) || 0;
+    let totalWeight = 0;
+
+    if (mode === 'band') {
+      baseWeight = 0;
+      plates = 0;
+      totalWeight = 0;
+    } else if (mode === 'dumbbell') {
+      plates = 0;
+      totalWeight = baseWeight;
+    } else {
+      totalWeight = this.calculateTotalWeight(baseWeight, plates);
+    }
+
+    return {
+      baseWeight,
+      additionalPlates: plates,
+      weight: totalWeight,
+      calories: parsedCalories,
+      loadMode: mode,
+      loadNote: note,
+      bandLevel: level
+    };
+  }
+
+  migrateExerciseRecord(exercise, defaultPlanId = 'default', defaultOrder = 0) {
+    if (!exercise || typeof exercise !== 'object') return false;
+
+    let changed = false;
+    if (typeof exercise.planId === 'undefined') {
+      exercise.planId = defaultPlanId;
+      changed = true;
+    }
+    if (exercise.order === undefined || exercise.order === null) {
+      exercise.order = defaultOrder;
+      changed = true;
+    }
+    if (exercise.type === 'header') {
+      return changed;
+    }
+
+    if (exercise.baseWeight === undefined) {
+      exercise.baseWeight = exercise.weight || 0;
+      exercise.additionalPlates = 0;
+      changed = true;
+    }
+    if (exercise.calories === undefined) {
+      exercise.calories = 0;
+      changed = true;
+    }
+    if (exercise.loadMode === undefined) {
+      exercise.loadMode = 'weight';
+      changed = true;
+    }
+    if (exercise.loadNote === undefined) {
+      exercise.loadNote = '';
+      changed = true;
+    }
+    if (exercise.bandLevel === undefined) {
+      exercise.bandLevel = '';
+      changed = true;
+    }
+
+    const normalizedFields = this.buildExerciseFields({
+      weight: exercise.baseWeight,
+      additionalPlates: exercise.additionalPlates,
+      calories: exercise.calories,
+      loadMode: exercise.loadMode,
+      loadNote: exercise.loadNote,
+      bandLevel: exercise.bandLevel
+    });
+
+    Object.entries(normalizedFields).forEach(([key, value]) => {
+      if (exercise[key] !== value) {
+        exercise[key] = value;
+        changed = true;
+      }
+    });
+
+    return changed;
+  }
+
+  migrateTrainingData(training) {
+    if (!training || !Array.isArray(training.exercises)) return false;
+
+    let changed = false;
+    training.exercises.forEach((exercise) => {
+      if (!exercise || typeof exercise !== 'object' || exercise.type === 'header') return;
+
+      if (exercise.loadMode === undefined) {
+        exercise.loadMode = 'weight';
+        changed = true;
+      }
+      if (exercise.loadNote === undefined) {
+        exercise.loadNote = '';
+        changed = true;
+      }
+      if (exercise.bandLevel === undefined) {
+        exercise.bandLevel = '';
+        changed = true;
+      }
+      if (exercise.calories === undefined) {
+        exercise.calories = 0;
+        changed = true;
+      }
+      if (typeof exercise.completed === 'undefined') {
+        exercise.completed = false;
+        changed = true;
+      }
+      if (typeof exercise.skipped === 'undefined') {
+        exercise.skipped = false;
+        changed = true;
+      }
+
+      const normalizedFields = this.buildExerciseFields({
+        weight: exercise.baseWeight !== undefined ? exercise.baseWeight : exercise.weight,
+        additionalPlates: exercise.additionalPlates,
+        calories: exercise.calories,
+        loadMode: exercise.loadMode,
+        loadNote: exercise.loadNote,
+        bandLevel: exercise.bandLevel
+      });
+
+      Object.entries(normalizedFields).forEach(([key, value]) => {
+        if (exercise[key] !== value) {
+          exercise[key] = value;
+          changed = true;
+        }
+      });
+    });
+
+    return changed;
+  }
+
   async init() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.dbVersion);
@@ -228,7 +379,7 @@ class Storage {
     });
   }
 
-  async addExercise(name, weight = 0, additionalPlates = 0, calories = 0, planId = 'default') {
+  async addExercise(name, weight = 0, additionalPlates = 0, calories = 0, planId = 'default', options = {}) {
     const exercises = await this.getAllExercises(planId);
     const maxOrder = exercises.length > 0 ? Math.max(...exercises.map(e => e.order || 0)) : -1;
 
@@ -236,20 +387,23 @@ class Storage {
     const store = transaction.objectStore('exercises');
 
     return new Promise((resolve, reject) => {
-      const baseWeight = this.parseWeight(weight);
-      const plates = parseInt(additionalPlates) || 0;
-      const totalWeight = this.calculateTotalWeight(baseWeight, plates);
+      const fields = this.buildExerciseFields({
+        weight,
+        additionalPlates,
+        calories,
+        loadMode: options.loadMode,
+        loadNote: options.loadNote,
+        bandLevel: options.bandLevel
+      });
 
       const request = store.add({
         name: name.trim(),
-        baseWeight: baseWeight,
-        additionalPlates: plates,
-        weight: totalWeight, // Für Rückwärtskompatibilität
-        calories: parseInt(calories) || 0,
+        ...fields,
         type: 'exercise',
         planId: String(planId || 'default'),
         order: maxOrder + 1,
-        createdAt: new Date()
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
 
       request.onsuccess = () => resolve(request.result);
@@ -294,35 +448,9 @@ class Storage {
         }
         exercises = Array.isArray(exercises) ? exercises : [];
 
-        // Auto-Migration: Fehlende Order-Werte und Gewichtsfelder hinzufügen
         let needsUpdate = false;
         exercises.forEach((exercise, index) => {
-          if (typeof exercise.planId === 'undefined') {
-            exercise.planId = safePlanId;
-            needsUpdate = true;
-          }
-          if (exercise.order === undefined || exercise.order === null) {
-            exercise.order = index;
-            needsUpdate = true;
-          }
-
-          // Migration: Alte weight-only Daten zu neuem Format
-          if (exercise.type !== 'header' && exercise.baseWeight === undefined) {
-            exercise.baseWeight = exercise.weight || 0;
-            exercise.additionalPlates = 0;
-            needsUpdate = true;
-          }
-
-          // Migration: calories-Feld hinzufügen
-          if (exercise.type !== 'header' && exercise.calories === undefined) {
-            exercise.calories = 0;
-            needsUpdate = true;
-          }
-
-          // Gesamtgewicht immer aktualisieren
-          if (exercise.type !== 'header') {
-            exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
-          }
+          needsUpdate = this.migrateExerciseRecord(exercise, safePlanId, index) || needsUpdate;
         });
 
         // Updates speichern falls nötig
@@ -352,26 +480,7 @@ class Storage {
 
         let needsUpdate = false;
         exercises.forEach((exercise, index) => {
-          if (typeof exercise.planId === 'undefined') {
-            exercise.planId = 'default';
-            needsUpdate = true;
-          }
-          if (exercise.order === undefined || exercise.order === null) {
-            exercise.order = index;
-            needsUpdate = true;
-          }
-          if (exercise.type !== 'header' && exercise.baseWeight === undefined) {
-            exercise.baseWeight = exercise.weight || 0;
-            exercise.additionalPlates = 0;
-            needsUpdate = true;
-          }
-          if (exercise.type !== 'header' && exercise.calories === undefined) {
-            exercise.calories = 0;
-            needsUpdate = true;
-          }
-          if (exercise.type !== 'header') {
-            exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
-          }
+          needsUpdate = this.migrateExerciseRecord(exercise, 'default', index) || needsUpdate;
         });
 
         if (needsUpdate) {
@@ -389,7 +498,7 @@ class Storage {
     });
   }
 
-  async updateExercise(id, name, weight, additionalPlates, calories = null) {
+  async updateExercise(id, name, weight, additionalPlates, calories = null, options = {}) {
     const transaction = this.db.transaction(['exercises'], 'readwrite');
     const store = transaction.objectStore('exercises');
 
@@ -400,12 +509,15 @@ class Storage {
         if (exercise) {
           exercise.name = name.trim();
           if (exercise.type !== 'header') {
-            exercise.baseWeight = this.parseWeight(weight);
-            exercise.additionalPlates = parseInt(additionalPlates) || 0;
-            exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
-            if (calories !== null) {
-              exercise.calories = parseInt(calories) || 0;
-            }
+            const fields = this.buildExerciseFields({
+              weight,
+              additionalPlates,
+              calories: calories !== null ? calories : exercise.calories,
+              loadMode: options.loadMode !== undefined ? options.loadMode : exercise.loadMode,
+              loadNote: options.loadNote !== undefined ? options.loadNote : exercise.loadNote,
+              bandLevel: options.bandLevel !== undefined ? options.bandLevel : exercise.bandLevel
+            });
+            Object.assign(exercise, fields);
           }
           exercise.updatedAt = new Date();
 
@@ -443,7 +555,7 @@ class Storage {
       startedAt: new Date(),
       planId: safePlanId,
       planName: plan ? plan.name : (safePlanId === 'default' ? 'Standard' : safePlanId),
-      cardioEntries: [], // NEU: Cardio-Einträge für diese Session
+      cardioEntries: [],
       exercises: exercises.map(ex => ({
         id: ex.id,
         name: ex.name,
@@ -451,7 +563,10 @@ class Storage {
         baseWeight: ex.baseWeight || 0,
         additionalPlates: ex.additionalPlates || 0,
         weight: ex.weight || 0,
-        calories: ex.calories || 0, // NEU: Kalorien pro Übung
+        calories: ex.calories || 0,
+        loadMode: ex.loadMode || 'weight',
+        loadNote: ex.loadNote || '',
+        bandLevel: ex.bandLevel || '',
         completed: ex.type === 'header' ? null : false,
         skipped: ex.type === 'header' ? null : false
       }))
@@ -475,27 +590,48 @@ class Storage {
       const request = store.get('current');
       request.onsuccess = () => {
         const training = request.result;
-        resolve(training && training.active ? training : null);
+        if (training && training.active) {
+          this.migrateTrainingData(training);
+          resolve(training);
+          return;
+        }
+        resolve(null);
       };
       request.onerror = () => reject(request.error);
     });
   }
 
-  async updateTrainingExercise(exerciseId, weight, completed, additionalPlates, saveToMaster = false) {
+  async updateTrainingExercise(exerciseId, updates = {}, saveToMaster = false) {
     const training = await this.getCurrentTraining();
     if (!training) return null;
 
-    const exercise = training.exercises.find(ex => ex.id === exerciseId);
+    const normalizedId = Number(exerciseId);
+    const exercise = training.exercises.find(ex => ex.id === normalizedId);
     if (exercise) {
-      exercise.baseWeight = this.parseWeight(weight);
-      exercise.additionalPlates = parseInt(additionalPlates) || 0;
-      exercise.weight = this.calculateTotalWeight(exercise.baseWeight, exercise.additionalPlates);
-      if (typeof completed !== 'undefined') {
-        if (completed === 'skipped') {
+      const hasWeight = Object.prototype.hasOwnProperty.call(updates, 'weight');
+      const hasAdditionalPlates = Object.prototype.hasOwnProperty.call(updates, 'additionalPlates');
+      const hasLoadMode = Object.prototype.hasOwnProperty.call(updates, 'loadMode');
+      const hasLoadNote = Object.prototype.hasOwnProperty.call(updates, 'loadNote');
+      const hasBandLevel = Object.prototype.hasOwnProperty.call(updates, 'bandLevel');
+      const hasCalories = Object.prototype.hasOwnProperty.call(updates, 'calories');
+      const hasCompleted = Object.prototype.hasOwnProperty.call(updates, 'completed');
+
+      const fields = this.buildExerciseFields({
+        weight: hasWeight ? updates.weight : exercise.baseWeight,
+        additionalPlates: hasAdditionalPlates ? updates.additionalPlates : exercise.additionalPlates,
+        calories: hasCalories ? updates.calories : exercise.calories,
+        loadMode: hasLoadMode ? updates.loadMode : exercise.loadMode,
+        loadNote: hasLoadNote ? updates.loadNote : exercise.loadNote,
+        bandLevel: hasBandLevel ? updates.bandLevel : exercise.bandLevel
+      });
+      Object.assign(exercise, fields);
+
+      if (hasCompleted) {
+        if (updates.completed === 'skipped') {
           exercise.completed = false;
           exercise.skipped = true;
         } else {
-          const isCompleted = !!completed;
+          const isCompleted = !!updates.completed;
           exercise.completed = isCompleted;
           exercise.skipped = false;
         }
@@ -503,9 +639,19 @@ class Storage {
         exercise.skipped = false;
       }
 
-      // Nur in Master-Daten speichern wenn explizit gewünscht (beim Abhaken)
       if (saveToMaster && exercise.completed === true) {
-        await this.updateExercise(exerciseId, exercise.name, exercise.baseWeight, exercise.additionalPlates);
+        await this.updateExercise(
+          normalizedId,
+          exercise.name,
+          exercise.baseWeight,
+          exercise.additionalPlates,
+          exercise.calories,
+          {
+            loadMode: exercise.loadMode,
+            loadNote: exercise.loadNote,
+            bandLevel: exercise.bandLevel
+          }
+        );
       }
     }
 
@@ -540,7 +686,7 @@ class Storage {
     const emailAddress = this.getEmailAddress();
     const webhookUrl = this.getWebhookUrl();
     const exportData = {
-      version: '2.3',
+      version: '2.4',
       exportDate: new Date().toISOString(),
       settings: {
         emailAddress: emailAddress || undefined,
@@ -557,6 +703,9 @@ class Storage {
         additionalPlates: ex.type === 'header' ? undefined : ex.additionalPlates,
         weight: ex.type === 'header' ? undefined : ex.weight,
         calories: ex.type === 'header' ? undefined : (ex.calories || 0),
+        loadMode: ex.type === 'header' ? undefined : (ex.loadMode || 'weight'),
+        loadNote: ex.type === 'header' ? undefined : (ex.loadNote || ''),
+        bandLevel: ex.type === 'header' ? undefined : (ex.bandLevel || ''),
         order: ex.order,
         planId: ex.planId || 'default'
       }))
@@ -631,11 +780,14 @@ class Storage {
               if (exercise.type === 'header') {
                 newId = await this.addHeader(exercise.name, planId);
               } else {
-                // Unterstütze sowohl neues Format (baseWeight + additionalPlates) als auch altes (weight)
                 const baseWeight = exercise.baseWeight !== undefined ? exercise.baseWeight : (exercise.weight || 0);
                 const additionalPlates = exercise.additionalPlates !== undefined ? exercise.additionalPlates : 0;
                 const calories = exercise.calories !== undefined ? exercise.calories : 0;
-                newId = await this.addExercise(exercise.name, baseWeight, additionalPlates, calories, planId);
+                newId = await this.addExercise(exercise.name, baseWeight, additionalPlates, calories, planId, {
+                  loadMode: exercise.loadMode || 'weight',
+                  loadNote: exercise.loadNote || '',
+                  bandLevel: exercise.bandLevel || ''
+                });
               }
 
               // Order-Feld setzen falls vorhanden

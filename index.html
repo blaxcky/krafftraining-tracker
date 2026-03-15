@@ -1380,7 +1380,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.12.10</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.13.0</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="add-exercise-btn" class="icon-btn top-add-btn" aria-label="Neue Übung">
@@ -1705,33 +1705,82 @@
                         <input type="text" id="exercise-name" class="input-field w-full px-4 py-3 rounded-xl" placeholder="z.B. Bankdrücken" required>
                     </div>
                     <div class="mb-5" id="weight-field">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Basisgewicht (kg)</label>
-                        <div class="weight-picker-container">
-                            <div class="weight-picker" id="exercise-weight-picker"></div>
-                        </div>
-                        <input type="hidden" id="exercise-weight" value="0">
-
-                        <div class="mt-4">
-                            <label class="block text-sm font-semibold text-gray-700 mb-3">Zusatzgewichte (2.5 kg Scheiben)</label>
-                            <div class="flex gap-3">
-                                <label class="cursor-pointer">
-                                    <input type="checkbox" id="plate-1" class="sr-only peer" onchange="app.updatePlateCheckboxes()">
-                                    <span class="chip inline-flex items-center px-4 py-2.5 rounded-full text-sm peer-checked:active">
-                                        +2,5 kg
-                                    </span>
-                                </label>
-                                <label class="cursor-pointer">
-                                    <input type="checkbox" id="plate-2" class="sr-only peer" onchange="app.updatePlateCheckboxes()">
-                                    <span class="chip inline-flex items-center px-4 py-2.5 rounded-full text-sm peer-checked:active">
-                                        +2,5 kg
-                                    </span>
-                                </label>
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Lasttyp</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" data-load-mode-btn="weight" class="chip inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-semibold">
+                                    Gewicht
+                                </button>
+                                <button type="button" data-load-mode-btn="dumbbell" class="chip inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-semibold">
+                                    Kurzhantel
+                                </button>
+                                <button type="button" data-load-mode-btn="band" class="chip inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-semibold">
+                                    Band/Physio
+                                </button>
                             </div>
                         </div>
 
-                        <div class="mt-4 p-3 rounded-xl border border-gray-200 bg-white/70">
-                            <span class="text-gray-600 text-sm font-medium">Gesamtgewicht: </span>
-                            <span id="total-weight" class="text-primary font-bold text-lg">0 kg</span>
+                        <div id="load-mode-weight-fields" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Basisgewicht (kg)</label>
+                                <div class="weight-picker-container">
+                                    <div class="weight-picker" id="exercise-weight-picker"></div>
+                                </div>
+                                <input type="hidden" id="exercise-weight" value="0">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Zusatzgewichte (2.5 kg Scheiben)</label>
+                                <div class="flex gap-3">
+                                    <label class="cursor-pointer">
+                                        <input type="checkbox" id="plate-1" class="sr-only peer" onchange="app.updatePlateCheckboxes()">
+                                        <span class="chip inline-flex items-center px-4 py-2.5 rounded-full text-sm peer-checked:active">
+                                            +2,5 kg
+                                        </span>
+                                    </label>
+                                    <label class="cursor-pointer">
+                                        <input type="checkbox" id="plate-2" class="sr-only peer" onchange="app.updatePlateCheckboxes()">
+                                        <span class="chip inline-flex items-center px-4 py-2.5 rounded-full text-sm peer-checked:active">
+                                            +2,5 kg
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="p-3 rounded-xl border border-gray-200 bg-white/70">
+                                <span class="text-gray-600 text-sm font-medium">Gesamtgewicht: </span>
+                                <span id="total-weight" class="text-primary font-bold text-lg">0 kg</span>
+                            </div>
+                        </div>
+
+                        <div id="load-mode-dumbbell-fields" class="hidden space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Gesamtgewicht (kg)</label>
+                                <div class="weight-picker-container">
+                                    <div class="weight-picker" id="exercise-dumbbell-weight-picker"></div>
+                                </div>
+                                <input type="hidden" id="exercise-dumbbell-weight" value="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Scheiben / Setup</label>
+                                <textarea id="exercise-load-note-dumbbell" rows="3" class="input-field w-full px-4 py-3 rounded-xl resize-none" placeholder="z.B. je Hantel: 2x5 + 2x2.5"></textarea>
+                                <p class="text-xs text-gray-500 mt-2">Kurze Notiz zur Beladung oder zum Griff-Setup</p>
+                            </div>
+                            <div class="p-3 rounded-xl border border-gray-200 bg-white/70">
+                                <span class="text-gray-600 text-sm font-medium">Gesamtgewicht: </span>
+                                <span id="dumbbell-total-weight" class="text-primary font-bold text-lg">0 kg</span>
+                            </div>
+                        </div>
+
+                        <div id="load-mode-band-fields" class="hidden space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Bandstärke / Level</label>
+                                <input type="text" id="exercise-band-level" class="input-field w-full px-4 py-3 rounded-xl" placeholder="z.B. Grün · mittel">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Notiz (optional)</label>
+                                <textarea id="exercise-load-note-band" rows="3" class="input-field w-full px-4 py-3 rounded-xl resize-none" placeholder="z.B. Türanker auf Brusthöhe"></textarea>
+                            </div>
                         </div>
 
                         <div class="mt-4">
@@ -1742,6 +1791,41 @@
                     </div>
                     <div class="flex gap-3">
                         <button type="button" id="cancel-btn" class="flex-1 py-3 px-4 rounded-xl text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200 transition-all">
+                            Abbrechen
+                        </button>
+                        <button type="submit" class="flex-1 btn-primary py-3 px-4 rounded-xl">
+                            Speichern
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="training-detail-modal" class="hidden fixed inset-0 modal-overlay z-50 flex items-end justify-center p-0">
+            <div class="modal-content w-full max-w-sm p-6 fade-in">
+                <div class="sheet-handle"></div>
+                <h3 id="training-detail-title" class="text-xl font-bold text-gray-900 mb-1">Übungsdetails</h3>
+                <p id="training-detail-name" class="text-sm text-gray-500 mb-5"></p>
+                <form id="training-detail-form">
+                    <div id="training-detail-dumbbell-fields" class="hidden mb-5">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Scheiben / Setup</label>
+                        <textarea id="training-detail-dumbbell-note" rows="4" class="input-field w-full px-4 py-3 rounded-xl resize-none" placeholder="z.B. je Hantel: 2x5 + 2x2.5"></textarea>
+                        <p class="text-xs text-gray-500 mt-2">Passe hier deine Kurzhantel-Beladung für diese Session an.</p>
+                    </div>
+
+                    <div id="training-detail-band-fields" class="hidden space-y-4 mb-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Bandstärke / Level</label>
+                            <input type="text" id="training-detail-band-level" class="input-field w-full px-4 py-3 rounded-xl" placeholder="z.B. Grün · mittel">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Notiz</label>
+                            <textarea id="training-detail-band-note" rows="4" class="input-field w-full px-4 py-3 rounded-xl resize-none" placeholder="z.B. Türanker auf Brusthöhe"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="button" id="training-detail-cancel-btn" class="flex-1 py-3 px-4 rounded-xl text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200 transition-all">
                             Abbrechen
                         </button>
                         <button type="submit" class="flex-1 btn-primary py-3 px-4 rounded-xl">
