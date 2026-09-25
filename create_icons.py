@@ -108,26 +108,27 @@ def write_png(path, width, height, rgba_pixels):
     with open(path, "wb") as f:
         f.write(png)
 
-def create_fitness_icon(size):
+def create_fitness_icon(size, transparent_background=False):
     scale = 2
     w = size * scale
     h = size * scale
     pixels = bytearray(w * h * 4)
 
-    # Background gradient (full bleed)
-    for y in range(h):
-        t = y / max(1, h - 1)
-        base = lerp_rgba(PALETTE["bg_top"], PALETTE["bg_bottom"], t)
-        for x in range(w):
-            tx = x / max(1, w - 1)
-            diag = (t * 0.65 + tx * 0.35)
-            blend_t = clamp(diag * 0.18, 0.0, 1.0)
-            color = lerp_rgba(base, PALETTE["bg_accent"], blend_t)
-            idx = (y * w + x) * 4
-            pixels[idx] = color[0]
-            pixels[idx + 1] = color[1]
-            pixels[idx + 2] = color[2]
-            pixels[idx + 3] = 255
+    # Background gradient (full bleed). Adaptive Android foregrounds stay transparent.
+    if not transparent_background:
+        for y in range(h):
+            t = y / max(1, h - 1)
+            base = lerp_rgba(PALETTE["bg_top"], PALETTE["bg_bottom"], t)
+            for x in range(w):
+                tx = x / max(1, w - 1)
+                diag = (t * 0.65 + tx * 0.35)
+                blend_t = clamp(diag * 0.18, 0.0, 1.0)
+                color = lerp_rgba(base, PALETTE["bg_accent"], blend_t)
+                idx = (y * w + x) * 4
+                pixels[idx] = color[0]
+                pixels[idx + 1] = color[1]
+                pixels[idx + 2] = color[2]
+                pixels[idx + 3] = 255
 
     # Dumbbell mark
     center = w // 2
@@ -197,15 +198,45 @@ def create_fitness_icon(size):
 
     return out
 
+def create_splash(size):
+    pixels = bytearray((255, 254, 250, 255) * (size * size))
+    mark_size = int(size * 0.32)
+    mark = create_fitness_icon(mark_size, transparent_background=True)
+    offset_x = (size - mark_size) // 2
+    offset_y = (size - mark_size) // 2
+
+    for y in range(mark_size):
+        for x in range(mark_size):
+            source_index = (y * mark_size + x) * 4
+            alpha = mark[source_index + 3]
+            if alpha == 0:
+                continue
+            target_index = ((offset_y + y) * size + offset_x + x) * 4
+            target = tuple(pixels[target_index:target_index + 4])
+            source = tuple(mark[source_index:source_index + 4])
+            blended = blend_over(target, source)
+            pixels[target_index:target_index + 4] = bytes(blended)
+
+    return pixels
+
 # Create icons directory if it doesn't exist
 os.makedirs('icons', exist_ok=True)
+os.makedirs('assets', exist_ok=True)
 
 # Generate all required icon sizes
-sizes = [72, 96, 128, 144, 152, 192, 384, 512]
+sizes = [72, 96, 128, 144, 152, 192, 384, 512, 1024]
 
 for size in sizes:
     rgba = create_fitness_icon(size)
     write_png(f'icons/icon-{size}x{size}.png', size, size, rgba)
+    if size == 1024:
+        write_png('assets/icon-only.png', size, size, rgba)
+        foreground = create_fitness_icon(size, transparent_background=True)
+        write_png('assets/icon-foreground.png', size, size, foreground)
+        background = bytearray(PALETTE["bg_top"] * (size * size))
+        write_png('assets/icon-background.png', size, size, background)
     print(f"Created icon-{size}x{size}.png")
+
+write_png('assets/splash.png', 2732, 2732, create_splash(2732))
 
 print("All icons created successfully!")

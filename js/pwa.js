@@ -4,6 +4,23 @@ const clearAppCaches = async () => {
   await Promise.all(keys.map((key) => caches.delete(key)));
 };
 
+const isNativeApp = window.Capacitor?.isNativePlatform?.() === true;
+
+const configureNativeUpdateUi = () => {
+  const updateCard = document.getElementById('update-card');
+  if (!updateCard) return;
+
+  const heading = updateCard.querySelector('h3');
+  const description = updateCard.querySelector('p');
+  const updateButton = document.getElementById('update-btn');
+
+  if (heading) heading.textContent = 'Native App-Updates';
+  if (description) {
+    description.textContent = 'Neue APK-Versionen werden über Obtainium aus den GitHub-Releases installiert.';
+  }
+  if (updateButton) updateButton.remove();
+};
+
 const hardReload = () => {
   const url = new URL(window.location.href);
   url.searchParams.set('v', Date.now().toString());
@@ -120,7 +137,7 @@ const showUpdateBanner = (registration) => {
   showUpdateAction(registration);
 };
 
-if ('serviceWorker' in navigator) {
+if (!isNativeApp && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js')
       .then((registration) => {
@@ -158,7 +175,12 @@ if ('serviceWorker' in navigator) {
 
 let deferredPrompt;
 
+if (isNativeApp) {
+  configureNativeUpdateUi();
+}
+
 window.addEventListener('beforeinstallprompt', (e) => {
+  if (isNativeApp) return;
   e.preventDefault();
   deferredPrompt = e;
   

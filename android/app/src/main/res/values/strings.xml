@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Krafttraining Tracker</string>
+    <string name="title_activity_main">Krafttraining Tracker</string>
+    <string name="package_name">com.blaxcky.krafttrainingtracker</string>
+    <string name="custom_url_scheme">com.blaxcky.krafttrainingtracker</string>
+</resources>

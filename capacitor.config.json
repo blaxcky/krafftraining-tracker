@@ -1,0 +1,9 @@
+{
+  "appId": "com.blaxcky.krafttrainingtracker",
+  "appName": "Krafttraining Tracker",
+  "webDir": "www",
+  "backgroundColor": "#FFFEFA",
+  "android": {
+    "backgroundColor": "#FFFEFA"
+  }
+}

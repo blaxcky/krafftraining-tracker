@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krafttraining-tracker-v106';
+const CACHE_NAME = 'krafttraining-tracker-v107';
 const urlsToCache = [
   './',
   './index.html',
@@ -6,14 +6,18 @@ const urlsToCache = [
   './js/app.js',
   './js/storage.js',
   './js/pwa.js',
+  './css/tailwind.css',
+  './fonts/roboto-flex.css',
+  './fonts/material-symbols.css',
+  './fonts/material-symbols-outlined.woff2',
   './icons/icon-192x192.png',
   './icons/icon-512x512.png',
+  './icons/icon-1024x1024.png',
   './icons/body-legs.svg',
   './icons/body-arms.svg',
   './icons/body-back.svg',
   './icons/body-core.svg',
-  './icons/body-default.svg',
-  'https://cdn.tailwindcss.com'
+  './icons/body-default.svg'
 ];
 
 const cacheUrl = async (request, response) => {
