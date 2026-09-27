@@ -32,10 +32,3 @@ const robotoFiles = await readdir(join(robotoSource, 'files'));
 for (const file of robotoFiles.filter((name) => name.endsWith('-wght-normal.woff2'))) {
   await cp(join(robotoSource, 'files', file), join(output, 'fonts', 'files', file));
 }
-
-const symbolsSource = join(root, 'node_modules', 'material-symbols');
-await cp(join(symbolsSource, 'outlined.css'), join(output, 'fonts', 'material-symbols.css'));
-await cp(
-  join(symbolsSource, 'material-symbols-outlined.woff2'),
-  join(output, 'fonts', 'material-symbols-outlined.woff2')
-);

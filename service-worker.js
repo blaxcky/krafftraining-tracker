@@ -1,15 +1,14 @@
-const CACHE_NAME = 'krafttraining-tracker-v109';
+const CACHE_NAME = 'krafttraining-tracker-v110';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
   './js/app.js',
+  './js/icons.js',
   './js/storage.js',
   './js/pwa.js',
   './css/tailwind.css',
   './fonts/roboto-flex.css',
-  './fonts/material-symbols.css',
-  './fonts/material-symbols-outlined.woff2',
   './fonts/files/roboto-flex-cyrillic-ext-wght-normal.woff2',
   './fonts/files/roboto-flex-cyrillic-wght-normal.woff2',
   './fonts/files/roboto-flex-greek-wght-normal.woff2',

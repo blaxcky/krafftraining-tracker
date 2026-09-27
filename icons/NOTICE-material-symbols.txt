@@ -1,0 +1,9 @@
+Material Symbols Outlined
+Copyright 2026 Google LLC. All Rights Reserved.
+Licensed under the Apache License, Version 2.0 (LICENSE-material-symbols.txt).
+
+The SVG paths in index.html and js/icons.js were converted from the font bundled
+with material-symbols 0.47.5 (https://github.com/marella/material-symbols).
+They were instantiated at wght=500, FILL=0, GRAD=0, opsz=24, transformed from
+font coordinates to a 0 0 960 960 SVG viewBox, and rounded to three decimals.
+Only the 19 icons used by this app are included. No icon font is required.

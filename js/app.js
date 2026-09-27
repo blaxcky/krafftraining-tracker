@@ -11,7 +11,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.14.2';
+    this.version = '2.14.3';
     this.init();
   }
 
@@ -936,7 +936,7 @@ class App {
       container.innerHTML = `
         <div class="card p-8 text-center">
           <div class="empty-state-icon tone-primary">
-            <span class="material-symbols-outlined text-3xl">fitness_center</span>
+            ${AppIcons.render("fitness_center", "text-3xl")}
           </div>
           <p class="text-gray-600">Noch keine Übungen vorhanden.</p>
           <p class="text-sm text-gray-400 mt-1">Füge deine erste Übung hinzu!</p>
@@ -1047,7 +1047,7 @@ class App {
               ${calories > 0 ? `
               <div class="mt-2">
                 <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
-                  <span class="material-symbols-outlined kcal-icon">local_fire_department</span>
+                  ${AppIcons.render("local_fire_department", "kcal-icon")}
                   ${calories} kcal
                 </span>
               </div>
@@ -1213,24 +1213,24 @@ class App {
       fragments.push(`
         <div class="exercise-swipe" data-training-exercise-id="${exercise.id}" data-exercise-done="${isCompleted ? 'true' : 'false'}">
           <div class="exercise-swipe-bg exercise-swipe-bg--complete exercise-swipe-bg--left" aria-hidden="true">
-            <span class="material-symbols-outlined">done</span>
+            ${AppIcons.render("done", "")}
             <span>Erledigt</span>
           </div>
           <div class="exercise-swipe-bg exercise-swipe-bg--complete exercise-swipe-bg--right" aria-hidden="true">
             <span>Erledigt</span>
-            <span class="material-symbols-outlined">done</span>
+            ${AppIcons.render("done", "")}
           </div>
           <div class="card p-4 exercise-swipe-card ${cardStateClasses}">
             <div class="flex items-start justify-between gap-3 mb-2">
               <div class="flex items-start gap-2 min-w-0">
-                <span class="material-symbols-outlined text-[18px] leading-none mt-0.5 opacity-70 text-primary-dark" aria-hidden="true">fitness_center</span>
+                ${AppIcons.render("fitness_center", "text-[18px] leading-none mt-0.5 opacity-70 text-primary-dark")}
                 <h3 class="font-semibold text-base leading-snug min-w-0 ${nameClasses}">${exercise.name}</h3>
               </div>
               <div class="flex items-center gap-2 shrink-0">
                 <button type="button" data-swipe-ignore onclick="app.toggleTrainingExerciseLock(${exercise.id})"
                   class="kcal-badge kcal-badge--toggle ${isUnlocked ? 'kcal-badge--unlock-active' : ''} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs"
                   aria-label="${lockToggleLabel}" title="${lockToggleLabel}">
-                    <span class="material-symbols-outlined kcal-icon">local_fire_department</span>
+                    ${AppIcons.render("local_fire_department", "kcal-icon")}
                     ${calories} kcal
                 </button>
                 ${stateLabel ? `
@@ -1242,7 +1242,7 @@ class App {
                   <button type="button" data-swipe-ignore onclick="app.setExerciseState(${exercise.id}, 'open')"
                     class="icon-btn h-9 w-9 rounded-xl flex items-center justify-center"
                     aria-label="Zurücksetzen" title="Zurücksetzen">
-                    <span class="material-symbols-outlined text-base">restart_alt</span>
+                    ${AppIcons.render("restart_alt", "text-base")}
                   </button>
                 ` : ''}
               </div>
@@ -1266,7 +1266,7 @@ class App {
       container.innerHTML = `
         <div class="card p-8 text-center">
           <div class="empty-state-icon ${messageTone}">
-            <span class="material-symbols-outlined text-3xl">${messageIcon}</span>
+            ${AppIcons.render(messageIcon, "text-3xl")}
           </div>
           <p class="text-gray-600">${messageText}</p>
           <p class="text-sm text-gray-400 mt-2">${messageHint}</p>
@@ -1294,7 +1294,7 @@ class App {
     const icon = document.getElementById('toggle-completed-icon');
     const isShowing = this.showCompletedExercises;
     if (icon) {
-      icon.textContent = isShowing ? 'visibility' : 'visibility_off';
+      AppIcons.set(icon, isShowing ? 'visibility' : 'visibility_off');
     }
     const titleText = isShowing ? 'Erledigte ausblenden' : 'Erledigte anzeigen';
     button.setAttribute('aria-label', titleText);

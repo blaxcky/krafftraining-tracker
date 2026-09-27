@@ -14,7 +14,7 @@ async function fixture(t) {
 
 test('the built web app includes its local and offline assets', async () => {
   const result = await verifyWeb();
-  assert.ok(result.fonts >= 7);
+  assert.equal(result.fonts, 6);
 });
 
 test('rejects the uncompiled stylesheet previously published by Pages', async (t) => {
@@ -29,14 +29,22 @@ test('rejects CSS without the hidden state utility', async (t) => {
   await assert.rejects(verifyWeb(directory), /missing the hidden utility/);
 });
 
-test('rejects missing icon fonts and broken local HTML references', async (t) => {
+test('rejects missing icon renderer and broken local HTML references', async (t) => {
   const directory = await fixture(t);
-  await rm(join(directory, 'fonts/material-symbols-outlined.woff2'));
-  await assert.rejects(verifyWeb(directory), /Missing or empty asset: \/fonts\/material-symbols-outlined.woff2/);
-  await cp(new URL('../www/fonts/material-symbols-outlined.woff2', import.meta.url), join(directory, 'fonts/material-symbols-outlined.woff2'));
+  await rm(join(directory, 'js/icons.js'));
+  await assert.rejects(verifyWeb(directory), /Missing or empty asset: \/js\/icons.js/);
+  await cp(new URL('../www/js/icons.js', import.meta.url), join(directory, 'js/icons.js'));
   const html = await readFile(join(directory, 'index.html'), 'utf8');
   await writeFile(join(directory, 'index.html'), html.replace('js/app.js', 'js/missing.js'));
   await assert.rejects(verifyWeb(directory), /Missing or empty asset: \/js\/missing.js/);
+});
+
+test('rejects reintroducing font-dependent icons', async (t) => {
+  const directory = await fixture(t);
+  const path = join(directory, 'index.html');
+  const html = await readFile(path, 'utf8');
+  await writeFile(path, html.replace('</body>', '<span class="material-symbols-outlined">fitness_center</span></body>'));
+  await assert.rejects(verifyWeb(directory), /Icon font dependency reintroduced/);
 });
 
 test('rejects fonts omitted from the offline precache', async (t) => {

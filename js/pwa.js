@@ -72,9 +72,9 @@ const showUpdateAction = (registration) => {
   const setBusyState = (isBusy) => {
     updateBtn.disabled = isBusy;
     updateBtn.dataset.loading = isBusy ? 'true' : 'false';
-    const icon = updateBtn.querySelector('.material-symbols-outlined');
+    const icon = updateBtn.querySelector('.ui-icon');
     if (icon) {
-      icon.textContent = isBusy ? 'autorenew' : 'system_update';
+      AppIcons.set(icon, isBusy ? 'autorenew' : 'system_update');
     }
     const label = updateBtn.querySelector('[data-update-label]');
     if (label) {
@@ -96,9 +96,9 @@ const showUpdateBanner = (registration) => {
   banner.id = 'update-banner';
   banner.className = 'update-banner';
 
-  const icon = document.createElement('span');
-  icon.className = 'material-symbols-outlined';
-  icon.textContent = 'system_update';
+  const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  icon.classList.add('ui-icon');
+  AppIcons.set(icon, 'system_update');
 
   const text = document.createElement('div');
   text.className = 'update-banner__text';

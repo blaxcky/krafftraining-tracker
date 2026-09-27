@@ -2,6 +2,8 @@
 
 Der Tracker läuft weiterhin als PWA und zusätzlich als native Android-App auf Basis von Capacitor. Alle Web-Assets, Schriftarten und Icons werden in die APK gebündelt; nur optionale Webhook- und E-Mail-Funktionen benötigen eine Netzwerkverbindung.
 
+UI-Icons sind direkt eingebettete SVG-Pfade und benötigen keine Icon-Schrift oder Schriftligaturen. Statische Icons stehen in `index.html`, dynamische Icons werden mit `AppIcons.render` und `AppIcons.set` aus `js/icons.js` erzeugt. Die Formen stammen aus Material Symbols Outlined (Google, Apache-2.0); Lizenz und Konvertierungshinweise stehen unter `icons/`.
+
 ## Lokal entwickeln
 
 Für die Web-Vorschau: Node.js 22+ und Python 3. Für Android zusätzlich JDK 21 und ein Android SDK mit API 36.
@@ -52,8 +54,8 @@ Der Workflow erwartet diese Repository-Secrets:
 3. Änderungen committen und einen passenden Tag pushen, zum Beispiel:
 
    ```bash
-   git tag v2.14.2
-   git push origin v2.14.2
+   git tag v2.14.3
+   git push origin v2.14.3
    ```
 
 Der Workflow `.github/workflows/android-release.yml` baut daraus eine signierte Universal-APK und veröffentlicht sie zusammen mit einer SHA-256-Prüfsumme im GitHub Release.

@@ -41,8 +41,14 @@ export async function verifyWeb(directory = 'www') {
   }
 
   // These are essential even if an accidental HTML edit removes their links.
-  for (const asset of ['css/tailwind.css', 'fonts/roboto-flex.css', 'fonts/material-symbols.css', 'manifest.json', 'service-worker.js']) {
+  for (const asset of ['css/tailwind.css', 'fonts/roboto-flex.css', 'js/icons.js', 'manifest.json', 'service-worker.js']) {
     await check(asset);
+  }
+  for (const asset of ['index.html', 'js/app.js', 'js/pwa.js', 'service-worker.js']) {
+    const source = await readFile(resolve(root, asset), 'utf8');
+    if (/material-symbols(?:-outlined|\.css|.*\.woff2)/.test(source)) {
+      throw new Error(`Icon font dependency reintroduced in ${asset}; use inline SVG icons`);
+    }
   }
   const css = await readFile(resolve(root, 'css/tailwind.css'), 'utf8');
   if (!/\.hidden\s*\{\s*display\s*:\s*none\s*;?\s*\}/.test(css)) {
