@@ -11,7 +11,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.14.1';
+    this.version = '2.14.2';
     this.init();
   }
 

@@ -52,8 +52,8 @@ Der Workflow erwartet diese Repository-Secrets:
 3. Änderungen committen und einen passenden Tag pushen, zum Beispiel:
 
    ```bash
-   git tag v2.14.1
-   git push origin v2.14.1
+   git tag v2.14.2
+   git push origin v2.14.2
    ```
 
 Der Workflow `.github/workflows/android-release.yml` baut daraus eine signierte Universal-APK und veröffentlicht sie zusammen mit einer SHA-256-Prüfsumme im GitHub Release.

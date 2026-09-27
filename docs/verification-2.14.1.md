@@ -2,6 +2,8 @@
 
 Geprüft am 27. September 2026.
 
+Nachtrag: Die Android-Prüfung konnte mit Host-Grafik fortgesetzt werden. Der dabei gefundene Tab-Fehler und die erfolgreiche Abnahme des Updates sind in [verification-2.14.2.md](verification-2.14.2.md) dokumentiert.
+
 ## Web und PWA
 
 - `npm run build`: erfolgreich; 26 lokale Assets und 7 offline vorab gespeicherte Fonts geprüft.
