@@ -11,7 +11,7 @@ class App {
     this.currentPlanId = 'default';
     this.startPlanId = 'default';
     this.tabOrder = ['exercises', 'training', 'calories', 'settings'];
-    this.version = '2.14.3';
+    this.version = '2.14.4';
     this.init();
   }
 
@@ -35,7 +35,7 @@ class App {
   isTrainingExerciseEditable(exerciseId, showToast = false) {
     const isUnlocked = this.isTrainingExerciseUnlocked(exerciseId);
     if (!isUnlocked && showToast) {
-      this.showToast('Tippe auf den kcal-Badge, um die Übung zu entsperren.', 'error');
+      this.showToast('Tippe auf „Gewichte / Details entsperren“, um die Übung zu bearbeiten.', 'error');
     }
     return isUnlocked;
   }
@@ -168,6 +168,7 @@ class App {
 
   async init() {
     await storage.init();
+    await SyncCore.ensureIdentity(storage.db, trainingSync.owner());
     this.setupEventListeners();
     this.initWeightPicker('exercise-weight-picker', 'exercise-weight');
     this.initWeightPicker('exercise-dumbbell-weight-picker', 'exercise-dumbbell-weight');
@@ -177,6 +178,7 @@ class App {
     await this.loadExercises();
     await this.loadTraining();
     this.loadSettingsTab();
+    await trainingSync.init(storage);
   }
 
   updateVersionBadge() {
@@ -226,25 +228,6 @@ class App {
 
     // Cardio Event-Listener
     document.getElementById('add-cardio-btn').addEventListener('click', () => this.addCardioEntry());
-
-    // E-Mail senden Button und Eingabefeld
-    document.getElementById('send-calories-email-btn').addEventListener('click', () => this.sendCaloriesSummaryEmail());
-    const settingsEmailInput = document.getElementById('settings-email-input');
-    if (settingsEmailInput) {
-      settingsEmailInput.addEventListener('change', (e) => this.saveEmailAddress(e.target.value));
-    }
-    const settingsSaveEmailBtn = document.getElementById('settings-save-email-btn');
-    if (settingsSaveEmailBtn) {
-      settingsSaveEmailBtn.addEventListener('click', () => this.saveEmailFromSettings());
-    }
-    const settingsWebhookInput = document.getElementById('settings-webhook-input');
-    if (settingsWebhookInput) {
-      settingsWebhookInput.addEventListener('change', (e) => this.saveWebhookUrl(e.target.value));
-    }
-    const settingsSaveWebhookBtn = document.getElementById('settings-save-webhook-btn');
-    if (settingsSaveWebhookBtn) {
-      settingsSaveWebhookBtn.addEventListener('click', () => this.saveWebhookFromSettings());
-    }
 
     document.addEventListener('click', (e) => {
       if (e.target.id === 'exercise-modal') {
@@ -783,6 +766,8 @@ class App {
       const modal = document.getElementById('exercise-modal');
       if (modal && !modal.classList.contains('hidden')) return;
       const startedOnControl = isControlTarget(event.target);
+      // Pointer capture on the card can redirect a control's click to the card.
+      if (startedOnControl) return;
 
       const swipeRoot = event.target.closest('.exercise-swipe');
       if (!swipeRoot) return;
@@ -1227,12 +1212,10 @@ class App {
                 <h3 class="font-semibold text-base leading-snug min-w-0 ${nameClasses}">${exercise.name}</h3>
               </div>
               <div class="flex items-center gap-2 shrink-0">
-                <button type="button" data-swipe-ignore onclick="app.toggleTrainingExerciseLock(${exercise.id})"
-                  class="kcal-badge kcal-badge--toggle ${isUnlocked ? 'kcal-badge--unlock-active' : ''} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs"
-                  aria-label="${lockToggleLabel}" title="${lockToggleLabel}">
-                    ${AppIcons.render("local_fire_department", "kcal-icon")}
-                    ${calories} kcal
-                </button>
+                <span class="kcal-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs">
+                  ${AppIcons.render("local_fire_department", "kcal-icon")}
+                  ${calories} kcal
+                </span>
                 ${stateLabel ? `
                   <span class="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold border ${stateLabelTone}">
                     ${stateLabel}
@@ -1248,6 +1231,13 @@ class App {
               </div>
             </div>
             <div class="training-divider mb-3"></div>
+            <div class="flex justify-end mb-3">
+              <button type="button" data-swipe-ignore onclick="app.toggleTrainingExerciseLock(${exercise.id})"
+                class="chip px-3 py-2 rounded-full text-xs font-semibold ${isUnlocked ? 'active' : ''}"
+                aria-label="${lockToggleLabel}" aria-pressed="${isUnlocked}">
+                ${isUnlocked ? 'Bearbeitung sperren' : 'Gewichte / Details entsperren'}
+              </button>
+            </div>
             ${this.renderTrainingLoadControls(exercise, isUnlocked)}
           </div>
         </div>
@@ -1649,65 +1639,21 @@ class App {
   }
 
   async endTraining() {
-    if (confirm('Training beenden?')) {
-      try {
-        const training = await storage.getCurrentTraining();
-        const summary = await storage.getSessionCaloriesSummary();
-        const webhookInput = document.getElementById('settings-webhook-input');
-        const pendingWebhook = webhookInput ? String(webhookInput.value || '').trim() : '';
-        const webhookUrl = pendingWebhook || storage.getWebhookUrl().trim();
-        let autoWebhookSent = false;
-        let webhookStatus = webhookUrl ? 'webhook-failed' : 'missing-webhook';
-
-        if (webhookUrl && this.isValidWebhookUrl(webhookUrl)) {
-          const autoSendResult = await this.sendCaloriesSummaryEmail({
-            webhookOnly: true,
-            allowEmailFallback: false,
-            showSuccessToast: false,
-            showErrorToast: false
-          });
-          autoWebhookSent = Boolean(autoSendResult && autoSendResult.sent);
-          webhookStatus = autoWebhookSent
-            ? 'sent'
-            : ((autoSendResult && autoSendResult.reason) || 'webhook-failed');
-        } else if (webhookUrl) {
-          webhookStatus = 'invalid-webhook';
-        }
-
-        if (training && summary) {
-          const snapshot = {
-            endedAt: new Date().toISOString(),
-            startedAt: training.startedAt || null,
-            planId: training.planId || 'default',
-            planName: training.planName || (training.planId === 'default' ? 'Standard' : (training.planId || 'Standard')),
-            totalCalories: Number(summary.totalCalories) || 0,
-            exerciseCalories: Number(summary.exerciseCalories) || 0,
-            cardioCalories: Number(summary.cardioCalories) || 0,
-            exercises: Array.isArray(summary.completedExercises)
-              ? summary.completedExercises.map(ex => ({
-                name: String(ex && ex.name ? ex.name : '').trim(),
-                calories: Number(ex && ex.calories ? ex.calories : 0)
-              })).filter(ex => ex.name)
-              : [],
-            cardio: Array.isArray(summary.cardioEntries)
-              ? summary.cardioEntries.map(entry => ({
-                name: String(entry && entry.name ? entry.name : '').trim(),
-                calories: Number(entry && entry.calories ? entry.calories : 0)
-              })).filter(entry => entry.name)
-              : [],
-            webhookStatus
-          };
-          storage.saveRecentTrainingSnapshot(snapshot);
-        }
-
-        await storage.endTraining();
-        this.showCompletedExercises = false;
-        this.unlockedTrainingExercises.clear();
-        await this.loadTraining();
-        this.showToast(autoWebhookSent ? 'Training beendet · Webhook gesendet' : 'Training beendet', 'success');
-      } catch (error) {
-        console.error('Error ending training:', error);
-      }
+    if (this.endingTraining || !confirm('Training beenden?')) return;
+    this.endingTraining = true;
+    try {
+      const job = await storage.endTraining();
+      this.showCompletedExercises = false;
+      this.unlockedTrainingExercises.clear();
+      await this.loadTraining();
+      this.loadSettingsTab();
+      this.showToast(job ? 'Training gespeichert · Synchronisierung vorgemerkt' : 'Training bereits beendet');
+      void trainingSync.run();
+    } catch (error) {
+      console.error('Error ending training:', error);
+      this.showToast('Training konnte nicht gespeichert werden und bleibt erhalten. ' + error.message, 'error');
+    } finally {
+      this.endingTraining = false;
     }
   }
 
@@ -1955,59 +1901,19 @@ class App {
   }
 
   loadSettingsTab() {
-    const emailAddress = storage.getEmailAddress();
-    const emailInput = document.getElementById('settings-email-input');
-    if (emailInput && document.activeElement !== emailInput) {
-      emailInput.value = emailAddress;
-    }
-    const webhookUrl = storage.getWebhookUrl();
-    const webhookInput = document.getElementById('settings-webhook-input');
-    if (webhookInput && document.activeElement !== webhookInput) {
-      webhookInput.value = webhookUrl;
-    }
-    this.updateEmailSettingsUI(emailAddress);
-    this.updateWebhookSettingsUI(webhookUrl);
     this.renderRecentTrainingSnapshots();
   }
 
-  updateEmailSettingsUI(emailValue = '') {
-    const trimmed = String(emailValue || '').trim();
-    const status = document.getElementById('settings-email-status');
-    if (status) {
-      status.textContent = trimmed.length > 0
-        ? `Aktuell hinterlegt: ${trimmed}`
-        : 'Noch keine E-Mail hinterlegt';
-    }
-  }
-
-  updateWebhookSettingsUI(webhookValue = '') {
-    const trimmed = String(webhookValue || '').trim();
-    const status = document.getElementById('settings-webhook-status');
-    if (status) {
-      status.textContent = trimmed.length > 0
-        ? 'Webhook ist hinterlegt'
-        : 'Noch kein Webhook hinterlegt';
-    }
-  }
-
-  renderRecentTrainingSnapshots() {
+  async renderRecentTrainingSnapshots() {
     const container = document.getElementById('settings-recent-summaries');
     if (!container) return;
 
-    const snapshots = storage.getRecentTrainingSnapshots(5);
+    const jobs = await SyncCore.listJobs(storage.db);
+    const snapshots = [...jobs.map(job => ({ endedAt: job.payload.endedAt, totalCalories: job.payload.strengthKcal + job.payload.cardioKcal, exerciseCalories: job.payload.strengthKcal, cardioCalories: job.payload.cardioKcal, planName: job.planName, syncStatus: job.status, exercises: job.details?.exercises || [], cardio: job.details?.cardio || [] })), ...storage.getRecentTrainingSnapshots(5)].sort((a,b) => new Date(b.endedAt)-new Date(a.endedAt)).slice(0,5);
     if (!Array.isArray(snapshots) || snapshots.length === 0) {
       container.innerHTML = '<p class="text-sm text-gray-500">Noch keine gespeicherten Trainings vorhanden.</p>';
       return;
     }
-
-    const statusText = (status) => {
-      if (status === 'sent') return 'Webhook gesendet';
-      if (status === 'invalid-webhook') return 'Webhook ungültig';
-      if (status === 'missing-webhook') return 'Kein Webhook hinterlegt';
-      if (status === 'webhook-failed') return 'Webhook fehlgeschlagen';
-      if (status === 'empty') return 'Keine Kalorien';
-      return 'Webhook nicht gesendet';
-    };
 
     container.innerHTML = snapshots.map((entry) => {
       const endedAt = entry && entry.endedAt ? new Date(entry.endedAt) : null;
@@ -2018,7 +1924,7 @@ class App {
       const strength = Number(entry && entry.exerciseCalories) || 0;
       const cardio = Number(entry && entry.cardioCalories) || 0;
       const planName = this.escapeHtml((entry && entry.planName) || 'Standard');
-      const webhookState = statusText(entry && entry.webhookStatus);
+      const webhookState = entry.syncStatus ? (entry.syncStatus === 'synced' ? 'Mit Firestore synchronisiert' : 'Für Firestore vorgemerkt') : 'Älteres lokales Backup';
 
       const exercises = Array.isArray(entry && entry.exercises)
         ? entry.exercises.slice(0, 8).map(ex => `<li class="text-gray-700">${this.escapeHtml(ex.name)}${Number(ex.calories) > 0 ? ` <span class="text-gray-500">(${Number(ex.calories)} kcal)</span>` : ''}</li>`).join('')
@@ -2044,46 +1950,6 @@ class App {
         </details>
       `;
     }).join('');
-  }
-
-  saveEmailFromSettings() {
-    const emailInput = document.getElementById('settings-email-input');
-    const emailAddress = emailInput ? String(emailInput.value || '').trim() : '';
-    this.saveEmailAddress(emailAddress);
-    this.showToast(emailAddress ? 'E-Mail gespeichert' : 'E-Mail entfernt');
-  }
-
-  saveWebhookFromSettings() {
-    const webhookInput = document.getElementById('settings-webhook-input');
-    const webhookUrl = webhookInput ? String(webhookInput.value || '').trim() : '';
-    if (webhookUrl && !this.isValidWebhookUrl(webhookUrl)) {
-      this.showToast('Bitte eine gültige HTTPS-Webhook-URL eingeben', 'error');
-      return;
-    }
-    this.saveWebhookUrl(webhookUrl);
-    this.showToast(webhookUrl ? 'Webhook gespeichert' : 'Webhook entfernt');
-  }
-
-  // E-Mail-Adresse speichern
-  saveEmailAddress(email) {
-    const trimmed = String(email || '').trim();
-    storage.saveEmailAddress(trimmed);
-    this.updateEmailSettingsUI(trimmed);
-  }
-
-  saveWebhookUrl(url) {
-    const trimmed = String(url || '').trim();
-    storage.saveWebhookUrl(trimmed);
-    this.updateWebhookSettingsUI(trimmed);
-  }
-
-  isValidWebhookUrl(url) {
-    try {
-      const parsed = new URL(String(url || '').trim());
-      return parsed.protocol === 'https:';
-    } catch (error) {
-      return false;
-    }
   }
 
   // Kalorien-Anzeige aktualisieren
@@ -2119,13 +1985,6 @@ class App {
         strengthBar.style.width = `${strengthPct}%`;
         cardioBar.style.width = `${cardioPct}%`;
       }
-    }
-
-    const sendBtn = document.getElementById('send-calories-email-btn');
-    if (sendBtn) {
-      sendBtn.disabled = !hasAny;
-      sendBtn.setAttribute('aria-disabled', hasAny ? 'false' : 'true');
-      sendBtn.title = hasAny ? 'Zusammenfassung senden' : 'Keine Kalorien zum Senden';
     }
 
     // Cardio-Liste rendern
@@ -2274,247 +2133,6 @@ class App {
     }
   }
 
-  // Kalorien-Übersicht per Webhook oder E-Mail senden
-  async sendCaloriesSummaryEmail(options = {}) {
-    const {
-      webhookOnly = false,
-      allowEmailFallback = true,
-      showSuccessToast = true,
-      showErrorToast = true
-    } = options;
-
-    const summary = await storage.getSessionCaloriesSummary();
-
-    if (summary.totalCalories === 0) {
-      if (showErrorToast) {
-        this.showToast('Keine Kalorien zum Senden vorhanden', 'error');
-      }
-      return { sent: false, reason: 'empty' };
-    }
-
-    const emailInput = document.getElementById('settings-email-input');
-    const webhookInput = document.getElementById('settings-webhook-input');
-    const pendingEmail = emailInput ? String(emailInput.value || '').trim() : '';
-    const pendingWebhook = webhookInput ? String(webhookInput.value || '').trim() : '';
-
-    const emailAddress = pendingEmail || storage.getEmailAddress().trim();
-    const webhookUrl = pendingWebhook || storage.getWebhookUrl().trim();
-
-    if (webhookUrl && !this.isValidWebhookUrl(webhookUrl)) {
-      if (showErrorToast) {
-        this.showToast('Webhook-URL ist ungültig (HTTPS erforderlich)', 'error');
-      }
-      return { sent: false, reason: 'invalid-webhook' };
-    }
-
-    if (webhookOnly && !webhookUrl) {
-      if (showErrorToast) {
-        this.showToast('Bitte Webhook in Einstellungen hinterlegen', 'error');
-      }
-      return { sent: false, reason: 'missing-webhook' };
-    }
-
-    if (!webhookUrl && !emailAddress) {
-      if (showErrorToast) {
-        this.showToast('Bitte E-Mail oder Webhook in Einstellungen hinterlegen', 'error');
-      }
-      return { sent: false, reason: 'missing-target' };
-    }
-
-    if (emailAddress) {
-      this.saveEmailAddress(emailAddress);
-    }
-    if (webhookUrl) {
-      this.saveWebhookUrl(webhookUrl);
-    }
-
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('de-DE', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const timeStr = now.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    const subject = `Trainings-Dokumentation vom ${dateStr}`;
-    let body = '';
-    body += 'TRAININGS-DOKUMENTATION\n';
-    body += '========================\n\n';
-    body += `${dateStr}\n`;
-    body += `${timeStr} Uhr\n\n`;
-    body += '----------------------------------------\n';
-    body += `GESAMTKALORIEN VERBRANNT: ${summary.totalCalories} kcal\n`;
-    body += '----------------------------------------\n\n';
-    body += `Krafttraining: ${summary.exerciseCalories} kcal\n`;
-    body += `Cardio: ${summary.cardioCalories} kcal\n\n`;
-
-    const exercisesWithCalories = summary.completedExercises.filter(ex => ex.calories > 0);
-    if (exercisesWithCalories.length > 0) {
-      body += '-- KRAFTTRAINING --\n\n';
-      exercisesWithCalories.forEach(ex => {
-        const dots = '.'.repeat(Math.max(2, 32 - ex.name.length - String(ex.calories).length));
-        body += `${ex.name} ${dots} ${ex.calories} kcal\n`;
-      });
-      body += '\n';
-    }
-
-    if (summary.cardioEntries.length > 0) {
-      body += '-- CARDIO --\n\n';
-      summary.cardioEntries.forEach(entry => {
-        const dots = '.'.repeat(Math.max(2, 32 - entry.name.length - String(entry.calories).length));
-        body += `${entry.name} ${dots} ${entry.calories} kcal\n`;
-      });
-      body += '\n';
-    }
-
-    body += '----------------------------------------\n';
-    body += 'Gesendet von Krafttraining Tracker\n';
-
-    const totalCalories = Number(summary.totalCalories) || 0;
-    const strengthCalories = Number(summary.exerciseCalories) || 0;
-    const cardioCalories = Number(summary.cardioCalories) || 0;
-    const strengthPercent = totalCalories > 0 ? Math.round((strengthCalories / totalCalories) * 100) : 0;
-    const cardioPercent = totalCalories > 0 ? Math.max(0, 100 - strengthPercent) : 0;
-
-    const buildTelegramCodeLikeLines = (entries = []) => entries
-      .map((entry) => {
-        const rawName = String(entry && entry.name ? entry.name : '');
-        const calories = Number(entry && entry.calories ? entry.calories : 0);
-        const compactName = rawName.length > 20 ? `${rawName.slice(0, 17)}...` : rawName;
-        const dots = '.'.repeat(Math.max(3, 24 - compactName.length - String(calories).length));
-        return `<code>• ${this.escapeHtml(compactName)} ${dots} ${calories} kcal</code>`;
-      })
-      .join('\n');
-
-    let webhookPrettyText = '';
-    webhookPrettyText += '🏋️ TRAININGS-DOKUMENTATION\n';
-    webhookPrettyText += `${dateStr} | ${timeStr} Uhr\n\n`;
-    webhookPrettyText += '━━━━━━━━━━━━━━━━━━━━\n';
-    webhookPrettyText += `🔥 GESAMT: ${summary.totalCalories} kcal\n`;
-    webhookPrettyText += '━━━━━━━━━━━━━━━━━━━━\n';
-    webhookPrettyText += `💪 Krafttraining: ${summary.exerciseCalories} kcal (${strengthPercent}%)\n`;
-    webhookPrettyText += `🏃 Cardio: ${summary.cardioCalories} kcal (${cardioPercent}%)\n`;
-
-    if (exercisesWithCalories.length > 0) {
-      webhookPrettyText += '\n💪 Krafttraining-Details:\n';
-      exercisesWithCalories.forEach(ex => {
-        webhookPrettyText += `• ${ex.name}: ${ex.calories} kcal\n`;
-      });
-    }
-
-    if (summary.cardioEntries.length > 0) {
-      webhookPrettyText += '\n🏃 Cardio-Details:\n';
-      summary.cardioEntries.forEach(entry => {
-        webhookPrettyText += `• ${entry.name}: ${entry.calories} kcal\n`;
-      });
-    }
-
-    let telegramHtml = '';
-    telegramHtml += '<b>🏋️ Trainings-Dokumentation</b>\n';
-    telegramHtml += `<i>${this.escapeHtml(dateStr)} • ${this.escapeHtml(timeStr)} Uhr</i>\n\n`;
-    telegramHtml += '<b>━━━━━━━━━━━━━━━━━━━━━━━━</b>\n';
-    telegramHtml += '<b>🔥 GESAMTKALORIEN</b>\n';
-    telegramHtml += `<b>🏁 ${summary.totalCalories} kcal</b>\n`;
-    telegramHtml += '<b>━━━━━━━━━━━━━━━━━━━━━━━━</b>\n';
-    telegramHtml += `💪 Krafttraining: <b>${summary.exerciseCalories} kcal</b> (${strengthPercent}%)\n`;
-    telegramHtml += `🏃 Cardio: <b>${summary.cardioCalories} kcal</b> (${cardioPercent}%)\n`;
-
-    if (exercisesWithCalories.length > 0) {
-      telegramHtml += '\n<b>💪 Krafttraining-Details</b>\n';
-      telegramHtml += `${buildTelegramCodeLikeLines(exercisesWithCalories)}\n`;
-    }
-
-    if (summary.cardioEntries.length > 0) {
-      telegramHtml += '\n<b>🏃 Cardio-Details</b>\n';
-      telegramHtml += `${buildTelegramCodeLikeLines(summary.cardioEntries)}\n`;
-    }
-
-    const webhookPayload = {
-      source: 'krafttraining-tracker',
-      version: this.version,
-      sentAt: now.toISOString(),
-      summary: {
-        totalCalories: summary.totalCalories,
-        exerciseCalories: summary.exerciseCalories,
-        cardioCalories: summary.cardioCalories
-      },
-      exercises: exercisesWithCalories.map(ex => ({ name: ex.name, calories: ex.calories })),
-      cardio: (summary.cardioEntries || []).map(entry => ({ name: entry.name, calories: entry.calories })),
-      subject,
-      message: body,
-      prettyMessage: webhookPrettyText,
-      telegramText: webhookPrettyText,
-      telegramHtml
-    };
-
-    if (webhookUrl) {
-      try {
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(webhookPayload)
-        });
-
-        if (!response.ok) {
-          throw new Error(`Webhook antwortete mit HTTP ${response.status}`);
-        }
-
-        if (showSuccessToast) {
-          this.showToast('Zusammenfassung an Webhook gesendet', 'success');
-        }
-        return { sent: true, channel: 'webhook' };
-      } catch (error) {
-        console.error('Error sending webhook:', error);
-        try {
-          await fetch(webhookUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-              'Content-Type': 'text/plain;charset=UTF-8'
-            },
-            body: JSON.stringify(webhookPayload)
-          });
-          if (showSuccessToast) {
-            this.showToast('Webhook gesendet', 'success');
-          }
-          return { sent: true, channel: 'webhook' };
-        } catch (fallbackError) {
-          console.error('Error sending webhook fallback:', fallbackError);
-        }
-
-        if (webhookOnly || !allowEmailFallback || !emailAddress) {
-          if (showErrorToast) {
-            this.showToast('Webhook-Senden fehlgeschlagen', 'error');
-          }
-          return { sent: false, reason: 'webhook-failed' };
-        }
-      }
-    }
-
-    if (webhookOnly || !allowEmailFallback) {
-      return { sent: false, reason: 'webhook-required' };
-    }
-
-    if (!emailAddress) {
-      if (showErrorToast) {
-        this.showToast('Kein E-Mail-Empfänger hinterlegt', 'error');
-      }
-      return { sent: false, reason: 'missing-email' };
-    }
-
-    const mailtoLink = `mailto:${emailAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoLink;
-    if (showSuccessToast) {
-      this.showToast('E-Mail-Client wird geöffnet...');
-    }
-    return { sent: true, channel: 'email' };
-  }
 }
 
 let app;

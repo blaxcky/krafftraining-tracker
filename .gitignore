@@ -8,3 +8,7 @@ android/app/build/
 android/build/
 *.jks
 *.keystore
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/

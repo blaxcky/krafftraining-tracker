@@ -63,7 +63,12 @@ jobs:
         run: npm ci
 
       - name: Sync Capacitor project
+        env:
+          FIREBASE_CONFIG: ${{ vars.FIREBASE_CONFIG }}
         run: npm run android:sync
+
+      - name: Test web assets and sync storage
+        run: npm test
 
       - name: Restore signing key
         shell: bash

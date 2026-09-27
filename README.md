@@ -1,6 +1,6 @@
 # Krafttraining Tracker
 
-Der Tracker läuft weiterhin als PWA und zusätzlich als native Android-App auf Basis von Capacitor. Alle Web-Assets, Schriftarten und Icons werden in die APK gebündelt; nur optionale Webhook- und E-Mail-Funktionen benötigen eine Netzwerkverbindung.
+Der Tracker läuft weiterhin als PWA und zusätzlich als native Android-App auf Basis von Capacitor. Alle Web-Assets, Schriftarten und Icons werden in die APK gebündelt; Firebase-Anmeldung und die Übertragung abgeschlossener Trainings benötigen eine Netzwerkverbindung. Ausstehende Trainings bleiben dauerhaft lokal gespeichert.
 
 UI-Icons sind direkt eingebettete SVG-Pfade und benötigen keine Icon-Schrift oder Schriftligaturen. Statische Icons stehen in `index.html`, dynamische Icons werden mit `AppIcons.render` und `AppIcons.set` aus `js/icons.js` erzeugt. Die Formen stammen aus Material Symbols Outlined (Google, Apache-2.0); Lizenz und Konvertierungshinweise stehen unter `icons/`.
 
@@ -67,3 +67,9 @@ https://github.com/blaxcky/krafftraining-tracker
 ```
 
 Paket-ID: `com.blaxcky.krafttrainingtracker`
+
+## Firestore-Synchronisierung
+
+Einrichtung und Datenvertrag: [docs/firestore-sync.md](docs/firestore-sync.md). Ohne Firebase-Konfiguration arbeitet die App lokal und sammelt Übertragungsaufträge. Sie verschickt keine E-Mails oder Webhooks mehr.
+
+`npm run test:firestore` prüft die Übertragung und Zugriffsregeln ausschließlich in einem lokalen Demo-Projekt (JDK 21 erforderlich). Der Android-/Browser-Test und der noch ausstehende FoodYou-Integrationstest sind in der Dokumentation beschrieben.

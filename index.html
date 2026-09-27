@@ -1363,7 +1363,7 @@
             </div>
             <div class="top-app-bar__title">
                 <h1>Krafttraining</h1>
-                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.14.3</span></p>
+                <p><span id="version-badge" class="text-xs font-medium text-gray-400">v2.14.4</span></p>
             </div>
             <div class="top-app-bar__actions">
                 <button id="add-exercise-btn" class="icon-btn top-add-btn" aria-label="Neue Übung">
@@ -1508,9 +1508,9 @@
 	                                    <svg class="ui-icon text-base" data-icon="local_fire_department" viewBox="0 0 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M246.218 560Q246.218 606.978 264.109 649.173Q282 691.368 315.739 724.216Q314.978 720.412 314.978 717.368Q314.978 714.325 314.978 710.521Q316.413 680.195 328.532 653.749Q340.652 627.304 362.695 605.26L480 489.716L597.544 605.26Q619.587 627.304 631.707 653.749Q643.826 680.195 645.022 710.521Q645.022 714.325 645.022 717.368Q645.022 720.412 644.261 724.216Q677.761 691.368 695.771 649.173Q713.782 606.978 713.782 560Q713.782 512.631 696.597 470.044Q679.413 427.457 646.804 393.892Q626.804 405.936 605.043 412.077Q583.283 418.218 561 418.218Q499.957 418.218 453.859 379.131Q407.761 340.045 397.413 281.479Q360.804 313.284 332.598 347.468Q304.392 381.653 285.207 416.718Q266.022 451.783 256.12 488.109Q246.218 524.435 246.218 560ZM480 617.261 426.348 669.913Q416.066 680.196 410.424 693.359Q404.783 706.522 404.783 720.565Q404.783 750.652 426.848 772.217Q448.913 793.782 480 793.782Q511.087 793.782 533.152 772.217Q555.217 750.652 555.217 720.565Q555.217 705.761 549.576 692.978Q543.934 680.196 533.652 669.913ZM484.783 112.347V252Q484.783 284.087 506.848 305.652Q528.913 327.217 561 327.217Q578.043 327.217 592.587 320.076Q607.13 312.934 618.413 298.891L638.804 273.782Q715.674 317.456 760.229 394.25Q804.783 471.043 804.783 560Q804.783 695.913 710.348 790.348Q615.913 884.783 480 884.783Q344.087 884.783 249.652 790.348Q155.217 695.913 155.217 560Q155.217 429.326 243.989 310.934Q332.761 192.543 484.783 112.347Z"></path></svg>
 	                                    KCAL
 	                                </div>
-                                <button id="send-calories-email-btn" type="button" class="calories-send-btn" title="Zusammenfassung senden">
+                                <button id="sync-calories-btn" data-sync-now type="button" class="calories-send-btn" title="Abgeschlossene Trainings synchronisieren">
                                     <svg class="ui-icon" data-icon="send" viewBox="0 0 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M112.586 807.653V152.347L889.566 480ZM200 676.413 665.151 480 200 283.587V416.413L443.587 480L200 543.587ZM200 676.413V480V283.587V416.413V543.587Z"></path></svg>
-                                    Senden
+                                    Jetzt synchronisieren
                                 </button>
 	                            </div>
 	                        </div>
@@ -1640,26 +1640,31 @@
             <div class="settings-stack">
                 <div class="card p-5">
                     <h3 class="settings-card-title">Einstellungen</h3>
-                    <p class="settings-hint">Verwalte App-Update, E-Mail und Zapier-Webhook an einem Ort.</p>
+                    <p class="settings-hint">Verwalte App-Update und Firestore-Synchronisierung.</p>
                 </div>
 
                 <div class="card p-5">
-                    <h3 class="font-bold text-lg text-gray-900 mb-2">Versand</h3>
-                    <p class="text-sm text-gray-500 mb-3">Nutze optional einen Zapier-Webhook (z. B. für Telegram). Ohne Webhook wird E-Mail verwendet.</p>
-                    <div class="flex flex-col gap-3">
-                        <input type="email" id="settings-email-input" class="input-field w-full px-4 py-3 rounded-xl" placeholder="E-Mail-Adresse eingeben">
-                        <button type="button" id="settings-save-email-btn" class="btn-secondary w-full py-3 px-5 rounded-xl">E-Mail speichern</button>
-                        <p id="settings-email-status" class="text-xs text-gray-500">Noch keine E-Mail hinterlegt</p>
-                        <div class="border-t border-gray-100 my-1"></div>
-                        <input type="url" id="settings-webhook-input" class="input-field w-full px-4 py-3 rounded-xl" placeholder="Zapier Webhook URL (https://hooks.zapier.com/...)">
-                        <button type="button" id="settings-save-webhook-btn" class="btn-secondary w-full py-3 px-5 rounded-xl">Webhook speichern</button>
-                        <p id="settings-webhook-status" class="text-xs text-gray-500">Noch kein Webhook hinterlegt</p>
-                    </div>
+                    <h3 class="font-bold text-lg text-gray-900 mb-2">Firestore-Synchronisierung</h3>
+                    <p class="settings-hint mb-3">Abgeschlossene Trainings werden automatisch übertragen. Melde dich mit demselben Konto wie in deiner Kalorien-App an.</p>
+                    <p id="sync-account" class="text-sm mb-3">Nicht angemeldet</p>
+                    <form id="sync-login-form" class="flex flex-col gap-3">
+                        <label for="sync-email">E-Mail</label>
+                        <input id="sync-email" type="email" autocomplete="username" required class="input-field w-full px-4 py-3 rounded-xl">
+                        <label for="sync-password">Passwort</label>
+                        <input id="sync-password" type="password" autocomplete="current-password" required class="input-field w-full px-4 py-3 rounded-xl">
+                        <button id="sync-login" type="submit" class="btn-secondary w-full py-3 rounded-xl">Anmelden</button>
+                        <button id="sync-reset" type="button" class="btn-secondary w-full py-3 rounded-xl">Passwort zurücksetzen</button>
+                    </form>
+                    <button id="sync-logout" type="button" class="btn-secondary w-full py-3 rounded-xl hidden">Abmelden</button>
+                    <button id="sync-claim" type="button" class="btn-secondary w-full py-3 rounded-xl hidden">Lokale Trainings zuordnen</button>
+                    <button type="button" data-sync-now class="btn-primary w-full py-3 rounded-xl mt-3">Jetzt synchronisieren</button>
+                    <p data-sync-status role="status" class="text-sm mt-3">Synchronisierung wird vorbereitet</p>
+                    <p class="settings-hint mt-3">Der Status bestätigt die Speicherung in Firestore. Die Übernahme zeigt deine Kalorien-App an.</p>
                 </div>
 
                 <div class="card p-5">
                     <h3 class="font-bold text-lg text-gray-900 mb-2">Letzte 5 Trainings</h3>
-                    <p class="text-sm text-gray-500 mb-3">Lokales Backup nach Trainingsende - hilfreich falls der Webhook ausfällt.</p>
+                    <p class="text-sm text-gray-500 mb-3">Die letzten Abschlüsse und ältere lokale Backups. Ausstehende Übertragungen bleiben vollständig gespeichert.</p>
                     <div id="settings-recent-summaries" class="space-y-2">
                         <!-- Letzte Trainings werden hier angezeigt -->
                     </div>
@@ -1844,6 +1849,8 @@
     </div>
 
     <script src="js/icons.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firestore-sync.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/app.js"></script>
     <script src="js/pwa.js"></script>

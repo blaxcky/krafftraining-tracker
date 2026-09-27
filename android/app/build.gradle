@@ -1,8 +1,8 @@
 apply plugin: 'com.android.application'
 
 def releaseStoreFile = System.getenv('ANDROID_KEYSTORE_FILE')
-def appVersionCode = (project.findProperty('versionCode') ?: '2014003').toInteger()
-def appVersionName = project.findProperty('versionName') ?: '2.14.3'
+def appVersionCode = (project.findProperty('versionCode') ?: '2014004').toInteger()
+def appVersionName = project.findProperty('versionName') ?: '2.14.4'
 
 android {
     namespace = "com.blaxcky.krafttrainingtracker"

@@ -549,10 +549,12 @@ class Storage {
       this.getAllExercises(safePlanId),
       this.getPlanById(safePlanId)
     ]);
+    const startedAt = new Date();
     const trainingData = {
       id: 'current',
       active: true,
-      startedAt: new Date(),
+      ...SyncCore.sessionIdentity(startedAt, trainingSync.owner()),
+      startedAt,
       planId: safePlanId,
       planName: plan ? plan.name : (safePlanId === 'default' ? 'Standard' : safePlanId),
       cardioEntries: [],
@@ -602,80 +604,35 @@ class Storage {
   }
 
   async updateTrainingExercise(exerciseId, updates = {}, saveToMaster = false) {
-    const training = await this.getCurrentTraining();
-    if (!training) return null;
-
     const normalizedId = Number(exerciseId);
-    const exercise = training.exercises.find(ex => ex.id === normalizedId);
-    if (exercise) {
-      const hasWeight = Object.prototype.hasOwnProperty.call(updates, 'weight');
-      const hasAdditionalPlates = Object.prototype.hasOwnProperty.call(updates, 'additionalPlates');
-      const hasLoadMode = Object.prototype.hasOwnProperty.call(updates, 'loadMode');
-      const hasLoadNote = Object.prototype.hasOwnProperty.call(updates, 'loadNote');
-      const hasBandLevel = Object.prototype.hasOwnProperty.call(updates, 'bandLevel');
-      const hasCalories = Object.prototype.hasOwnProperty.call(updates, 'calories');
-      const hasCompleted = Object.prototype.hasOwnProperty.call(updates, 'completed');
-
-      const fields = this.buildExerciseFields({
-        weight: hasWeight ? updates.weight : exercise.baseWeight,
-        additionalPlates: hasAdditionalPlates ? updates.additionalPlates : exercise.additionalPlates,
-        calories: hasCalories ? updates.calories : exercise.calories,
-        loadMode: hasLoadMode ? updates.loadMode : exercise.loadMode,
-        loadNote: hasLoadNote ? updates.loadNote : exercise.loadNote,
-        bandLevel: hasBandLevel ? updates.bandLevel : exercise.bandLevel
-      });
-      Object.assign(exercise, fields);
-
-      if (hasCompleted) {
-        if (updates.completed === 'skipped') {
-          exercise.completed = false;
-          exercise.skipped = true;
-        } else {
-          const isCompleted = !!updates.completed;
-          exercise.completed = isCompleted;
-          exercise.skipped = false;
-        }
-      } else if (typeof exercise.skipped === 'undefined') {
-        exercise.skipped = false;
+    const training = await SyncCore.changeCurrent(this.db, training => {
+      const exercise = training.exercises.find(ex => ex.id === normalizedId);
+      if (!exercise) return;
+      const has = key => Object.prototype.hasOwnProperty.call(updates, key);
+      Object.assign(exercise, this.buildExerciseFields({
+        weight: has('weight') ? updates.weight : exercise.baseWeight,
+        additionalPlates: has('additionalPlates') ? updates.additionalPlates : exercise.additionalPlates,
+        calories: has('calories') ? updates.calories : exercise.calories,
+        loadMode: has('loadMode') ? updates.loadMode : exercise.loadMode,
+        loadNote: has('loadNote') ? updates.loadNote : exercise.loadNote,
+        bandLevel: has('bandLevel') ? updates.bandLevel : exercise.bandLevel
+      }));
+      if (has('completed')) {
+        exercise.completed = updates.completed === 'skipped' ? false : Boolean(updates.completed);
+        exercise.skipped = updates.completed === 'skipped';
       }
-
-      if (saveToMaster && exercise.completed === true) {
-        await this.updateExercise(
-          normalizedId,
-          exercise.name,
-          exercise.baseWeight,
-          exercise.additionalPlates,
-          exercise.calories,
-          {
-            loadMode: exercise.loadMode,
-            loadNote: exercise.loadNote,
-            bandLevel: exercise.bandLevel
-          }
-        );
-      }
-    }
-
-    const transaction = this.db.transaction(['training'], 'readwrite');
-    const store = transaction.objectStore('training');
-
-    return new Promise((resolve, reject) => {
-      const request = store.put(training);
-      request.onerror = () => reject(request.error);
-      transaction.oncomplete = () => resolve(training);
-      transaction.onerror = () => reject(transaction.error || request.error);
-      transaction.onabort = () => reject(transaction.error || request.error);
     });
+    const exercise = training?.exercises.find(ex => ex.id === normalizedId);
+    if (saveToMaster && exercise?.completed === true) {
+      await this.updateExercise(normalizedId, exercise.name, exercise.baseWeight, exercise.additionalPlates, exercise.calories, {
+        loadMode: exercise.loadMode, loadNote: exercise.loadNote, bandLevel: exercise.bandLevel
+      });
+    }
+    return training;
   }
 
   async endTraining() {
-    const transaction = this.db.transaction(['training'], 'readwrite');
-    const store = transaction.objectStore('training');
-    
-    return new Promise((resolve, reject) => {
-      const request = store.delete('current');
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+    return SyncCore.finishTraining(this.db, trainingSync.owner());
   }
 
   async exportExercises() {
@@ -888,46 +845,22 @@ class Storage {
 
   // Cardio zur aktuellen Training-Session hinzufügen
   async addCardioToSession(name, calories) {
-    const training = await this.getCurrentTraining();
-    if (!training) return null;
-
-    // cardioEntries initialisieren falls nicht vorhanden (Migration)
-    if (!training.cardioEntries) {
-      training.cardioEntries = [];
-    }
-
-    const newEntry = {
-      id: Date.now(),
-      name: name.trim(),
-      calories: parseInt(calories) || 0
-    };
-
-    training.cardioEntries.push(newEntry);
-
-    const transaction = this.db.transaction(['training'], 'readwrite');
-    const store = transaction.objectStore('training');
-
-    return new Promise((resolve, reject) => {
-      const request = store.put(training);
-      request.onsuccess = () => resolve(newEntry);
-      request.onerror = () => reject(request.error);
+    let newEntry;
+    await SyncCore.changeCurrent(this.db, training => {
+      training.cardioEntries ||= [];
+      // Keep numeric IDs compatible with existing inline handlers, even when
+      // multiple entries are added in the same millisecond.
+      const id = Math.max(Date.now(), ...training.cardioEntries.map(entry => Number(entry.id) + 1));
+      newEntry = { id, name: name.trim(), calories: parseInt(calories) || 0 };
+      training.cardioEntries.push(newEntry);
     });
+    if (!newEntry) throw new Error('Kein aktives Training vorhanden');
+    return newEntry;
   }
 
-  // Cardio aus der aktuellen Training-Session entfernen
   async removeCardioFromSession(cardioId) {
-    const training = await this.getCurrentTraining();
-    if (!training || !training.cardioEntries) return null;
-
-    training.cardioEntries = training.cardioEntries.filter(entry => entry.id !== cardioId);
-
-    const transaction = this.db.transaction(['training'], 'readwrite');
-    const store = transaction.objectStore('training');
-
-    return new Promise((resolve, reject) => {
-      const request = store.put(training);
-      request.onsuccess = () => resolve(training);
-      request.onerror = () => reject(request.error);
+    return SyncCore.changeCurrent(this.db, training => {
+      training.cardioEntries = (training.cardioEntries || []).filter(entry => entry.id !== cardioId);
     });
   }
 

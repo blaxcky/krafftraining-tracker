@@ -41,7 +41,7 @@ export async function verifyWeb(directory = 'www') {
   }
 
   // These are essential even if an accidental HTML edit removes their links.
-  for (const asset of ['css/tailwind.css', 'fonts/roboto-flex.css', 'js/icons.js', 'manifest.json', 'service-worker.js']) {
+  for (const asset of ['css/tailwind.css', 'fonts/roboto-flex.css', 'js/icons.js', 'js/firestore-sync.js', 'js/firebase-config.js', 'manifest.json', 'service-worker.js']) {
     await check(asset);
   }
   for (const asset of ['index.html', 'js/app.js', 'js/pwa.js', 'service-worker.js']) {

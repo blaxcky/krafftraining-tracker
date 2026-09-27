@@ -1,9 +1,11 @@
-const CACHE_NAME = 'krafttraining-tracker-v110';
+const CACHE_NAME = 'krafttraining-tracker-v112';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
   './js/app.js',
+  './js/firebase-config.js',
+  './js/firestore-sync.js',
   './js/icons.js',
   './js/storage.js',
   './js/pwa.js',
