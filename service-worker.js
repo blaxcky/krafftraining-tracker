@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krafttraining-tracker-v107';
+const CACHE_NAME = 'krafttraining-tracker-v108';
 const urlsToCache = [
   './',
   './index.html',
@@ -10,6 +10,12 @@ const urlsToCache = [
   './fonts/roboto-flex.css',
   './fonts/material-symbols.css',
   './fonts/material-symbols-outlined.woff2',
+  './fonts/files/roboto-flex-cyrillic-ext-wght-normal.woff2',
+  './fonts/files/roboto-flex-cyrillic-wght-normal.woff2',
+  './fonts/files/roboto-flex-greek-wght-normal.woff2',
+  './fonts/files/roboto-flex-vietnamese-wght-normal.woff2',
+  './fonts/files/roboto-flex-latin-ext-wght-normal.woff2',
+  './fonts/files/roboto-flex-latin-wght-normal.woff2',
   './icons/icon-192x192.png',
   './icons/icon-512x512.png',
   './icons/icon-1024x1024.png',
@@ -35,17 +41,19 @@ const networkFirst = async (request, fallbackUrl, shouldCache) => {
     }
     return response;
   } catch (error) {
-    const cached = await caches.match(request);
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
     if (cached) return cached;
     if (request.mode === 'navigate' && fallbackUrl) {
-      return caches.match(fallbackUrl);
+      return cache.match(fallbackUrl);
     }
     throw error;
   }
 };
 
 const cacheFirst = async (request, shouldCache) => {
-  const cached = await caches.match(request);
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
   if (cached) return cached;
 
   const response = await fetch(request);

@@ -1,10 +1,13 @@
 {
   "name": "krafttraining-tracker",
-  "version": "2.14.0",
+  "version": "2.14.1",
   "private": true,
   "description": "Krafttraining Tracker als PWA und native Android-App mit Capacitor",
   "scripts": {
-    "build": "node scripts/build-web.mjs && tailwindcss -i ./css/tailwind.css -o ./www/css/tailwind.css --minify",
+    "build": "node scripts/build-web.mjs && tailwindcss -i ./css/tailwind.css -o ./www/css/tailwind.css --minify && npm run verify:web",
+    "verify:web": "node scripts/verify-web.mjs",
+    "test": "node --test tests/build-assets.test.mjs",
+    "preview": "python3 -m http.server 8080 --directory www",
     "android:sync": "npm run build && cap sync android",
     "android:debug": "npm run android:sync && cd android && ./gradlew assembleDebug",
     "android:release": "npm run android:sync && cd android && ./gradlew assembleRelease"
